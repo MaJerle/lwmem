@@ -183,7 +183,7 @@ MEM_PREF(mem_init)(const MEM_PREF(mem_region_t)* regions, const size_t len) {
         mem_size = regions[i].size;
     }
 
-    for (size_t i = 0; i < len; regions++) {
+    for (size_t i = 0; i < len; i++, regions++) {
         /* Ensure region size has enough memory */
         /* Size of region must be for at least block meta size + 1 minimum byte allocation alignment */
         mem_size = regions->size;
@@ -290,19 +290,19 @@ MEM_PREF(mem_malloc)(const size_t size) {
     const size_t final_size = MEM_ALIGN(size) + MEM_BLOCK_META_SIZE;
 
     /* Check if initialized and if size is in the limits */
-    if (end_block == NULL || size == 0 || (size & mem_alloc_bit)) {
+    if (end_block == NULL || final_size == 0 || (final_size & mem_alloc_bit)) {
         return NULL;
     }
 
     /* Check upper size limit */
-    if (size & mem_alloc_bit) {
+    if (final_size & mem_alloc_bit) {
         return NULL;
     }
 
     /* Try to find first block with has at least `size` bytes available memory */
     prev = &start_block;                        /* Always start with start block which contains valid information about first available block */
     curr = prev->next;                          /* Set current as next of start = first available block */
-    while (curr->size < size) {                 /* Loop until available block contains less memory than required */
+    while (curr->size < final_size) {                 /* Loop until available block contains less memory than required */
         if (curr->next == NULL || curr == end_block) {  /* If no more blocks available */
             return NULL;                        /* No sufficient memory available to allocate block of memory */
         }
@@ -321,10 +321,10 @@ MEM_PREF(mem_malloc)(const size_t size) {
      * split it to to make available memory for other allocations
      * Threshold is 2 * MEM_BLOCK_META_SIZE of remaining size
      */
-    if ((curr->size - size) > 2 * MEM_BLOCK_META_SIZE) {
-        next = (void *)((uint8_t *)curr + size);    /* Put next block after size of current allocation */
-        next->size = curr->size - size;         /* Set as remaining size */
-        curr->size = size;                      /* Current size is now smaller */
+    if ((curr->size - final_size) > 2 * MEM_BLOCK_META_SIZE) {
+        next = (void *)((uint8_t *)curr + final_size);  /* Put next block after size of current allocation */
+        next->size = curr->size - final_size;   /* Set as remaining size */
+        curr->size = final_size;                /* Current size is now smaller */
 
         /* Insert this block to list = align all pointers to match linked list */
         insert_free_block(next);
@@ -334,7 +334,7 @@ MEM_PREF(mem_malloc)(const size_t size) {
     curr->size |= mem_alloc_bit;                /* Bit indicates block is allocated */
     curr->next = NULL;                          /* Allocated blocks have no next entries */
 
-    mem_available_bytes -= size;                /* Decrease available bytes */
+    mem_available_bytes -= final_size;          /* Decrease available bytes */
 
     return retval;
 }
