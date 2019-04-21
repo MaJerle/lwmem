@@ -1,5 +1,5 @@
 /**	
- * \file            dyn_mem.c
+ * \file            dyn_mem.h
  * \brief           Dynamic memory manager
  */
  
@@ -66,12 +66,12 @@ typedef struct {
     size_t size;                                /*!< Size of region in units of bytes */
 } MEM_PREF(mem_region_t);
 
-size_t      MEM_PREF(mem_assignmem)(const MEM_PREF(mem_region_t)* regions, size_t len);
-size_t      MEM_PREF(mem_init)(const MEM_PREF(mem_region_t)* regions, size_t len);
-void *      MEM_PREF(mem_malloc)(size_t size);
-void *      MEM_PREF(mem_calloc)(size_t nitems, size_t size);
-void *      MEM_PREF(mem_realloc)(void *ptr, size_t size);
-void        MEM_PREF(mem_free)(void* ptr);
+size_t      MEM_PREF(mem_assignmem)(const MEM_PREF(mem_region_t)* regions, const size_t len);
+size_t      MEM_PREF(mem_init)(const MEM_PREF(mem_region_t)* regions, const size_t len);
+void *      MEM_PREF(mem_malloc)(const size_t size);
+void *      MEM_PREF(mem_calloc)(const size_t nitems, const size_t size);
+void *      MEM_PREF(mem_realloc)(void* const ptr, const size_t size);
+void        MEM_PREF(mem_free)(void* const ptr);
 
 #undef MEM_PREF
 

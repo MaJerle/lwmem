@@ -159,7 +159,7 @@ insert_free_block(mem_block_t* nb) {
  * \return          `0` on failure, number of final regions used for memory manager on success
  */
 size_t
-MEM_PREF(mem_init)(const MEM_PREF(mem_region_t)* regions, size_t len) {
+MEM_PREF(mem_init)(const MEM_PREF(mem_region_t)* regions, const size_t len) {
     uint8_t* mem_start_addr;
     size_t mem_size;
     mem_block_t* first_block, *prev_end_block;
@@ -183,7 +183,7 @@ MEM_PREF(mem_init)(const MEM_PREF(mem_region_t)* regions, size_t len) {
         mem_size = regions[i].size;
     }
 
-    for (; len--; regions++) {
+    for (size_t i = 0; i < len; regions++) {
         /* Ensure region size has enough memory */
         /* Size of region must be for at least block meta size + 1 minimum byte allocation alignment */
         mem_size = regions->size;
@@ -271,7 +271,7 @@ MEM_PREF(mem_init)(const MEM_PREF(mem_region_t)* regions, size_t len) {
  * \return          `0` on failure, number of final regions used for memory manager on success
  */
 size_t
-MEM_PREF(mem_assignmem)(const MEM_PREF(mem_region_t)* regions, size_t len) {
+MEM_PREF(mem_assignmem)(const MEM_PREF(mem_region_t)* regions, const size_t len) {
     return MEM_PREF(mem_init)(regions, len);
 }
 
@@ -282,17 +282,17 @@ MEM_PREF(mem_assignmem)(const MEM_PREF(mem_region_t)* regions, size_t len) {
  * \return          Pointer to allocated memory on success, `NULL` otherwise
  */
 void *
-MEM_PREF(mem_malloc)(size_t size) {
+MEM_PREF(mem_malloc)(const size_t size) {
     mem_block_t *prev, *curr, *next;
     void* retval = NULL;
+
+    /* Calculate final size including meta data size */
+    const size_t final_size = MEM_ALIGN(size) + MEM_BLOCK_META_SIZE;
 
     /* Check if initialized and if size is in the limits */
     if (end_block == NULL || size == 0 || (size & mem_alloc_bit)) {
         return NULL;
     }
-
-    /* Calculate final size, including meta size */
-    size = MEM_ALIGN(size) + MEM_BLOCK_META_SIZE;
 
     /* Check upper size limit */
     if (size & mem_alloc_bit) {
@@ -350,12 +350,12 @@ MEM_PREF(mem_malloc)(size_t size) {
  * \return          Pointer to allocated memory on success, `NULL` otherwise
  */
 void *
-MEM_PREF(mem_calloc)(size_t nitems, size_t size) {
+MEM_PREF(mem_calloc)(const size_t nitems, const size_t size) {
     void* ptr;
+    const size_t s = size * nitems;
 
-    size *= nitems;
-    if ((ptr = MEM_PREF(mem_malloc(size))) != NULL) {
-        MEM_MEMSET(ptr, 0x00, size);
+    if ((ptr = MEM_PREF(mem_malloc(s))) != NULL) {
+        MEM_MEMSET(ptr, 0x00, s);
     }
     return ptr;
 }
@@ -378,7 +378,7 @@ MEM_PREF(mem_calloc)(size_t nitems, size_t size) {
  * \return          Pointer to allocated memory on success, `NULL` otherwise
  */
 void *
-MEM_PREF(mem_realloc)(void *ptr, size_t size) {
+MEM_PREF(mem_realloc)(void* const ptr, const size_t size) {
     if (size == 0) {
         if (ptr != NULL) {
             MEM_PREF(mem_free(ptr));
@@ -408,7 +408,7 @@ MEM_PREF(mem_realloc)(void *ptr, size_t size) {
  * \param[in]       ptr: Memory to free. `NULL` pointer is valid input
  */
 void
-MEM_PREF(mem_free)(void* ptr) {
+MEM_PREF(mem_free)(void* const ptr) {
     mem_block_t* block;
 
     if (ptr == NULL) {
