@@ -46,7 +46,7 @@
  * Most CPUs do not offer unaligned memory access (Cortex-M0 as an example)
  * therefore it is important to have alignment.
  *
- * \note            This value can be power of `2`. Usually alignment of `4` bytes fits to all processors.
+ * \note            This value can be a power of `2`. Usually alignment of `4` bytes fits to all processors.
  */
 #define MEM_ALIGN_NUM                   ((size_t)4)
 
@@ -82,8 +82,8 @@
 typedef struct mem_block {
     struct mem_block* next;                     /*!< Next free memory block on linked list.
                                                         Set to `NULL` when block is allocated and in use */
-    size_t size;                                /*!< Size of free block.
-                                                        MSB bit is set to `1` when block is allocated and in use */
+    size_t size;                                /*!< Size of block. MSB bit is set to `1` when block is allocated and in use,
+                                                        or `0` when block is free */
 } mem_block_t;
 
 /**
@@ -120,7 +120,7 @@ insert_free_block(mem_block_t* nb) {
      * Check if current block and new block together create one big contiguous block
      * If this is the case, merge blocks together and increase current block by new block size
      */
-    if (((uint8_t *)curr + curr->size) == (uint8_t *)nb) {
+    if (((unsigned char *)curr + curr->size) == (unsigned char *)nb) {
         curr->size += nb->size;                 /* Increase current block by size of new block */
         nb = curr;                              /* New block and current are now the same thing */
         /* 
@@ -131,7 +131,7 @@ insert_free_block(mem_block_t* nb) {
     }
 
     /* Check if new block and next of current create big contiguous block */
-    if ((uint8_t *)nb + nb->size == (uint8_t *)curr->next) {
+    if (((unsigned char *)nb + nb->size) == (unsigned char *)curr->next) {
         if (curr->next == end_block) {          /* Does it points to the end? */
             nb->next = end_block;               /* Set end block pointer */
         } else {
@@ -160,7 +160,7 @@ insert_free_block(mem_block_t* nb) {
  */
 size_t
 MEM_PREF(mem_init)(const MEM_PREF(mem_region_t)* regions, const size_t len) {
-    uint8_t* mem_start_addr;
+    unsigned char* mem_start_addr;
     size_t mem_size;
     mem_block_t* first_block, *prev_end_block;
 
@@ -174,7 +174,7 @@ MEM_PREF(mem_init)(const MEM_PREF(mem_region_t)* regions, const size_t len) {
     mem_size = 0;
     for (size_t i = 0; i < len; i++) {
         /* New regions must be higher than previous one */
-        if ((mem_start_addr + mem_size) > (uint8_t *)regions[i].start_addr) {
+        if ((mem_start_addr + mem_size) > (unsigned char *)regions[i].start_addr) {
             return 0;
         }
 
@@ -200,7 +200,7 @@ MEM_PREF(mem_init)(const MEM_PREF(mem_region_t)* regions, const size_t len) {
             /* Start address needs manual alignment */
             /* Increase start address and decrease effective region size because of that */
             mem_start_addr += MEM_ALIGN_NUM - ((size_t)mem_start_addr & MEM_ALIGN_BITS);
-            mem_size -= mem_start_addr - (uint8_t *)regions->start_addr;
+            mem_size -= mem_start_addr - (unsigned char *)regions->start_addr;
         }
 
         /* Check region size alignment */
@@ -231,7 +231,7 @@ MEM_PREF(mem_init)(const MEM_PREF(mem_region_t)* regions, const size_t len) {
         prev_end_block = end_block;
 
         /* Put end block to the end of the region with size = 0 */
-        end_block = (void *)((uint8_t *)mem_start_addr + mem_size - MEM_BLOCK_META_SIZE);
+        end_block = (void *)((unsigned char *)mem_start_addr + mem_size - MEM_BLOCK_META_SIZE);
         end_block->next = NULL;                 /* End block in region does not have next entry */
         end_block->size = 0;                    /* Size of end block is zero */
 
@@ -265,6 +265,7 @@ MEM_PREF(mem_init)(const MEM_PREF(mem_region_t)* regions, const size_t len) {
 
 /**
  * \brief           Initialize and set memory regions for dynamic allocations
+ * \note            Function is alias for initialization
  * \param[in]       regions: Array of regions with address and its size.
  *                  Regions must be in increasing order (start address) and must not overlap in-between
  * \param[in]       len: Number of regions in array
@@ -290,19 +291,14 @@ MEM_PREF(mem_malloc)(const size_t size) {
     const size_t final_size = MEM_ALIGN(size) + MEM_BLOCK_META_SIZE;
 
     /* Check if initialized and if size is in the limits */
-    if (end_block == NULL || final_size == 0 || (final_size & mem_alloc_bit)) {
-        return NULL;
-    }
-
-    /* Check upper size limit */
-    if (final_size & mem_alloc_bit) {
+    if (end_block == NULL || final_size == MEM_BLOCK_META_SIZE || (final_size & mem_alloc_bit)) {
         return NULL;
     }
 
     /* Try to find first block with has at least `size` bytes available memory */
     prev = &start_block;                        /* Always start with start block which contains valid information about first available block */
     curr = prev->next;                          /* Set current as next of start = first available block */
-    while (curr->size < final_size) {                 /* Loop until available block contains less memory than required */
+    while (curr->size < final_size) {           /* Loop until available block contains less memory than required */
         if (curr->next == NULL || curr == end_block) {  /* If no more blocks available */
             return NULL;                        /* No sufficient memory available to allocate block of memory */
         }
@@ -311,8 +307,8 @@ MEM_PREF(mem_malloc)(const size_t size) {
     }
 
     /* There is a valid block available */
-    retval = (void *)((uint8_t *)prev->next + MEM_BLOCK_META_SIZE); /* Return pointer does not include meta */
-    prev->next = curr->next;                    /* Remove this block by setting next of previous to next of current */
+    retval = (void *)((unsigned char *)prev->next + MEM_BLOCK_META_SIZE);   /* Return pointer does not include meta part */
+    prev->next = curr->next;                    /* Remove this block from linked list by setting next of previous to next of current */
 
     /* curr block is now removed from linked list */
     
@@ -322,7 +318,7 @@ MEM_PREF(mem_malloc)(const size_t size) {
      * Threshold is 2 * MEM_BLOCK_META_SIZE of remaining size
      */
     if ((curr->size - final_size) > 2 * MEM_BLOCK_META_SIZE) {
-        next = (void *)((uint8_t *)curr + final_size);  /* Put next block after size of current allocation */
+        next = (void *)((unsigned char *)curr + final_size);/* Put next block after size of current allocation */
         next->size = curr->size - final_size;   /* Set as remaining size */
         curr->size = final_size;                /* Current size is now smaller */
 
@@ -392,7 +388,7 @@ MEM_PREF(mem_realloc)(void* const ptr, const size_t size) {
         size_t old_size;
 
         /* Get size of input pointer */
-        old_size = (size_t)(((mem_block_t *)((uint8_t *)ptr - MEM_BLOCK_META_SIZE))->size) & ~mem_alloc_bit;
+        old_size = (size_t)(((mem_block_t *)((unsigned char *)ptr - MEM_BLOCK_META_SIZE))->size) & ~mem_alloc_bit;
         new_ptr = MEM_PREF(mem_malloc(size));
         if (new_ptr != NULL) {
             MEM_MEMCPY(new_ptr, ptr, old_size > size ? size : old_size);
@@ -416,10 +412,10 @@ MEM_PREF(mem_free)(void* const ptr) {
     }
 
     /* Remove offset from input pointer */
-    block = (void *)((uint8_t *)ptr - MEM_BLOCK_META_SIZE);
+    block = (void *)((unsigned char *)ptr - MEM_BLOCK_META_SIZE);
 
     /* Check if block is valid */
-    if (block->size & mem_alloc_bit && block->next == NULL) {
+    if ((block->size & mem_alloc_bit) && block->next == NULL) {
         block->size &= ~mem_alloc_bit;          /* Clear allocated bit indication */
         mem_available_bytes += block->size;     /* Increase available bytes */
         insert_free_block(block);               /* Put block back to list of free block */

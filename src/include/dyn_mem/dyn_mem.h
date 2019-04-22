@@ -38,7 +38,6 @@ extern "C" {
 #endif
 
 #include "string.h"
-#include "stdint.h"
 
 /**
  * \defgroup        DYN_MEM Dynamic memory
