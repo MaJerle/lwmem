@@ -1,4 +1,4 @@
-# Dynamic memory manager
+# Lightweight dynamic memory manager
 
 ## Features
 
@@ -6,19 +6,20 @@
 - Implements standard C library functions for memory allocation, `malloc`, `calloc`, `realloc` and `free`
 - Supports different memory regions to allow use of framented memories
 - Uses `first-fit` algorithm to search free block
-- Suitable for embedded applications
+- Suitable for embedded applications with fragmented memories
+- Suitable for automotive applications 
 - 100% open source, code available
 - User friendly MIT license
 
 ## Examples and resources
 
-For examples, please check second repository, available at https://github.com/MaJerle/dyn_mem_res
+For examples, please check second repository, available at https://github.com/MaJerle/lwmem_res
 
 ## Documentation
 
 Full API documentation with description and examples is available and is regulary updated with the source changes
 
-http://majerle.eu/documentation/dyn_mem/html/index.html
+http://majerle.eu/documentation/lwmem/html/index.html
 
 ## Contribution
 

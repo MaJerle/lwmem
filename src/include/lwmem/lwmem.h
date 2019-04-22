@@ -1,6 +1,6 @@
 /**	
- * \file            dyn_mem.h
- * \brief           Dynamic memory manager
+ * \file            lwmem.c
+ * \brief           Lightweight dynamic memory manager
  */
  
 /*
@@ -26,12 +26,12 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  * OTHER DEALINGS IN THE SOFTWARE.
  *
- * This file is part of dynamic memory library.
+ * This file is part of Lightweight dynamic memory manager library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
  */
-#ifndef DYN_MEM_HDR_H
-#define DYN_MEM_HDR_H
+#ifndef LWMEM_HDR_H
+#define LWMEM_HDR_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -40,8 +40,8 @@ extern "C" {
 #include "string.h"
 
 /**
- * \defgroup        DYN_MEM Dynamic memory
- * \brief           Dynamic memory manager
+ * \defgroup        LWMEM Lightweight dynamic memory manager
+ * \brief           Lightweight dynamic memory manager
  * \{
  */
 
@@ -50,11 +50,11 @@ extern "C" {
  * \brief           Memory function/typedef prefix string
  * 
  * It is used to change function names in zero time to easily re-use same library between applications.
- * Use `#define MEM_PREF(x)    my_prefix_ ## x` to change all function names to (for example) `my_prefix_mem_init` 
+ * Use `#define LWMEM_PREF(x)   my_prefix_ ## x` to change all function names to (for example) `my_prefix_lwmem_init` 
  *
  * \note            Modification of this macro must be done in header and source file aswell
  */
-#define MEM_PREF(x)                     x
+#define LWMEM_PREF(x)                     lwmem_ ## x
 /* --- Memory unique part ends --- */
 
 /**
@@ -63,16 +63,15 @@ extern "C" {
 typedef struct {   
     void* start_addr;                           /*!< Region start address */
     size_t size;                                /*!< Size of region in units of bytes */
-} MEM_PREF(mem_region_t);
+} LWMEM_PREF(region_t);
 
-size_t      MEM_PREF(mem_assignmem)(const MEM_PREF(mem_region_t)* regions, const size_t len);
-size_t      MEM_PREF(mem_init)(const MEM_PREF(mem_region_t)* regions, const size_t len);
-void *      MEM_PREF(mem_malloc)(const size_t size);
-void *      MEM_PREF(mem_calloc)(const size_t nitems, const size_t size);
-void *      MEM_PREF(mem_realloc)(void* const ptr, const size_t size);
-void        MEM_PREF(mem_free)(void* const ptr);
+size_t      LWMEM_PREF(assignmem)(const LWMEM_PREF(region_t)* regions, const size_t len);
+void *      LWMEM_PREF(malloc)(const size_t size);
+void *      LWMEM_PREF(calloc)(const size_t nitems, const size_t size);
+void *      LWMEM_PREF(realloc)(void* const ptr, const size_t size);
+void        LWMEM_PREF(free)(void* const ptr);
 
-#undef MEM_PREF
+#undef LWMEM_PREF
 
 /**
  * \}
@@ -82,4 +81,4 @@ void        MEM_PREF(mem_free)(void* const ptr);
 }
 #endif
 
-#endif /* DYN_MEM_HDR_H */
+#endif /* LWMEM_HDR_H */

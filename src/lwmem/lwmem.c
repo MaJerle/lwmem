@@ -1,6 +1,6 @@
 /**	
- * \file            dyn_mem.c
- * \brief           Dynamic memory manager
+ * \file            lwmem.c
+ * \brief           Lightweight dynamic memory manager
  */
  
 /*
@@ -26,11 +26,11 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  * OTHER DEALINGS IN THE SOFTWARE.
  *
- * This file is part of dynamic memory library.
+ * This file is part of Lightweight dynamic memory manager library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
  */
-#include "dyn_mem/dyn_mem.h"
+#include "lwmem/lwmem.h"
 #include "limits.h"
 
 /* --- Memory unique part starts --- */
@@ -38,7 +38,7 @@
 /**
  * \brief           Memory function/typedef prefix string
  */
-#define MEM_PREF(x)                     x
+#define LWMEM_PREF(x)                   lwmem_ ## x
 
 /**
  * \brief           Number of bits to align memory address and size.
@@ -48,19 +48,19 @@
  *
  * \note            This value can be a power of `2`. Usually alignment of `4` bytes fits to all processors.
  */
-#define MEM_ALIGN_NUM                   ((size_t)4)
+#define LWMEM_ALIGN_NUM                 ((size_t)4)
 
-#define MEM_MEMSET                      memset
-#define MEM_MEMCPY                      memcpy
+#define LWMEM_MEMSET                    memset
+#define LWMEM_MEMCPY                    memcpy
 /* --- Memory unique part ends --- */
 
 /**
  * \brief           Transform alignment number (power of `2`) to bits
  */
-#define MEM_ALIGN_BITS                  ((size_t)(MEM_ALIGN_NUM - 1))
+#define LWMEM_ALIGN_BITS                ((size_t)(LWMEM_ALIGN_NUM - 1))
 
 /**
- * \brief           Align input value to number of bits.
+ * \brief           Aligns input value to next alignment bits
  *
  * As an example, when \ref MEM_ALIGN_NUM is set to `4`:
  *
@@ -74,25 +74,25 @@
  *  - Input: `7`; Output: `8`
  *  - Input: `8`; Output: `8`
  */
-#define MEM_ALIGN(x)                    ((x + (MEM_ALIGN_BITS)) & ~(MEM_ALIGN_BITS))
+#define LWMEM_ALIGN(x)                  ((x + (LWMEM_ALIGN_BITS)) & ~(LWMEM_ALIGN_BITS))
 
 /**
  * \brief           Memory block structure
  */
-typedef struct mem_block {
-    struct mem_block* next;                     /*!< Next free memory block on linked list.
+typedef struct lwmem_block {
+    struct lwmem_block* next;                   /*!< Next free memory block on linked list.
                                                         Set to `NULL` when block is allocated and in use */
     size_t size;                                /*!< Size of block. MSB bit is set to `1` when block is allocated and in use,
                                                         or `0` when block is free */
-} mem_block_t;
+} lwmem_block_t;
 
 /**
  * \brief           Size of metadata header for block information
  */
-#define MEM_BLOCK_META_SIZE             MEM_ALIGN(sizeof(mem_block_t))
+#define LWMEM_BLOCK_META_SIZE           LWMEM_ALIGN(sizeof(lwmem_block_t))
 
-static mem_block_t start_block;                 /*!< Holds beginning of memory allocation regions */
-static mem_block_t* end_block;                  /*!< Pointer to the last memory location in regions linked list */
+static lwmem_block_t start_block;               /*!< Holds beginning of memory allocation regions */
+static lwmem_block_t* end_block;                /*!< Pointer to the last memory location in regions linked list */
 static size_t mem_alloc_bit;                    /*!< Bit indicating block is allocated, highest (MSB) bit indication */
 static size_t mem_available_bytes;              /*!< Memory size available for allocation */
 static size_t mem_regions_count;                /*!< Number of regions used for allocation */
@@ -102,8 +102,8 @@ static size_t mem_regions_count;                /*!< Number of regions used for 
  * \param[in]       nb: New free block to insert into linked list
  */
 void
-insert_free_block(mem_block_t* nb) {
-    mem_block_t* curr;
+insert_free_block(lwmem_block_t* nb) {
+    lwmem_block_t* curr;
 
     /* 
      * Try to find position to put new block
@@ -152,17 +152,17 @@ insert_free_block(mem_block_t* nb) {
 }
 
 /**
- * \brief           Initialize and set memory regions for dynamic allocations
+ * \brief           Initialize and assigns user regions for memory used by allocator algorithm
  * \param[in]       regions: Array of regions with address and its size.
- *                  Regions must be in increasing order (start address) and must not overlap in-between
+ *                      Regions must be in increasing order (start address) and must not overlap in-between
  * \param[in]       len: Number of regions in array
  * \return          `0` on failure, number of final regions used for memory manager on success
  */
 size_t
-MEM_PREF(mem_init)(const MEM_PREF(mem_region_t)* regions, const size_t len) {
+LWMEM_PREF(assignmem)(const LWMEM_PREF(region_t)* regions, const size_t len) {
     unsigned char* mem_start_addr;
     size_t mem_size;
-    mem_block_t* first_block, *prev_end_block;
+    lwmem_block_t* first_block, *prev_end_block;
 
     /* Init function may only be called once */
     if (end_block != NULL) {
@@ -187,7 +187,7 @@ MEM_PREF(mem_init)(const MEM_PREF(mem_region_t)* regions, const size_t len) {
         /* Ensure region size has enough memory */
         /* Size of region must be for at least block meta size + 1 minimum byte allocation alignment */
         mem_size = regions->size;
-        if (mem_size < (MEM_BLOCK_META_SIZE + MEM_ALIGN_NUM)) {
+        if (mem_size < (LWMEM_BLOCK_META_SIZE + LWMEM_ALIGN_NUM)) {
             /* Ignore region, go to next one */
             continue;
         }
@@ -196,20 +196,20 @@ MEM_PREF(mem_init)(const MEM_PREF(mem_region_t)* regions, const size_t len) {
         /* It is ok to cast to size_t, even if pointer could be larger */
         /* Important is to check lower-bytes (and bits) */
         mem_start_addr = regions->start_addr;
-        if ((size_t)mem_start_addr & MEM_ALIGN_BITS) {  /* Check alignment boundary */
+        if ((size_t)mem_start_addr & LWMEM_ALIGN_BITS) {/* Check alignment boundary */
             /* Start address needs manual alignment */
             /* Increase start address and decrease effective region size because of that */
-            mem_start_addr += MEM_ALIGN_NUM - ((size_t)mem_start_addr & MEM_ALIGN_BITS);
+            mem_start_addr += LWMEM_ALIGN_NUM - ((size_t)mem_start_addr & LWMEM_ALIGN_BITS);
             mem_size -= mem_start_addr - (unsigned char *)regions->start_addr;
         }
 
         /* Check region size alignment */
-        if (mem_size & MEM_ALIGN_BITS) {        /* Lower bits must be zero */
-            mem_size &= ~MEM_ALIGN_BITS;        /* Set lower bits to 0, decrease effective region size */
+        if (mem_size & LWMEM_ALIGN_BITS) {      /* Lower bits must be zero */
+            mem_size &= ~LWMEM_ALIGN_BITS;      /* Set lower bits to 0, decrease effective region size */
         }
         
         /* Ensure region size has enough memory after all the alignment checks */
-        if (mem_size < (MEM_BLOCK_META_SIZE + MEM_ALIGN_NUM)) {
+        if (mem_size < (LWMEM_BLOCK_META_SIZE + LWMEM_ALIGN_NUM)) {
             /* Ignore region, go to next one */
             continue;
         }
@@ -231,7 +231,7 @@ MEM_PREF(mem_init)(const MEM_PREF(mem_region_t)* regions, const size_t len) {
         prev_end_block = end_block;
 
         /* Put end block to the end of the region with size = 0 */
-        end_block = (void *)((unsigned char *)mem_start_addr + mem_size - MEM_BLOCK_META_SIZE);
+        end_block = (void *)((unsigned char *)mem_start_addr + mem_size - LWMEM_BLOCK_META_SIZE);
         end_block->next = NULL;                 /* End block in region does not have next entry */
         end_block->size = 0;                    /* Size of end block is zero */
 
@@ -245,7 +245,7 @@ MEM_PREF(mem_init)(const MEM_PREF(mem_region_t)* regions, const size_t len) {
          */
         first_block = (void *)mem_start_addr;
         first_block->next = end_block;          /* Next block of first is last block */
-        first_block->size = mem_size - MEM_BLOCK_META_SIZE;
+        first_block->size = mem_size - LWMEM_BLOCK_META_SIZE;
 
         /* Check if previous regions exist by checking previous end block state */
         if (prev_end_block != NULL) {
@@ -264,34 +264,21 @@ MEM_PREF(mem_init)(const MEM_PREF(mem_region_t)* regions, const size_t len) {
 }
 
 /**
- * \brief           Initialize and set memory regions for dynamic allocations
- * \note            Function is alias for initialization
- * \param[in]       regions: Array of regions with address and its size.
- *                  Regions must be in increasing order (start address) and must not overlap in-between
- * \param[in]       len: Number of regions in array
- * \return          `0` on failure, number of final regions used for memory manager on success
- */
-size_t
-MEM_PREF(mem_assignmem)(const MEM_PREF(mem_region_t)* regions, const size_t len) {
-    return MEM_PREF(mem_init)(regions, len);
-}
-
-/**
  * \brief           Allocate memory of requested size
  * \note            Function declaration is in-line with standard C function `malloc`
  * \param[in]       size: Number of bytes to allocate
  * \return          Pointer to allocated memory on success, `NULL` otherwise
  */
 void *
-MEM_PREF(mem_malloc)(const size_t size) {
-    mem_block_t *prev, *curr, *next;
+LWMEM_PREF(malloc)(const size_t size) {
+    lwmem_block_t *prev, *curr, *next;
     void* retval = NULL;
 
     /* Calculate final size including meta data size */
-    const size_t final_size = MEM_ALIGN(size) + MEM_BLOCK_META_SIZE;
+    const size_t final_size = LWMEM_ALIGN(size) + LWMEM_BLOCK_META_SIZE;
 
     /* Check if initialized and if size is in the limits */
-    if (end_block == NULL || final_size == MEM_BLOCK_META_SIZE || (final_size & mem_alloc_bit)) {
+    if (end_block == NULL || final_size == LWMEM_BLOCK_META_SIZE || (final_size & mem_alloc_bit)) {
         return NULL;
     }
 
@@ -307,7 +294,7 @@ MEM_PREF(mem_malloc)(const size_t size) {
     }
 
     /* There is a valid block available */
-    retval = (void *)((unsigned char *)prev->next + MEM_BLOCK_META_SIZE);   /* Return pointer does not include meta part */
+    retval = (void *)((unsigned char *)prev->next + LWMEM_BLOCK_META_SIZE); /* Return pointer does not include meta part */
     prev->next = curr->next;                    /* Remove this block from linked list by setting next of previous to next of current */
 
     /* curr block is now removed from linked list */
@@ -317,7 +304,7 @@ MEM_PREF(mem_malloc)(const size_t size) {
      * split it to to make available memory for other allocations
      * Threshold is 2 * MEM_BLOCK_META_SIZE of remaining size
      */
-    if ((curr->size - final_size) > 2 * MEM_BLOCK_META_SIZE) {
+    if ((curr->size - final_size) > 2 * LWMEM_BLOCK_META_SIZE) {
         next = (void *)((unsigned char *)curr + final_size);/* Put next block after size of current allocation */
         next->size = curr->size - final_size;   /* Set as remaining size */
         curr->size = final_size;                /* Current size is now smaller */
@@ -346,12 +333,12 @@ MEM_PREF(mem_malloc)(const size_t size) {
  * \return          Pointer to allocated memory on success, `NULL` otherwise
  */
 void *
-MEM_PREF(mem_calloc)(const size_t nitems, const size_t size) {
+LWMEM_PREF(calloc)(const size_t nitems, const size_t size) {
     void* ptr;
     const size_t s = size * nitems;
 
-    if ((ptr = MEM_PREF(mem_malloc(s))) != NULL) {
-        MEM_MEMSET(ptr, 0x00, s);
+    if ((ptr = LWMEM_PREF(malloc)(s)) != NULL) {
+        LWMEM_MEMSET(ptr, 0x00, s);
     }
     return ptr;
 }
@@ -374,25 +361,25 @@ MEM_PREF(mem_calloc)(const size_t nitems, const size_t size) {
  * \return          Pointer to allocated memory on success, `NULL` otherwise
  */
 void *
-MEM_PREF(mem_realloc)(void* const ptr, const size_t size) {
+LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
     if (size == 0) {
         if (ptr != NULL) {
-            MEM_PREF(mem_free(ptr));
+            LWMEM_PREF(free(ptr));
         }
         return NULL;
     }
     if (ptr == NULL) {
-        return MEM_PREF(mem_malloc(size));
+        return LWMEM_PREF(malloc(size));
     } else {
         void* new_ptr;
         size_t old_size;
 
         /* Get size of input pointer */
-        old_size = (size_t)(((mem_block_t *)((unsigned char *)ptr - MEM_BLOCK_META_SIZE))->size) & ~mem_alloc_bit;
-        new_ptr = MEM_PREF(mem_malloc(size));
+        old_size = (size_t)((((lwmem_block_t *)((unsigned char *)ptr - LWMEM_BLOCK_META_SIZE))->size) & ~mem_alloc_bit) - LWMEM_BLOCK_META_SIZE;
+        new_ptr = LWMEM_PREF(malloc(size));
         if (new_ptr != NULL) {
-            MEM_MEMCPY(new_ptr, ptr, old_size > size ? size : old_size);
-            MEM_PREF(mem_free(ptr));
+            LWMEM_MEMCPY(new_ptr, ptr, old_size > size ? size : old_size);
+            LWMEM_PREF(free(ptr));
         }
         return new_ptr;
     }
@@ -404,15 +391,15 @@ MEM_PREF(mem_realloc)(void* const ptr, const size_t size) {
  * \param[in]       ptr: Memory to free. `NULL` pointer is valid input
  */
 void
-MEM_PREF(mem_free)(void* const ptr) {
-    mem_block_t* block;
+LWMEM_PREF(free)(void* const ptr) {
+    lwmem_block_t* block;
 
     if (ptr == NULL) {
         return;
     }
 
     /* Remove offset from input pointer */
-    block = (void *)((unsigned char *)ptr - MEM_BLOCK_META_SIZE);
+    block = (void *)((unsigned char *)ptr - LWMEM_BLOCK_META_SIZE);
 
     /* Check if block is valid */
     if ((block->size & mem_alloc_bit) && block->next == NULL) {
