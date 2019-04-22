@@ -364,22 +364,22 @@ void *
 LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
     if (size == 0) {
         if (ptr != NULL) {
-            LWMEM_PREF(free(ptr));
+            LWMEM_PREF(free)(ptr);
         }
         return NULL;
     }
     if (ptr == NULL) {
-        return LWMEM_PREF(malloc(size));
+        return LWMEM_PREF(malloc)(size);
     } else {
         void* new_ptr;
         size_t old_size;
 
         /* Get size of input pointer */
         old_size = (size_t)((((lwmem_block_t *)((unsigned char *)ptr - LWMEM_BLOCK_META_SIZE))->size) & ~mem_alloc_bit) - LWMEM_BLOCK_META_SIZE;
-        new_ptr = LWMEM_PREF(malloc(size));
+        new_ptr = LWMEM_PREF(malloc)(size);
         if (new_ptr != NULL) {
             LWMEM_MEMCPY(new_ptr, ptr, old_size > size ? size : old_size);
-            LWMEM_PREF(free(ptr));
+            LWMEM_PREF(free)(ptr);
         }
         return new_ptr;
     }
