@@ -445,7 +445,7 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
             return ptr;
         }
 
-        /* Check new size lower than current block size */
+        /* Check if new size is lower than current block size */
         if (final_size < block_size) {
             /*
              * If new requested size is smaller than current block size
@@ -462,12 +462,12 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
                 /* Create empty block at the end */
                 next = (void *)((unsigned char *)block + final_size);
                 next->size = block_size - final_size;   /* Set remaining size for new block */
-                block->size = final_size;       /* Set new block size, including allocation bit */
+                block->size = final_size;       /* Set new block size */
 
                 insert_free_block(next);        /* Add new block to the free list */
                 mem_available_bytes += next->size;  /* Increase available bytes by new block size */
             }
-            LWMEM_BLOCK_SET_ALLOC(block);       /* Set block as allocated */
+            LWMEM_BLOCK_SET_ALLOC(block);       /* Set block as allocated in case its size has been changed */
             
             /* Return existing pointer, no need to copy content between addresses */
             return ptr;
@@ -478,8 +478,11 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
          * Try to find if there is a free block before or after current
          */
 
-        /* Find "curr" free block, located before existing block */
+        /* Find "curr" free block, located before input existing block */
         for (curr = &start_block, prev = curr->next; curr != NULL && curr->next < block; prev = curr, curr = curr->next) {}
+		
+		/* Order of variables is: | prev ---> curr --->--->--->--->--->--->--->--->--->---> next | */
+		/*                        |                  (input_block, which is not on a list)       | */
 
         /* Check if block and block after create contiguous memory with size of at least new requested size */
         if (((unsigned char *)block + block_size) == (unsigned char *)curr->next) {
@@ -515,7 +518,7 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
         if (((unsigned char *)curr + curr->size) == (unsigned char *)block) {
             /* 
              * 2 blocks create contiguous memory
-             * Is size of 2 blocks together big enough?
+             * Is size of 2 blocks together big enough for requested size?
              */
             if ((curr->size + block_size) >= final_size) {
                 void* old_data_ptr, *new_data_ptr;
