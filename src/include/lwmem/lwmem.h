@@ -71,7 +71,6 @@ void *      LWMEM_PREF(calloc)(const size_t nitems, const size_t size);
 void *      LWMEM_PREF(realloc)(void* const ptr, const size_t size);
 void        LWMEM_PREF(free)(void* const ptr);
 void        LWMEM_PREF(free_s)(void** const ptr);
-size_t      LWMEM_PREF(block_app_size)(void* ptr);
 
 #undef LWMEM_PREF
 
