@@ -114,7 +114,7 @@
  * \param[in]       _p_: Previous of input block
  */
 #define LWMEM_GET_PREV_CURR_OF_BLOCK(_b_, _pp_, _p_) do {               \
-    for ((_pp_) = &start_block, (_p_) = (_pp_)->next;                   \
+    for ((_pp_) = NULL, (_p_) = &start_block;                           \
         (_p_) != NULL && (_p_)->next < (_b_);                           \
         (_pp_) = (_p_), (_p_) = (_p_)->next                             \
    ) {}                                                                 \
@@ -220,6 +220,10 @@ prv_split_too_big_block(lwmem_block_t* block, size_t block_size, unsigned char s
         prv_insert_free_block(next);            /* Add new block to the free list */
 
         success = 1;
+    } else {
+        /* TODO: If next of current is free, check if we can increase next by at least some bytes */
+        /* This can only happen during reallocation process when allocated block is reallocated to previous one */
+        /* Very rare case, but may happen! */
     }
     if (set_as_alloc) {
         LWMEM_BLOCK_SET_ALLOC(block);           /* Set as allocated */
@@ -562,7 +566,7 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
              * Is size of 2 blocks together big enough?
              */
             if ((block_size + prev->next->size) >= final_size) {
-                /* It is, merge blocks together first by increasing its size and removing it from free list */
+                /* Merge blocks together by increasing its size and removing it from free list */
                 mem_available_bytes -= prev->next->size;/* For now decrease effective available bytes */
                 block->size = block_size + prev->next->size;/* Increase effective size of new block */
                 prev->next = prev->next->next;  /* Set next to next's next, effectively remove expanded block from free list */
@@ -634,7 +638,7 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
                  * If memmove overwrites metadata of current block, it is not an issue
                  * as we know its size and next is already NULL
                  *
-                 * memmove cannot overwrite free block after current one, 
+                 * memmove cannot overwrite free block after current one as we are shifting data up, 
                  * so there is no need to save temporary variables
                  */
 
@@ -660,7 +664,7 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
      */
     retval = prv_alloc(size);                   /* Try to allocate new block */
     if (retval != NULL) {
-        block_size = block_app_size(ptr);       /* Get application size of input pointer */
+        block_size = block_app_size(ptr);       /* Get application size from input pointer */
         LWMEM_MEMCPY(retval, ptr, size > block_size ? block_size : size);
         LWMEM_PREF(free)(ptr);                  /* Free previous pointer */
     }
