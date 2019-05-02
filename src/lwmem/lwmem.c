@@ -75,7 +75,7 @@
  *  - Input: `7`; Output: `8`
  *  - Input: `8`; Output: `8`
  */
-#define LWMEM_ALIGN(x)                  ((x + (LWMEM_ALIGN_BITS)) & ~(LWMEM_ALIGN_BITS))
+#define LWMEM_ALIGN(x)                  (((x) + (LWMEM_ALIGN_BITS)) & ~(LWMEM_ALIGN_BITS))
 
 /**
  * \brief           Size of metadata header for block information
@@ -302,6 +302,21 @@ prv_alloc(const size_t size) {
 }
 
 /**
+ * \brief           Free input pointer
+ * \param[in]       ptr: Input pointer to free
+ */
+void
+prv_free(void* const ptr) {
+    lwmem_block_t* const block = LWMEM_GET_BLOCK_FROM_PTR(ptr);
+    if (LWMEM_BLOCK_IS_ALLOC(block)) {          /* Check if block is valid */
+        block->size &= ~mem_alloc_bit;          /* Clear allocated bit indication */
+
+        mem_available_bytes += block->size;     /* Increase available bytes */
+        prv_insert_free_block(block);           /* Put block back to list of free block */
+    }
+}
+
+/**
  * \brief           Initialize and assigns user regions for memory used by allocator algorithm
  * \param[in]       regions: Array of regions with address and its size.
  *                      Regions must be in increasing order (start address) and must not overlap in-between
@@ -315,8 +330,7 @@ LWMEM_PREF(assignmem)(const LWMEM_PREF(region_t)* regions, const size_t len) {
     lwmem_block_t* first_block, *prev_end_block;
 
     if (end_block != NULL                       /* Init function may only be called once */
-        || (LWMEM_ALIGN_NUM & (LWMEM_ALIGN_NUM - 1))/* Must be power of 2 */
-        ) {
+        || (LWMEM_ALIGN_NUM & (LWMEM_ALIGN_NUM - 1))) { /* Must be power of 2 */
         return 0;
     }
 
@@ -324,7 +338,7 @@ LWMEM_PREF(assignmem)(const LWMEM_PREF(region_t)* regions, const size_t len) {
     mem_start_addr = (void *)0;
     mem_size = 0;
     for (size_t i = 0; i < len; i++) {
-        /* New regions must be higher than previous one */
+        /* New region(s) must be higher (in address space) than previous one */
         if ((mem_start_addr + mem_size) > LWMEM_TO_BYTE_PTR(regions[i].start_addr)) {
             return 0;
         }
@@ -335,40 +349,29 @@ LWMEM_PREF(assignmem)(const LWMEM_PREF(region_t)* regions, const size_t len) {
     }
 
     for (size_t i = 0; i < len; i++, regions++) {
-        /*
-         * Ensure region size has enough memory
-         * Size of region must be for at least block meta size + 1 minimum byte allocation alignment
-         */
-        mem_size = regions->size;
-        if (mem_size < LWMEM_BLOCK_MIN_SIZE) {
-            /* Ignore region, go to next one */
-            continue;
-        }
-
         /* 
          * Check region start address and align start address accordingly
          * It is ok to cast to size_t, even if pointer could be larger
          * Important is to check lower-bytes (and bits)
          */
+        mem_size = regions->size & ~LWMEM_ALIGN_BITS;   /* Size does not include lower bits */
+        if (mem_size < (2 * LWMEM_BLOCK_MIN_SIZE)) {
+            continue;                           /* Ignore region, go to next one */
+        }
+
+        /*
+         * Start address must be aligned to configuration
+         * Increase start address and decrease effective region size
+         */
         mem_start_addr = regions->start_addr;
         if (((size_t)mem_start_addr) & LWMEM_ALIGN_BITS) {  /* Check alignment boundary */
-            /* 
-             * Start address needs manual alignment
-             * Increase start address and decrease effective region size because of that
-             */
             mem_start_addr += LWMEM_ALIGN_NUM - ((size_t)mem_start_addr & LWMEM_ALIGN_BITS);
             mem_size -= mem_start_addr - LWMEM_TO_BYTE_PTR(regions->start_addr);
         }
-
-        /* Check region size alignment */
-        if (mem_size & LWMEM_ALIGN_BITS) {      /* Lower bits must be zero */
-            mem_size &= ~LWMEM_ALIGN_BITS;      /* Set lower bits to 0, decrease effective region size */
-        }
         
         /* Ensure region size has enough memory after all the alignment checks */
-        if (mem_size < (LWMEM_BLOCK_META_SIZE + LWMEM_ALIGN_NUM)) {
-            /* Ignore region, go to next one */
-            continue;
+        if (mem_size < (2 * LWMEM_BLOCK_MIN_SIZE)) {
+            continue;                           /* Ignore region, go to next one */
         }
 
         /*
@@ -459,9 +462,9 @@ LWMEM_PREF(calloc)(const size_t nitems, const size_t size) {
  * Function behaves differently, depends on input parameter of `ptr` and `size`:
  *
  *  - `ptr == NULL; size == 0`: Function returns `NULL`, no memory is allocated or freed
- *  - `ptr == NULL; size > 0`: Function tries to allocate new block of memory with `size` length, equivalent to `malloc(size)`
+ *  - `ptr == NULL; size != 0`: Function tries to allocate new block of memory with `size` length, equivalent to `malloc(size)`
  *  - `ptr != NULL; size == 0`: Function frees memory, equivalent to `free(ptr)`
- *  - `ptr != NULL; size > 0`: Function tries to allocate new memory of copy content before returning pointer on success
+ *  - `ptr != NULL; size != 0`: Function tries to allocate new memory of copy content before returning pointer on success
  *
  * \note            Function declaration is in-line with standard C function `realloc`
  *
@@ -618,10 +621,7 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
             /*
              * Current situation is:
              * 
-             * block + its size = input block
-             * input blocks + its size = next block
-             *
-             * These 3 blocks together create 1 big contiguous block of size:
+             * prev block + block + next block make one big contiguous block of size:
              * 
              * Free block before + current input + free block after
              */
@@ -663,9 +663,53 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
     if (retval != NULL) {
         block_size = block_app_size(ptr);       /* Get application size from input pointer */
         LWMEM_MEMCPY(retval, ptr, size > block_size ? block_size : size);
-        LWMEM_PREF(free)(ptr);                  /* Free previous pointer */
+        prv_free(ptr);                          /* Free previous pointer */
     }
     return retval;
+}
+
+/**
+ * \brief           Safe version of classic realloc function
+ *
+ * It is advised to use this function when reallocating memory.
+ * After memory is reallocated, input pointer automatically points to new memory
+ * to prevent use of dangling pointers.
+ *
+ * Function behaves differently, depends on input parameter of `ptr` and `size`:
+ *
+ *  - `ptr == NULL`: Invalid input, function returns `0`
+ *  - `*ptr == NULL; size == 0`: Function returns `0`, no memory is allocated or freed
+ *  - `*ptr == NULL; size != 0`: Function tries to allocate new block of memory with `size` length, equivalent to `malloc(size)`
+ *  - `*ptr != NULL; size == 0`: Function frees memory, equivalent to `free(ptr)`, sets input pointer pointing to `NULL`
+ *  - `*ptr != NULL; size != 0`: Function tries to allocate new memory of copy content before returning pointer on success
+ *
+ * \param[in]       ptr: Pointer to pointer to allocated memory. Must not be set to `NULL`.
+ *                      If reallocation is successful, it modified where pointer points to,
+ *                      or sets it to `NULL` in case of `free` operation
+ * \param[in]       size: New requested size
+ * \return          `1` if successfully reallocated, `0` otherwise
+ */
+unsigned char
+LWMEM_PREF(realloc_s)(void** const ptr, const size_t size) {
+    void* new_ptr;
+
+    /*
+     * Input pointer must not be NULL otherwise,
+     * in case of successful allocation, we have memory leakage
+     * aka. allocated memory where noone is pointing to it
+     */
+    if (ptr == NULL) {
+        return 0;
+    }
+    
+    new_ptr = LWMEM_PREF(realloc)(*ptr, size);  /* Try to reallocate existing pointer */
+    if (new_ptr != NULL) {
+        *ptr = new_ptr;
+    } else if (size == 0) {                     /* size == 0 means free input memory */
+        *ptr = NULL;
+        return 1;
+    }
+    return new_ptr != NULL;
 }
 
 /**
@@ -675,21 +719,15 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
  */
 void
 LWMEM_PREF(free)(void* const ptr) {
-    lwmem_block_t* const block = LWMEM_GET_BLOCK_FROM_PTR(ptr);
-    if (LWMEM_BLOCK_IS_ALLOC(block)) {          /* Check if block is valid */
-        block->size &= ~mem_alloc_bit;          /* Clear allocated bit indication */
-
-        mem_available_bytes += block->size;     /* Increase available bytes */
-        prv_insert_free_block(block);           /* Put block back to list of free block */
-    }
+    prv_free(ptr);                              /* Free pointer */
 }
 
 /**
  * \brief           Safe version of free function
  * 
  * It is advised to use this function when freeing memory.
- * After memory is freed, input pointer is safely set to `NULL` to
- * prevent future mis-uses of dangling pointers
+ * After memory is freed, input pointer is safely set to `NULL`
+ * to prevent use of dangling pointers.
  *
  * \param[in]       ptr: Pointer to pointer to allocated memory.
  *                  When set to non `NULL`, pointer is freed and set to `NULL`

@@ -65,12 +65,13 @@ typedef struct {
     size_t size;                                /*!< Size of region in units of bytes */
 } LWMEM_PREF(region_t);
 
-size_t      LWMEM_PREF(assignmem)(const LWMEM_PREF(region_t)* regions, const size_t len);
-void *      LWMEM_PREF(malloc)(const size_t size);
-void *      LWMEM_PREF(calloc)(const size_t nitems, const size_t size);
-void *      LWMEM_PREF(realloc)(void* const ptr, const size_t size);
-void        LWMEM_PREF(free)(void* const ptr);
-void        LWMEM_PREF(free_s)(void** const ptr);
+size_t          LWMEM_PREF(assignmem)(const LWMEM_PREF(region_t)* regions, const size_t len);
+void *          LWMEM_PREF(malloc)(const size_t size);
+void *          LWMEM_PREF(calloc)(const size_t nitems, const size_t size);
+void *          LWMEM_PREF(realloc)(void* const ptr, const size_t size);
+unsigned char   LWMEM_PREF(realloc_s)(void** const ptr, const size_t size);
+void            LWMEM_PREF(free)(void* const ptr);
+void            LWMEM_PREF(free_s)(void** const ptr);
 
 #undef LWMEM_PREF
 
