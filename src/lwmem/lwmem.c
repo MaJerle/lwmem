@@ -86,13 +86,18 @@
  * \brief           Set block as allocated
  * \param[in]       block: Block to set as allocated
  */
-#define LWMEM_BLOCK_SET_ALLOC(block)    do { if ((block) != NULL) { (block)->size |= mem_alloc_bit; (block)->next = (void *)0xDEADBEEF; }} while (0)
+#define LWMEM_BLOCK_SET_ALLOC(block)    do { if ((block) != NULL) { (block)->size |= LWMEM_ALLOC_BIT; (block)->next = (void *)0xDEADBEEF; }} while (0)
 
 /**
  * \brief           Check if input block is properly allocated and valid
  * \param[in]       block: Block to check if properly set as allocated
  */
-#define LWMEM_BLOCK_IS_ALLOC(block)     ((block) != NULL && ((block)->size & mem_alloc_bit) && (block)->next == (void *)0xDEADBEEF)
+#define LWMEM_BLOCK_IS_ALLOC(block)     ((block) != NULL && ((block)->size & LWMEM_ALLOC_BIT) && (block)->next == (void *)0xDEADBEEF)
+
+/**
+ * \brief           Bit indicating memory block is allocated
+ */
+#define LWMEM_ALLOC_BIT                 ((size_t)((size_t)1 << (sizeof(size_t) * CHAR_BIT - 1)))
 
 /**
  * \brief           Get block handle from application pointer
@@ -137,7 +142,6 @@ typedef struct lwmem_block {
 
 static lwmem_block_t start_block;               /*!< Holds beginning of memory allocation regions */
 static lwmem_block_t* end_block;                /*!< Pointer to the last memory location in regions linked list */
-static size_t mem_alloc_bit;                    /*!< Bit indicating block is allocated, highest (MSB) bit indication */
 static size_t mem_available_bytes;              /*!< Memory size available for allocation */
 static size_t mem_regions_count;                /*!< Number of regions used for allocation */
 
@@ -246,7 +250,7 @@ static size_t
 block_app_size(void* const ptr) {
     lwmem_block_t* const block = LWMEM_GET_BLOCK_FROM_PTR(ptr); /* Get meta from application address */;
     if (LWMEM_BLOCK_IS_ALLOC(block)) {          /* Check if block is valid */
-        return (block->size & ~mem_alloc_bit) - LWMEM_BLOCK_META_SIZE;
+        return (block->size & ~LWMEM_ALLOC_BIT) - LWMEM_BLOCK_META_SIZE;
     }
     return 0;
 }
@@ -269,7 +273,7 @@ prv_alloc(const size_t size) {
     const size_t final_size = LWMEM_ALIGN(size) + LWMEM_BLOCK_META_SIZE;
 
     /* Check if initialized and if size is in the limits */
-    if (end_block == NULL || final_size == LWMEM_BLOCK_META_SIZE || (final_size & mem_alloc_bit)) {
+    if (end_block == NULL || final_size == LWMEM_BLOCK_META_SIZE || (final_size & LWMEM_ALLOC_BIT)) {
         return NULL;
     }
 
@@ -309,7 +313,7 @@ void
 prv_free(void* const ptr) {
     lwmem_block_t* const block = LWMEM_GET_BLOCK_FROM_PTR(ptr);
     if (LWMEM_BLOCK_IS_ALLOC(block)) {          /* Check if block is valid */
-        block->size &= ~mem_alloc_bit;          /* Clear allocated bit indication */
+        block->size &= ~LWMEM_ALLOC_BIT;        /* Clear allocated bit indication */
 
         mem_available_bytes += block->size;     /* Increase available bytes */
         prv_insert_free_block(block);           /* Put block back to list of free block */
@@ -418,9 +422,6 @@ LWMEM_PREF(assignmem)(const LWMEM_PREF(region_t)* regions, const size_t len) {
         mem_regions_count++;                    /* Increase number of used regions */
     }
 
-    /* Set bit indicating memory allocated, MSB bit to `1` */
-    mem_alloc_bit = (size_t)((size_t)1 << (sizeof(size_t) * CHAR_BIT - 1));
-
     return mem_regions_count;                   /* Return number of regions used by manager */
 }
 
@@ -494,7 +495,7 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
     }
 
     /* Try to reallocate existing pointer */
-    if ((size & mem_alloc_bit) || (final_size & mem_alloc_bit)) {
+    if ((size & LWMEM_ALLOC_BIT) || (final_size & LWMEM_ALLOC_BIT)) {
         return NULL;
     }
 
@@ -502,7 +503,7 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
     retval = NULL;
     block = LWMEM_GET_BLOCK_FROM_PTR(ptr);
     if (LWMEM_BLOCK_IS_ALLOC(block)) {
-        block_size = block->size & ~mem_alloc_bit;  /* Get actual block size, without memory allocation bit */
+        block_size = block->size & ~LWMEM_ALLOC_BIT;/* Get actual block size, without memory allocation bit */
 
         /* If sizes are the same? */
         if (block_size == final_size) {
@@ -520,7 +521,7 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
          */
         if (final_size < block_size) {
             if ((block_size - final_size) >= LWMEM_BLOCK_MIN_SIZE) {
-                block->size &= mem_alloc_bit;   /* Temporarly remove allocated bit */
+                block->size &= LWMEM_ALLOC_BIT; /* Temporarly remove allocated bit */
                 prv_split_too_big_block(block, final_size, 0);  /* Split block if necessary */
             } else {
                 /*
