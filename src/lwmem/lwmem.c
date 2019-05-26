@@ -127,7 +127,7 @@
     for ((_pp_) = NULL, (_p_) = &start_block;                           \
         (_p_) != NULL && (_p_)->next < (_b_);                           \
         (_pp_) = (_p_), (_p_) = (_p_)->next                             \
-   ) {}                                                                 \
+    ) {}                                                                \
 } while (0)
 
 /**
