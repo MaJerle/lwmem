@@ -83,16 +83,21 @@
 #define LWMEM_BLOCK_META_SIZE           LWMEM_ALIGN(sizeof(lwmem_block_t))
 
 /**
+ * \brief           Cast input pointer to byte
+ */
+#define LWMEM_TO_BYTE_PTR(_p_)          ((unsigned char *)(_p_))
+
+/**
  * \brief           Set block as allocated
  * \param[in]       block: Block to set as allocated
  */
-#define LWMEM_BLOCK_SET_ALLOC(block)    do { if ((block) != NULL) { (block)->size |= LWMEM_ALLOC_BIT; (block)->next = (void *)0xDEADBEEF; }} while (0)
+#define LWMEM_BLOCK_SET_ALLOC(block)    do { if ((block) != NULL) { (block)->size |= LWMEM_ALLOC_BIT; (block)->next = (void *)(LWMEM_TO_BYTE_PTR(0) + 0xDEADBEEF); }} while (0)
 
 /**
  * \brief           Check if input block is properly allocated and valid
  * \param[in]       block: Block to check if properly set as allocated
  */
-#define LWMEM_BLOCK_IS_ALLOC(block)     ((block) != NULL && ((block)->size & LWMEM_ALLOC_BIT) && (block)->next == (void *)0xDEADBEEF)
+#define LWMEM_BLOCK_IS_ALLOC(block)     ((block) != NULL && ((block)->size & LWMEM_ALLOC_BIT) && (block)->next == (void *)(LWMEM_TO_BYTE_PTR(0) + 0xDEADBEEF))
 
 /**
  * \brief           Bit indicating memory block is allocated
@@ -111,11 +116,6 @@
  * Default size is size of meta block
  */
 #define LWMEM_BLOCK_MIN_SIZE            (LWMEM_BLOCK_META_SIZE)
-
-/**
- * \brief           Cast input pointer to byte
- */
-#define LWMEM_TO_BYTE_PTR(_p_)          ((unsigned char *)(_p_))
 
 /**
  * \brief           Gets block before input block (marked as prev) and its previous free block
