@@ -84,8 +84,9 @@
 
 /**
  * \brief           Cast input pointer to byte
+ * \param[in]       p: Input pointer to cast to byte pointer
  */
-#define LWMEM_TO_BYTE_PTR(_p_)          ((unsigned char *)(_p_))
+#define LWMEM_TO_BYTE_PTR(p)            ((unsigned char *)(p))
 
 /**
  * \brief           Set block as allocated
