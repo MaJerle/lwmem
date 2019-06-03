@@ -98,7 +98,7 @@
  * \brief           Check if input block is properly allocated and valid
  * \param[in]       block: Block to check if properly set as allocated
  */
-#define LWMEM_BLOCK_IS_ALLOC(block)     (NULL != (block) && ((block)->size & LWMEM_ALLOC_BIT) && (block)->next == (void *)(LWMEM_TO_BYTE_PTR(0) + 0xDEADBEEF))
+#define LWMEM_BLOCK_IS_ALLOC(block)     (NULL != (block) && ((block)->size & LWMEM_ALLOC_BIT) && (void *)(LWMEM_TO_BYTE_PTR(0) + 0xDEADBEEF) == (block)->next)
 
 /**
  * \brief           Bit indicating memory block is allocated
@@ -159,6 +159,11 @@ prv_insert_free_block(lwmem_block_t* nb) {
      * Search until all free block addresses are lower than new block
      */
     for (prev = &start_block; NULL != prev && prev->next < nb; prev = prev->next) {}
+
+    /* This is hard error with wrong memory usage */
+    if (NULL == prev) {
+        return;
+    }
 
     /*
      * At this point we have valid previous block
@@ -274,7 +279,7 @@ prv_alloc(const size_t size) {
     const size_t final_size = LWMEM_ALIGN(size) + LWMEM_BLOCK_META_SIZE;
 
     /* Check if initialized and if size is in the limits */
-    if (NULL == end_block || final_size == LWMEM_BLOCK_META_SIZE || (final_size & LWMEM_ALLOC_BIT)) {
+    if (NULL == end_block || LWMEM_BLOCK_META_SIZE == final_size || (final_size & LWMEM_ALLOC_BIT)) {
         return NULL;
     }
 
@@ -491,7 +496,7 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
         }
         return NULL;
     }
-    if (NULL != ptr) {
+    if (NULL == ptr) {
         return prv_alloc(size);
     }
 
