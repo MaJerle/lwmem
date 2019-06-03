@@ -92,13 +92,13 @@
  * \brief           Set block as allocated
  * \param[in]       block: Block to set as allocated
  */
-#define LWMEM_BLOCK_SET_ALLOC(block)    do { if ((block) != NULL) { (block)->size |= LWMEM_ALLOC_BIT; (block)->next = (void *)(LWMEM_TO_BYTE_PTR(0) + 0xDEADBEEF); }} while (0)
+#define LWMEM_BLOCK_SET_ALLOC(block)    do { if (NULL != (block)) { (block)->size |= LWMEM_ALLOC_BIT; (block)->next = (void *)(LWMEM_TO_BYTE_PTR(0) + 0xDEADBEEF); }} while (0)
 
 /**
  * \brief           Check if input block is properly allocated and valid
  * \param[in]       block: Block to check if properly set as allocated
  */
-#define LWMEM_BLOCK_IS_ALLOC(block)     ((block) != NULL && ((block)->size & LWMEM_ALLOC_BIT) && (block)->next == (void *)(LWMEM_TO_BYTE_PTR(0) + 0xDEADBEEF))
+#define LWMEM_BLOCK_IS_ALLOC(block)     (NULL != (block) && ((block)->size & LWMEM_ALLOC_BIT) && (block)->next == (void *)(LWMEM_TO_BYTE_PTR(0) + 0xDEADBEEF))
 
 /**
  * \brief           Bit indicating memory block is allocated
@@ -109,7 +109,7 @@
  * \brief           Get block handle from application pointer
  * \param[in]       ptr: Input pointer to get block from
  */
-#define LWMEM_GET_BLOCK_FROM_PTR(ptr)   (void *)((ptr) != NULL ? ((LWMEM_TO_BYTE_PTR(ptr)) - LWMEM_BLOCK_META_SIZE) : NULL)
+#define LWMEM_GET_BLOCK_FROM_PTR(ptr)   (void *)(NULL != (ptr) ? ((LWMEM_TO_BYTE_PTR(ptr)) - LWMEM_BLOCK_META_SIZE) : NULL)
 
 /**
  * \brief           Minimum amount of memory required to make new empty block
@@ -126,7 +126,7 @@
  */
 #define LWMEM_GET_PREV_CURR_OF_BLOCK(_b_, _pp_, _p_) do {               \
     for ((_pp_) = NULL, (_p_) = &start_block;                           \
-        (_p_) != NULL && (_p_)->next < (_b_);                           \
+        NULL != (_p_) && (_p_)->next < (_b_);                           \
         (_pp_) = (_p_), (_p_) = (_p_)->next                             \
     ) {}                                                                \
 } while (0)
@@ -158,7 +158,7 @@ prv_insert_free_block(lwmem_block_t* nb) {
      * Try to find position to put new block
      * Search until all free block addresses are lower than new block
      */
-    for (prev = &start_block; prev != NULL && prev->next < nb; prev = prev->next) {}
+    for (prev = &start_block; NULL != prev && prev->next < nb; prev = prev->next) {}
 
     /*
      * At this point we have valid previous block
@@ -183,7 +183,7 @@ prv_insert_free_block(lwmem_block_t* nb) {
      * Check if new block and next of previous create big contiguous block
      * Do not merge with "end of region" indication (commented part of if statement)
      */
-    if (prev->next != NULL && prev->next->size != 0 /* Do not remove "end of region" indicator in each region */
+    if (NULL != prev->next && prev->next->size  /* Do not remove "end of region" indicator in each region */
         && (LWMEM_TO_BYTE_PTR(nb) + nb->size) == LWMEM_TO_BYTE_PTR(prev->next)) {
         if (prev->next == end_block) {          /* Does it points to the end? */
             nb->next = end_block;               /* Set end block pointer */
@@ -274,7 +274,7 @@ prv_alloc(const size_t size) {
     const size_t final_size = LWMEM_ALIGN(size) + LWMEM_BLOCK_META_SIZE;
 
     /* Check if initialized and if size is in the limits */
-    if (end_block == NULL || final_size == LWMEM_BLOCK_META_SIZE || (final_size & LWMEM_ALLOC_BIT)) {
+    if (NULL == end_block || final_size == LWMEM_BLOCK_META_SIZE || (final_size & LWMEM_ALLOC_BIT)) {
         return NULL;
     }
 
@@ -282,7 +282,7 @@ prv_alloc(const size_t size) {
     prev = &start_block;                        /* Always start with start block which contains valid information about first available block */
     curr = prev->next;                          /* Set current as next of start = first available block */
     while (curr->size < final_size) {           /* Loop until available block contains less memory than required */
-        if (curr->next == NULL || curr == end_block) {  /* If no more blocks available */
+        if (NULL == curr->next || curr == end_block) {  /* If no more blocks available */
             return NULL;                        /* No sufficient memory available to allocate block of memory */
         }
         prev = curr;                            /* Set current as previous */
@@ -334,7 +334,7 @@ LWMEM_PREF(assignmem)(const LWMEM_PREF(region_t)* regions, const size_t len) {
     size_t mem_size;
     lwmem_block_t* first_block, *prev_end_block;
 
-    if (end_block != NULL                       /* Init function may only be called once */
+    if (NULL != end_block                       /* Init function may only be called once */
         || (LWMEM_ALIGN_NUM & (LWMEM_ALIGN_NUM - 1))) { /* Must be power of 2 */
         return 0;
     }
@@ -380,11 +380,11 @@ LWMEM_PREF(assignmem)(const LWMEM_PREF(region_t)* regions, const size_t len) {
         }
 
         /*
-         * If end_block == NULL, this indicates first iteration.
+         * If NULL == end_block, this indicates first iteration.
          * In first indication application shall set start_block and never again
          * end_block value holds
          */
-        if (end_block == NULL) {
+        if (NULL == end_block) {
             /*
              * Next entry of start block is first region
              * It points to beginning of region data
@@ -415,7 +415,7 @@ LWMEM_PREF(assignmem)(const LWMEM_PREF(region_t)* regions, const size_t len) {
         first_block->size = mem_size - LWMEM_BLOCK_META_SIZE;
 
         /* Check if previous regions exist by checking previous end block state */
-        if (prev_end_block != NULL) {
+        if (NULL != prev_end_block) {
             prev_end_block->next = first_block; /* End block of previous region now points to start of current region */
         }
 
@@ -452,7 +452,7 @@ LWMEM_PREF(calloc)(const size_t nitems, const size_t size) {
     void* ptr;
     const size_t s = size * nitems;
 
-    if ((ptr = prv_alloc(s)) != NULL) {
+    if (NULL != (ptr = prv_alloc(s))) {
         LWMEM_MEMSET(ptr, 0x00, s);
     }
     return ptr;
@@ -463,10 +463,10 @@ LWMEM_PREF(calloc)(const size_t nitems, const size_t size) {
  *
  * Function behaves differently, depends on input parameter of `ptr` and `size`:
  *
- *  - `ptr == NULL; size == 0`: Function returns `NULL`, no memory is allocated or freed
- *  - `ptr == NULL; size != 0`: Function tries to allocate new block of memory with `size` length, equivalent to `malloc(size)`
- *  - `ptr != NULL; size == 0`: Function frees memory, equivalent to `free(ptr)`
- *  - `ptr != NULL; size != 0`: Function tries to allocate new memory of copy content before returning pointer on success
+ *  - `NULL == ptr; !size`: Function returns `NULL`, no memory is allocated or freed
+ *  - `NULL == ptr; size`: Function tries to allocate new block of memory with `size` length, equivalent to `malloc(size)`
+ *  - `NULL != ptr; !size`: Function frees memory, equivalent to `free(ptr)`
+ *  - `NULL != ptr; size`: Function tries to allocate new memory of copy content before returning pointer on success
  *
  * \note            Function declaration is in-line with standard C function `realloc`
  *
@@ -485,13 +485,13 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
     const size_t final_size = LWMEM_ALIGN(size) + LWMEM_BLOCK_META_SIZE;
 
     /* Check optional input parameters */
-    if (size == 0) {
-        if (ptr != NULL) {
+    if (!size) {
+        if (NULL != ptr) {
             LWMEM_PREF(free)(ptr);
         }
         return NULL;
     }
-    if (ptr == NULL) {
+    if (NULL != ptr) {
         return prv_alloc(size);
     }
 
@@ -662,7 +662,7 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
      * Some manual work is required by allocating new memory and copy content to it
      */
     retval = prv_alloc(size);                   /* Try to allocate new block */
-    if (retval != NULL) {
+    if (NULL != retval) {
         block_size = block_app_size(ptr);       /* Get application size from input pointer */
         LWMEM_MEMCPY(retval, ptr, size > block_size ? block_size : size);
         prv_free(ptr);                          /* Free previous pointer */
@@ -679,11 +679,11 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
  *
  * Function behaves differently, depends on input parameter of `ptr` and `size`:
  *
- *  - `ptr == NULL`: Invalid input, function returns `0`
- *  - `*ptr == NULL; size == 0`: Function returns `0`, no memory is allocated or freed
- *  - `*ptr == NULL; size != 0`: Function tries to allocate new block of memory with `size` length, equivalent to `malloc(size)`
- *  - `*ptr != NULL; size == 0`: Function frees memory, equivalent to `free(ptr)`, sets input pointer pointing to `NULL`
- *  - `*ptr != NULL; size != 0`: Function tries to allocate new memory of copy content before returning pointer on success
+ *  - `NULL == ptr`: Invalid input, function returns `0`
+ *  - `NULL == *ptr; !size`: Function returns `0`, no memory is allocated or freed
+ *  - `NULL == *ptr; size`: Function tries to allocate new block of memory with `size` length, equivalent to `malloc(size)`
+ *  - `NULL != *ptr; !size`: Function frees memory, equivalent to `free(ptr)`, sets input pointer pointing to `NULL`
+ *  - `NULL != *ptr; size`: Function tries to allocate new memory of copy content before returning pointer on success
  *
  * \param[in]       ptr: Pointer to pointer to allocated memory. Must not be set to `NULL`.
  *                      If reallocation is successful, it modified where pointer points to,
@@ -700,18 +700,18 @@ LWMEM_PREF(realloc_s)(void** const ptr, const size_t size) {
      * in case of successful allocation, we have memory leakage
      * aka. allocated memory where noone is pointing to it
      */
-    if (ptr == NULL) {
+    if (NULL == ptr) {
         return 0;
     }
     
     new_ptr = LWMEM_PREF(realloc)(*ptr, size);  /* Try to reallocate existing pointer */
-    if (new_ptr != NULL) {
+    if (NULL != new_ptr) {
         *ptr = new_ptr;
-    } else if (size == 0) {                     /* size == 0 means free input memory */
+    } else if (!size) {                         /* !size means free input memory */
         *ptr = NULL;
         return 1;
     }
-    return new_ptr != NULL;
+    return NULL != new_ptr;
 }
 
 /**
@@ -736,8 +736,8 @@ LWMEM_PREF(free)(void* const ptr) {
  */
 void
 LWMEM_PREF(free_s)(void** const ptr) {
-    if (ptr != NULL) {
-        if (*ptr != NULL) {
+    if (NULL != ptr) {
+        if (NULL != *ptr) {
             LWMEM_PREF(free)(*ptr);
         }
         *ptr = NULL;
