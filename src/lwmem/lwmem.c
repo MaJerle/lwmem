@@ -468,10 +468,10 @@ LWMEM_PREF(calloc)(const size_t nitems, const size_t size) {
  *
  * Function behaves differently, depends on input parameter of `ptr` and `size`:
  *
- *  - `ptr == NULL; !size`: Function returns `NULL`, no memory is allocated or freed
- *  - `ptr == NULL; size`: Function tries to allocate new block of memory with `size` length, equivalent to `malloc(size)`
- *  - `ptr != NULL; !size`: Function frees memory, equivalent to `free(ptr)`
- *  - `ptr != NULL; size`: Function tries to allocate new memory of copy content before returning pointer on success
+ *  - `ptr == NULL; size == 0`: Function returns `NULL`, no memory is allocated or freed
+ *  - `ptr == NULL; size > 0`: Function tries to allocate new block of memory with `size` length, equivalent to `malloc(size)`
+ *  - `ptr != NULL; size == 0`: Function frees memory, equivalent to `free(ptr)`
+ *  - `ptr != NULL; size > 0`: Function tries to allocate new memory of copy content before returning pointer on success
  *
  * \note            Function declaration is in-line with standard C function `realloc`
  *
@@ -490,7 +490,7 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
     const size_t final_size = LWMEM_ALIGN(size) + LWMEM_BLOCK_META_SIZE;
 
     /* Check optional input parameters */
-    if (!size) {
+    if (size == 0) {
         if (ptr != NULL) {
             LWMEM_PREF(free)(ptr);
         }
@@ -690,9 +690,9 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
  * Function behaves differently, depends on input parameter of `ptr` and `size`:
  *
  *  - `ptr == NULL`: Invalid input, function returns `0`
- *  - `*ptr == NULL; !size`: Function returns `0`, no memory is allocated or freed
+ *  - `*ptr == NULL; size == 0`: Function returns `0`, no memory is allocated or freed
  *  - `*ptr == NULL; size`: Function tries to allocate new block of memory with `size` length, equivalent to `malloc(size)`
- *  - `*ptr != NULL; !size`: Function frees memory, equivalent to `free(ptr)`, sets input pointer pointing to `NULL`
+ *  - `*ptr != NULL; size == 0`: Function frees memory, equivalent to `free(ptr)`, sets input pointer pointing to `NULL`
  *  - `*ptr != NULL; size`: Function tries to allocate new memory of copy content before returning pointer on success
  *
  * \param[in]       ptr: Pointer to pointer to allocated memory. Must not be set to `NULL`.
@@ -717,7 +717,7 @@ LWMEM_PREF(realloc_s)(void** const ptr, const size_t size) {
     new_ptr = LWMEM_PREF(realloc)(*ptr, size);  /* Try to reallocate existing pointer */
     if (new_ptr != NULL) {
         *ptr = new_ptr;
-    } else if (!size) {                         /* !size means free input memory */
+    } else if (size == 0) {                     /* size == 0 means free input memory */
         *ptr = NULL;
         return 1;
     }
