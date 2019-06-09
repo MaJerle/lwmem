@@ -89,6 +89,11 @@
 #define LWMEM_TO_BYTE_PTR(p)            ((unsigned char *)(p))
 
 /**
+ * \brief           Bit indicating memory block is allocated
+ */
+#define LWMEM_ALLOC_BIT                 ((size_t)((size_t)1 << (sizeof(size_t) * CHAR_BIT - 1)))
+
+/**
  * \brief           Set block as allocated
  * \param[in]       block: Block to set as allocated
  */
@@ -99,11 +104,6 @@
  * \param[in]       block: Block to check if properly set as allocated
  */
 #define LWMEM_BLOCK_IS_ALLOC(block)     ((block) != NULL && ((block)->size & LWMEM_ALLOC_BIT) && (block)->next == (void *)(LWMEM_TO_BYTE_PTR(0) + 0xDEADBEEF))
-
-/**
- * \brief           Bit indicating memory block is allocated
- */
-#define LWMEM_ALLOC_BIT                 ((size_t)((size_t)1 << (sizeof(size_t) * CHAR_BIT - 1)))
 
 /**
  * \brief           Get block handle from application pointer
@@ -439,7 +439,9 @@ LWMEM_PREF(assignmem)(const LWMEM_PREF(region_t)* regions, const size_t len) {
  */
 void *
 LWMEM_PREF(malloc)(const size_t size) {
-    return prv_alloc(size);
+    void* ptr;
+    ptr = prv_alloc(size);
+    return ptr;
 }
 
 /**
@@ -492,7 +494,7 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
     /* Check optional input parameters */
     if (size == 0) {
         if (ptr != NULL) {
-            LWMEM_PREF(free)(ptr);
+            prv_free(ptr);
         }
         return NULL;
     }
@@ -543,7 +545,7 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
 
                 /* Check if current block and next free are connected */
                 if ((LWMEM_TO_BYTE_PTR(block) + block_size) == LWMEM_TO_BYTE_PTR(prev->next)
-                    && prev->next->size) {      /* Must not be end of region indicator */
+                    && prev->next->size > 0) {  /* Must not be end of region indicator */
                     const size_t tmp_size = prev->next->size;
                     void* const tmp_next = prev->next->next;
 
@@ -748,7 +750,7 @@ void
 LWMEM_PREF(free_s)(void** const ptr) {
     if (ptr != NULL) {
         if (*ptr != NULL) {
-            LWMEM_PREF(free)(*ptr);
+            prv_free(*ptr);
         }
         *ptr = NULL;
     }
