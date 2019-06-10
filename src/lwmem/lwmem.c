@@ -340,7 +340,8 @@ LWMEM_PREF(assignmem)(const LWMEM_PREF(region_t)* regions, const size_t len) {
     lwmem_block_t* first_block, *prev_end_block;
 
     if (end_block != NULL                       /* Init function may only be called once */
-        || (LWMEM_ALIGN_NUM & (LWMEM_ALIGN_NUM - 1))) { /* Must be power of 2 */
+        || (LWMEM_ALIGN_NUM & (LWMEM_ALIGN_NUM - 1))/* Must be power of 2 */
+        || regions == NULL || len == 0) {       /* Check inputs */
         return 0;
     }
 
