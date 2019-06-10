@@ -39,7 +39,7 @@ extern "C" {
 
 /**
  * \defgroup        LWMEM_CONFIG Configuration
- * \brief           Configuration for OneWire library
+ * \brief           Configuration for LwMEM library
  * \{
  */
 
