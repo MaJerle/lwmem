@@ -26,7 +26,7 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  * OTHER DEALINGS IN THE SOFTWARE.
  *
- * This file is part of Lightweight dynamic memory manager library.
+ * This file is part of LwMEM - Lightweight dynamic memory manager library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
  */
@@ -35,9 +35,10 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif /* __cplusplus */
 
 #include "string.h"
+#include "lwmem_config.h"
 
 /**
  * \defgroup        LWMEM Lightweight dynamic memory manager
@@ -60,7 +61,7 @@ extern "C" {
 /**
  * \brief           Memory region descriptor
  */
-typedef struct {   
+typedef struct {
     void* start_addr;                           /*!< Region start address */
     size_t size;                                /*!< Size of region in units of bytes */
 } LWMEM_PREF(region_t);
@@ -81,6 +82,6 @@ void            LWMEM_PREF(free_s)(void** const ptr);
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* LWMEM_HDR_H */
