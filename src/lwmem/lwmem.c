@@ -31,6 +31,7 @@
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
  */
 #include "lwmem/lwmem.h"
+#include "system/lwmem_sys.h"
 #include "limits.h"
 
 /* --- Memory unique part starts --- */
