@@ -34,25 +34,32 @@
 
 #if LWMEM_CFG_OS && !__DOXYGEN__
 
-#include "cmsis_os.h"
+#include "Windows.h"
 
 uint8_t
-lwmem_sys_mutex_create(LWMEM_CFG_OS_MUTEX_HANDLE* mutex) {
+lwmem_sys_mutex_create(LWMEM_CFG_OS_MUTEX_HANDLE* m) {
+    *m = CreateMutex(NULL, FALSE, NULL);
     return 1;
 }
 
 uint8_t
-lwmem_sys_mutex_delete(LWMEM_CFG_OS_MUTEX_HANDLE* mutex) {
+lwmem_sys_mutex_isvalid(LWMEM_CFG_OS_MUTEX_HANDLE* m) {
+    return *m != NULL;
+}
+
+uint8_t
+lwmem_sys_mutex_wait(LWMEM_CFG_OS_MUTEX_HANDLE* m) {
+    DWORD ret;
+    ret = WaitForSingleObject(*m, INFINITE);
+    if (ret != WAIT_OBJECT_0) {
+        return 0;
+    }
     return 1;
 }
 
 uint8_t
-lwmem_sys_mutex_wait(LWMEM_CFG_OS_MUTEX_HANDLE* mutex) {
-    return 1;
-}
-
-uint8_t
-lwmem_sys_mutex_release(LWMEM_CFG_OS_MUTEX_HANDLE* mutex) {
+lwmem_sys_mutex_release(LWMEM_CFG_OS_MUTEX_HANDLE* m) {
+    ReleaseMutex(*m);
     return 1;
 }
 

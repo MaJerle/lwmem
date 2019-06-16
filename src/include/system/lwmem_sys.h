@@ -47,10 +47,10 @@ extern "C" {
  * \{
  */
 
-uint8_t     lwmem_sys_mutex_create(LWMEM_CFG_OS_MUTEX_HANDLE* mutex);
-uint8_t     lwmem_sys_mutex_delete(LWMEM_CFG_OS_MUTEX_HANDLE* mutex);
-uint8_t     lwmem_sys_mutex_wait(LWMEM_CFG_OS_MUTEX_HANDLE* mutex);
-uint8_t     lwmem_sys_mutex_release(LWMEM_CFG_OS_MUTEX_HANDLE* mutex);
+uint8_t     lwmem_sys_mutex_create(LWMEM_CFG_OS_MUTEX_HANDLE* m);
+uint8_t     lwmem_sys_mutex_isvalid(LWMEM_CFG_OS_MUTEX_HANDLE* m);
+uint8_t     lwmem_sys_mutex_wait(LWMEM_CFG_OS_MUTEX_HANDLE* m);
+uint8_t     lwmem_sys_mutex_release(LWMEM_CFG_OS_MUTEX_HANDLE* m);
 
 /**
  * \}

@@ -131,6 +131,14 @@
     ) {}                                                                \
 } while (0)
 
+#if LWMEM_CFG_OS
+#define LWMEM_PROTECT()         lwmem_sys_mutex_wait(&mutex)
+#define LWMEM_UNPROTECT()       lwmem_sys_mutex_release(&mutex)
+#else /* LWMEM_CFG_OS */
+#define LWMEM_PROTECT()
+#define LWMEM_UNPROTECT()
+#endif /* !LWMEM_CFG_OS */
+
 /**
  * \brief           Memory block structure
  */
@@ -145,6 +153,9 @@ static lwmem_block_t start_block;               /*!< Holds beginning of memory a
 static lwmem_block_t* end_block;                /*!< Pointer to the last memory location in regions linked list */
 static size_t mem_available_bytes;              /*!< Memory size available for allocation */
 static size_t mem_regions_count;                /*!< Number of regions used for allocation */
+#if LWMEM_CFG_OS || __DOXYGEN__
+static LWMEM_CFG_OS_MUTEX_HANDLE mutex;         /*!< System mutex */
+#endif /* LWMEM_CFG_OS || __DOXYGEN__ */
 
 /**
  * \brief           Insert free block to linked list of free blocks
@@ -341,9 +352,19 @@ LWMEM_PREF(assignmem)(const LWMEM_PREF(region_t)* regions, const size_t len) {
 
     if (end_block != NULL                       /* Init function may only be called once */
         || (LWMEM_ALIGN_NUM & (LWMEM_ALIGN_NUM - 1))/* Must be power of 2 */
-        || regions == NULL || len == 0) {       /* Check inputs */
+        || regions == NULL || len == 0
+#if LWMEM_CFG_OS
+        || lwmem_sys_mutex_isvalid(&mutex)      /* Check if mutex valid already */
+#endif /* LWMEM_CFG_OS */
+        ) {       /* Check inputs */
         return 0;
     }
+
+#if LWMEM_CFG_OS
+    if (!lwmem_sys_mutex_create(&mutex)) {
+        return 0;
+    }
+#endif /* LWMEM_CFG_OS */
 
     /* Ensure regions are growing linearly and do not overlap in between */
     mem_start_addr = (void *)0;
@@ -441,7 +462,9 @@ LWMEM_PREF(assignmem)(const LWMEM_PREF(region_t)* regions, const size_t len) {
 void *
 LWMEM_PREF(malloc)(const size_t size) {
     void* ptr;
+    LWMEM_PROTECT();
     ptr = prv_alloc(size);
+    LWMEM_UNPROTECT();
     return ptr;
 }
 
@@ -460,9 +483,11 @@ LWMEM_PREF(calloc)(const size_t nitems, const size_t size) {
     void* ptr;
     const size_t s = size * nitems;
 
+    LWMEM_PROTECT();
     if ((ptr = prv_alloc(s)) != NULL) {
         LWMEM_MEMSET(ptr, 0x00, s);
     }
+    LWMEM_UNPROTECT();
     return ptr;
 }
 
@@ -489,23 +514,28 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
     size_t block_size;
     void* retval;
 
+    #define LWMEM_RETURN(x)     do { retval = (x); goto ret; } while (0)
+
     /* Calculate final size including meta data size */
     const size_t final_size = LWMEM_ALIGN(size) + LWMEM_BLOCK_META_SIZE;
+
+    /* Protect lwmem core */
+    LWMEM_PROTECT();
 
     /* Check optional input parameters */
     if (size == 0) {
         if (ptr != NULL) {
             prv_free(ptr);
         }
-        return NULL;
+        LWMEM_RETURN(NULL);
     }
     if (ptr == NULL) {
-        return prv_alloc(size);
+        LWMEM_RETURN(prv_alloc(size));
     }
 
     /* Try to reallocate existing pointer */
     if ((size & LWMEM_ALLOC_BIT) || (final_size & LWMEM_ALLOC_BIT)) {
-        return NULL;
+        LWMEM_RETURN(NULL);
     }
 
     /* Process existing block */
@@ -516,7 +546,7 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
 
         /* If sizes are the same? */
         if (block_size == final_size) {
-            return ptr;                         /* Just return pointer, nothing to do */
+            LWMEM_RETURN(ptr);                      /* Just return pointer, nothing to do */
         }
 
         /*
@@ -560,8 +590,7 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
                 }
             }
             LWMEM_BLOCK_SET_ALLOC(block);       /* Set block as allocated */
-            
-            return ptr;                         /* Return existing pointer */
+            LWMEM_RETURN(ptr);                  /* Return existing pointer */
         }
 
         /* New requested size is bigger than current block size is */
@@ -571,7 +600,7 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
 
         /* If entry could not be found, there is a hard error */
         if (prev == NULL) {
-            return NULL;                        /* Return immediately */
+            LWMEM_RETURN(NULL);
         }
 		
 		/* Order of variables is: | prevprev ---> prev --->--->--->--->--->--->--->--->--->---> prev->next  | */
@@ -591,7 +620,7 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
                 prev->next = prev->next->next;  /* Set next to next's next, effectively remove expanded block from free list */
 
                 prv_split_too_big_block(block, final_size, 1);  /* Split block if necessary and set it as allocated */
-                return ptr;                     /* Return existing pointer */
+                LWMEM_RETURN(ptr);              /* Return existing pointer */
             }
         }
 
@@ -622,7 +651,7 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
                 block = prev;                   /* Block is now current */
 
                 prv_split_too_big_block(block, final_size, 1);  /* Split block if necessary and set it as allocated */
-                return new_data_ptr;            /* Return new data ptr */
+                LWMEM_RETURN(new_data_ptr);     /* Return new data ptr */
             }
         }
 
@@ -660,7 +689,7 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
                 block = prev;                   /* Previous block is now current */
 
                 prv_split_too_big_block(block, final_size, 1);  /* Split block if necessary and set it as allocated */
-                return new_data_ptr;            /* Return new data ptr */
+                LWMEM_RETURN(new_data_ptr);     /* Return new data ptr */
             }
 
             /*
@@ -680,6 +709,10 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
         LWMEM_MEMCPY(retval, ptr, size > block_size ? block_size : size);
         prv_free(ptr);                          /* Free previous pointer */
     }
+    LWMEM_RETURN(retval);
+
+ret:
+    LWMEM_UNPROTECT();
     return retval;
 }
 
@@ -734,7 +767,9 @@ LWMEM_PREF(realloc_s)(void** const ptr, const size_t size) {
  */
 void
 LWMEM_PREF(free)(void* const ptr) {
+    LWMEM_PROTECT();
     prv_free(ptr);                              /* Free pointer */
+    LWMEM_UNPROTECT();
 }
 
 /**
@@ -751,7 +786,9 @@ void
 LWMEM_PREF(free_s)(void** const ptr) {
     if (ptr != NULL) {
         if (*ptr != NULL) {
+            LWMEM_PROTECT();
             prv_free(*ptr);
+            LWMEM_UNPROTECT();
         }
         *ptr = NULL;
     }

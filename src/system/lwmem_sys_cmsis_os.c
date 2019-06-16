@@ -37,29 +37,28 @@
 #include "cmsis_os.h"
 
 uint8_t
-lwmem_sys_mutex_create(LWMEM_CFG_OS_MUTEX_HANDLE* mutex) {
-    osMutexDef(m);
-    *mutex = osMutexCreate(osMutex(m));         /* Create new mutex */
+lwmem_sys_mutex_create(LWMEM_CFG_OS_MUTEX_HANDLE* m) {
+    osMutexDef(mut);
+    *m = osMutexCreate(osMutex(mut));
     return 1;
 }
 
 uint8_t
-lwmem_sys_mutex_delete(LWMEM_CFG_OS_MUTEX_HANDLE* mutex) {
-    osMutexDelete(*mutex);                      /* Delete mutex */
-    return 1;
+lwmem_sys_mutex_isvalid(LWMEM_CFG_OS_MUTEX_HANDLE* m) {
+    return *m != NULL;
 }
 
 uint8_t
-lwmem_sys_mutex_wait(LWMEM_CFG_OS_MUTEX_HANDLE* mutex) {
-    if (osMutexWait(*mutex, osWaitForever) != osOK) {
+lwmem_sys_mutex_wait(LWMEM_CFG_OS_MUTEX_HANDLE* m) {
+    if (osMutexWait(*m, osWaitForever) != osOK) {
         return 0;
     }
     return 1;
 }
 
 uint8_t
-lwmem_sys_mutex_release(LWMEM_CFG_OS_MUTEX_HANDLE* mutex) {
-    if (osMutexRelease(*mutex) != osOK) {
+lwmem_sys_mutex_release(LWMEM_CFG_OS_MUTEX_HANDLE* m) {
+    if (osMutexRelease(*m) != osOK) {
         return 0;
     }
     return 1;

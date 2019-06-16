@@ -38,41 +38,41 @@
 
 /**
  * \brief           Create a new mutex and assign value to handle
- * \param[out]      mutex: Output variable to save mutex handle
+ * \param[out]      m: Output variable to save mutex handle
  * \return          `1` on success, `0` otherwise
  */
 uint8_t
-lwmem_sys_mutex_create(LWMEM_CFG_OS_MUTEX_HANDLE* mutex) {
+lwmem_sys_mutex_create(LWMEM_CFG_OS_MUTEX_HANDLE* m) {
     return 1;
 }
 
 /**
- * \brief           Delete existing mutex and invalidate mutex variable
- * \param[in]       mutex: Mutex handle to remove and invalidate
+ * \brief           Check if mutex handle is valid
+ * \param[in]       m: Mutex handle to check if valid
  * \return          `1` on success, `0` otherwise
  */
 uint8_t
-lwmem_sys_mutex_delete(LWMEM_CFG_OS_MUTEX_HANDLE* mutex) {
+lwmem_sys_mutex_isvalid(LWMEM_CFG_OS_MUTEX_HANDLE* m) {
     return 1;
 }
 
 /**
  * \brief           Wait for a mutex until ready (unlimited time)
- * \param[in]       mutex: Mutex handle to wait for
+ * \param[in]       m: Mutex handle to wait for
  * \return          `1` on success, `0` otherwise
  */
 uint8_t
-lwmem_sys_mutex_wait(LWMEM_CFG_OS_MUTEX_HANDLE* mutex) {
+lwmem_sys_mutex_wait(LWMEM_CFG_OS_MUTEX_HANDLE* m) {
     return 1;
 }
 
 /**
  * \brief           Release already locked mutex
- * \param[in]       mutex: Mutex handle to release
+ * \param[in]       m: Mutex handle to release
  * \return          `1` on success, `0` otherwise
  */
 uint8_t
-lwmem_sys_mutex_release(LWMEM_CFG_OS_MUTEX_HANDLE* mutex) {
+lwmem_sys_mutex_release(LWMEM_CFG_OS_MUTEX_HANDLE* m) {
     return 1;
 }
 
