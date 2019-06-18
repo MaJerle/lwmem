@@ -551,7 +551,6 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
          */
         if (final_size < block_size) {
             if ((block_size - final_size) >= LWMEM_BLOCK_MIN_SIZE) {
-                block->size &= LWMEM_ALLOC_BIT; /* Temporary remove allocated bit */
                 prv_split_too_big_block(block, final_size); /* Split block if it is too big */
             } else {
                 /*
