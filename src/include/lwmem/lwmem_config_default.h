@@ -49,7 +49,7 @@ extern "C" {
  * \note            When `LWMEM_CFG_OS` is enabled, user must implement functions in \ref LWMEM_SYS group.
  */
 #ifndef LWMEM_CFG_OS
-#define LWMEM_CFG_OS                           0
+#define LWMEM_CFG_OS                            0
 #endif
 
 /**
