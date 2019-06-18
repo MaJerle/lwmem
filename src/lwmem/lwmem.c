@@ -113,6 +113,12 @@
 #define LWMEM_GET_BLOCK_FROM_PTR(ptr)   (void *)((ptr) != NULL ? ((LWMEM_TO_BYTE_PTR(ptr)) - LWMEM_BLOCK_META_SIZE) : NULL)
 
 /**
+ * \brief           Get block handle from application pointer
+ * \param[in]       ptr: Input pointer to get block from
+ */
+#define LWMEM_GET_PTR_FROM_BLOCK(block) (void *)((block) != NULL ? ((LWMEM_TO_BYTE_PTR(block)) + LWMEM_BLOCK_META_SIZE) : NULL)
+
+/**
  * \brief           Minimum amount of memory required to make new empty block
  *
  * Default size is size of meta block
@@ -288,7 +294,7 @@ prv_alloc(const size_t size) {
 
     /* Try to find first block with at least `size` bytes of available memory */
     for (prev = &start_block, curr = prev->next;/* Start from very beginning and set curr as first empty block */
-        curr->size < final_size;                /* Loop until block size is smaller than requested */
+        curr != NULL && curr->size < final_size;/* Loop until block size is smaller than requested */
         prev = curr, curr = curr->next) {       /* Go to next free block */
         if (curr->next == NULL || curr == end_block) {  /* If no more blocks available */
             return NULL;                        /* No sufficient memory available to allocate block of memory */
@@ -296,7 +302,7 @@ prv_alloc(const size_t size) {
     }
 
     /* There is a valid block available */
-    retval = (void *)(LWMEM_TO_BYTE_PTR(curr) + LWMEM_BLOCK_META_SIZE); /* Return pointer does not include meta part */
+    retval = LWMEM_GET_PTR_FROM_BLOCK(curr);    /* Return pointer does not include meta part */
     prev->next = curr->next;                    /* Remove this block from linked list by setting next of previous to next of current */
 
     /* curr block is now removed from linked list */
@@ -623,8 +629,8 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
         if ((LWMEM_TO_BYTE_PTR(prev) + prev->size) == LWMEM_TO_BYTE_PTR(block)  /* Blocks create contiguous block */
             && (prev->size + block_size) >= final_size) {   /* Size is greater or equal to requested */
             /* Move memory from block to block previous to current */
-            void* const old_data_ptr = (LWMEM_TO_BYTE_PTR(block) + LWMEM_BLOCK_META_SIZE);
-            void* const new_data_ptr = (LWMEM_TO_BYTE_PTR(prev) + LWMEM_BLOCK_META_SIZE);
+            void* const old_data_ptr = LWMEM_GET_PTR_FROM_BLOCK(block);
+            void* const new_data_ptr = LWMEM_GET_PTR_FROM_BLOCK(prev);
             LWMEM_MEMMOVE(new_data_ptr, old_data_ptr, block_size);  /* Copy old buffer size to new location */
 
             /*
@@ -655,8 +661,8 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
             && (prev->size + block_size + prev->next->size) >= final_size) {/* Size is greater or equal to requested */
 
             /* Move memory from block to block previous to current */
-            void* const old_data_ptr = (LWMEM_TO_BYTE_PTR(block) + LWMEM_BLOCK_META_SIZE);
-            void* const new_data_ptr = (LWMEM_TO_BYTE_PTR(prev) + LWMEM_BLOCK_META_SIZE);
+            void* const old_data_ptr = LWMEM_GET_PTR_FROM_BLOCK(block);
+            void* const new_data_ptr = LWMEM_GET_PTR_FROM_BLOCK(prev);
 
             /*
              * It is necessary to use memmove and not memcpy as memmove takes care of memory overlapping
