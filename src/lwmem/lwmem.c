@@ -167,8 +167,8 @@ prv_insert_free_block(lwmem_block_t* nb) {
     lwmem_block_t* prev;
 
     /* 
-     * Try to find position to put new block
-     * Search until all free block addresses are lower than new block
+     * Try to find position to put new block in-between
+     * Search until all free block addresses are lower than entry block
      */
     for (prev = &start_block; prev != NULL && prev->next < nb; prev = prev->next) {}
 
@@ -179,12 +179,12 @@ prv_insert_free_block(lwmem_block_t* nb) {
 
     /*
      * At this point we have valid previous block
-     * Previous block is free block before new block
+     * Previous block is last free block before input block
      */
 
     /*
-     * Check if previous block and new block together create one big contiguous block
-     * If this is the case, merge blocks together and increase previous block by new block size
+     * Check if previous block and input block together create one big contiguous block
+     * If this is the case, merge blocks together and increase previous block by input block size
      */
     if ((LWMEM_TO_BYTE_PTR(prev) + prev->size) == LWMEM_TO_BYTE_PTR(nb)) {
         prev->size += nb->size;                 /* Increase current block by size of new block */
@@ -200,7 +200,7 @@ prv_insert_free_block(lwmem_block_t* nb) {
      * Check if new block and next of previous create big contiguous block
      * Do not merge with "end of region" indication (commented part of if statement)
      */
-    if (prev->next != NULL && prev->next->size  /* Do not remove "end of region" indicator in each region */
+    if (prev->next != NULL && prev->next->size > 0  /* Do not remove "end of region" indicator in each region */
         && (LWMEM_TO_BYTE_PTR(nb) + nb->size) == LWMEM_TO_BYTE_PTR(prev->next)) {
         if (prev->next == end_block) {          /* Does it points to the end? */
             nb->next = end_block;               /* Set end block pointer */
@@ -209,7 +209,7 @@ prv_insert_free_block(lwmem_block_t* nb) {
             nb->next = prev->next->next;        /* Next free is pointed to the next one of previous next */
         }
     } else {
-        nb->next = prev->next;                  /* Set next of new block as next of current one */
+        nb->next = prev->next;                  /* Set next of input block as next of current one */
     }
 
     /*
@@ -224,14 +224,17 @@ prv_insert_free_block(lwmem_block_t* nb) {
 /**
  * \brief           Split too big block and add it to list of free blocks
  * \param[in]       block: Pointer to block with size already set
- * \param[in]       block_size: Final block size
- * \param[in]       set_as_alloc: Set to `1` to set input block as allocated, `0` otherwise
+ * \param[in]       new_block_size: New block size to be set
  * \return          `1` if block splitted, `0` otherwise
  */
 static unsigned char
-prv_split_too_big_block(lwmem_block_t* block, size_t block_size, unsigned char set_as_alloc) {
+prv_split_too_big_block(lwmem_block_t* block, size_t new_block_size) {
     lwmem_block_t* next;
+	size_t block_size, is_alloc_bit;
     unsigned char success = 0;
+	
+	is_alloc_bit = block->size & LWMEM_ALLOC_BIT;   /* Check if allocation bit is set */
+	block_size = block->size & ~LWMEM_ALLOC_BIT;/* Use size without allocated bit */
 
     /*
      * If current block size is greater than requested size,
@@ -239,10 +242,10 @@ prv_split_too_big_block(lwmem_block_t* block, size_t block_size, unsigned char s
      * and add it back to list of empty blocks
      */
 
-    if ((block->size - block_size) >= LWMEM_BLOCK_MIN_SIZE) {
-        next = (void *)(LWMEM_TO_BYTE_PTR(block) + block_size); /* Put next block after size of current allocation */
-        next->size = block->size - block_size;  /* Modify block data */
-        block->size = block_size;               /* Current size is now smaller */
+    if ((block_size - new_block_size) >= LWMEM_BLOCK_MIN_SIZE) {
+        next = (void *)(LWMEM_TO_BYTE_PTR(block) + new_block_size); /* Put next block after size of current allocation */
+        next->size = block_size - new_block_size;   /* Modify block data */
+        block->size = new_block_size;           /* Current size is now smaller */
 
         mem_available_bytes += next->size;      /* Increase available bytes by new block size */
         prv_insert_free_block(next);            /* Add new block to the free list */
@@ -253,24 +256,12 @@ prv_split_too_big_block(lwmem_block_t* block, size_t block_size, unsigned char s
         /* This can only happen during reallocation process when allocated block is reallocated to previous one */
         /* Very rare case, but may happen! */
     }
-    if (set_as_alloc) {
-        LWMEM_BLOCK_SET_ALLOC(block);           /* Set as allocated */
+	
+	/* If allocation bit was set before, set it now again */
+    if (is_alloc_bit) {
+        LWMEM_BLOCK_SET_ALLOC(block);
     }
     return success;
-}
-
-/**
- * \brief           Get application memory size of allocated pointer
- * \param[in]       ptr: Allocated pointer
- * \return          Application block memory size in units of bytes
- */
-static size_t
-block_app_size(void* const ptr) {
-    lwmem_block_t* const block = LWMEM_GET_BLOCK_FROM_PTR(ptr); /* Get meta from application address */;
-    if (LWMEM_BLOCK_IS_ALLOC(block)) {          /* Check if block is valid */
-        return (block->size & ~LWMEM_ALLOC_BIT) - LWMEM_BLOCK_META_SIZE;
-    }
-    return 0;
 }
 
 /**
@@ -295,30 +286,24 @@ prv_alloc(const size_t size) {
         return NULL;
     }
 
-    /* Try to find first block with has at least `size` bytes available memory */
-    prev = &start_block;                        /* Always start with start block which contains valid information about first available block */
-    curr = prev->next;                          /* Set current as next of start = first available block */
-    while (curr->size < final_size) {           /* Loop until available block contains less memory than required */
+    /* Try to find first block with at least `size` bytes of available memory */
+    for (prev = &start_block, curr = prev->next;/* Start from very beginning and set curr as first empty block */
+        curr->size < final_size;                /* Loop until block size is smaller than requested */
+        prev = curr, curr = curr->next) {       /* Go to next free block */
         if (curr->next == NULL || curr == end_block) {  /* If no more blocks available */
             return NULL;                        /* No sufficient memory available to allocate block of memory */
         }
-        prev = curr;                            /* Set current as previous */
-        curr = curr->next;                      /* Go to next empty entry */
     }
 
     /* There is a valid block available */
-    retval = (void *)(LWMEM_TO_BYTE_PTR(prev->next) + LWMEM_BLOCK_META_SIZE);   /* Return pointer does not include meta part */
+    retval = (void *)(LWMEM_TO_BYTE_PTR(curr) + LWMEM_BLOCK_META_SIZE); /* Return pointer does not include meta part */
     prev->next = curr->next;                    /* Remove this block from linked list by setting next of previous to next of current */
 
     /* curr block is now removed from linked list */
     
-    /* 
-     * If block size is bigger than required,
-     * split it to to make available memory for other allocations
-     * First check if there is enough memory for next free block entry
-     */
     mem_available_bytes -= curr->size;          /* Decrease available bytes by allocated block size */
-    prv_split_too_big_block(curr, final_size, 1);   /* Split block if necessary and set it as allocated */
+    prv_split_too_big_block(curr, final_size);  /* Split block if it is too big */
+    LWMEM_BLOCK_SET_ALLOC(curr);                /* Set block as allocated */
 
     return retval;
 }
@@ -512,15 +497,12 @@ LWMEM_PREF(calloc)(const size_t nitems, const size_t size) {
 void *
 LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
     lwmem_block_t* block, *prevprev, *prev;
-    size_t block_size;
-    void* retval;
-
-    #define LWMEM_RETURN(x)     do { retval = (x); goto ret; } while (0)
-
-    /* Calculate final size including meta data size */
-    const size_t final_size = LWMEM_ALIGN(size) + LWMEM_BLOCK_META_SIZE;
+    size_t block_size;                          /* Holds size of input block (ptr), including metadata size */
+    const size_t final_size = LWMEM_ALIGN(size) + LWMEM_BLOCK_META_SIZE;/* Holds size of new requested block size, including metadata size */
+    void* retval;                               /* Return pointer, used with LWMEM_RETURN macro */
 
     /* Protect lwmem core */
+    #define LWMEM_RETURN(x)     do { retval = (x); goto ret; } while (0)
     LWMEM_PROTECT();
 
     /* Check optional input parameters */
@@ -540,15 +522,23 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
     }
 
     /* Process existing block */
-    retval = NULL;
     block = LWMEM_GET_BLOCK_FROM_PTR(ptr);
     if (LWMEM_BLOCK_IS_ALLOC(block)) {
         block_size = block->size & ~LWMEM_ALLOC_BIT;/* Get actual block size, without memory allocation bit */
 
-        /* If sizes are the same? */
+        /* Check current block size is the same as new requested size */
         if (block_size == final_size) {
-            LWMEM_RETURN(ptr);                      /* Just return pointer, nothing to do */
+            LWMEM_RETURN(ptr);                  /* Just return pointer, nothing to do */
         }
+
+        /*
+         * Abbreviations
+         *
+         * - "Current block" or "Input block" is allocated block from input variable "ptr"
+         * - "Next free block" is next free block, on address space after input block
+         * - "Prev free block" is last free block, on address space before input block
+         * - "PrevPrev free block" is previous free block of "Prev free block"
+         */
 
         /*
          * When new requested size is smaller than existing one,
@@ -557,12 +547,12 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
          * If new requested size is much smaller than existing one,
          * check if it is possible to create new empty block and add it to list of empty blocks
          *
-         * Application returns same pointer back to user.
+         * Application returns same pointer
          */
         if (final_size < block_size) {
             if ((block_size - final_size) >= LWMEM_BLOCK_MIN_SIZE) {
-                block->size &= LWMEM_ALLOC_BIT; /* Temporarly remove allocated bit */
-                prv_split_too_big_block(block, final_size, 0);  /* Split block if necessary */
+                block->size &= LWMEM_ALLOC_BIT; /* Temporary remove allocated bit */
+                prv_split_too_big_block(block, final_size); /* Split block if it is too big */
             } else {
                 /*
                  * It is not possible to create new empty block as it is not enough memory
@@ -578,14 +568,15 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
                 /* Check if current block and next free are connected */
                 if ((LWMEM_TO_BYTE_PTR(block) + block_size) == LWMEM_TO_BYTE_PTR(prev->next)
                     && prev->next->size > 0) {  /* Must not be end of region indicator */
+                    /* Make temporary variables as prev->next will point to different location */
                     const size_t tmp_size = prev->next->size;
                     void* const tmp_next = prev->next->next;
 
-                    /* Shift block up, effectively increasing block */
+                    /* Shift block up, effectively increase its size */
                     prev->next = (void *)(LWMEM_TO_BYTE_PTR(prev->next) - (block_size - final_size));
                     prev->next->size = tmp_size + (block_size - final_size);
                     prev->next->next = tmp_next;
-                    mem_available_bytes += block_size - final_size; /* Increase available bytes by new block size */
+                    mem_available_bytes += block_size - final_size; /* Increase available bytes by increase of free block */
 
                     block->size = final_size;   /* Block size is requested size */
                 }
@@ -596,7 +587,7 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
 
         /* New requested size is bigger than current block size is */
 
-        /* Find "curr" free block, located before input existing block */
+        /* Find last free (and its previous) block, located just before input block */
         LWMEM_GET_PREV_CURR_OF_BLOCK(block, prevprev, prev);
 
         /* If entry could not be found, there is a hard error */
@@ -608,107 +599,100 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
 		/*                        |                      (input_block, which is not on a list)              | */
         /* Input block points to address somewhere between "prev" and "prev->next" pointers                   */
 
-        /* Check if "block" and "next" create contiguous memory with size of at least new requested size */
-        if ((LWMEM_TO_BYTE_PTR(block) + block_size) == LWMEM_TO_BYTE_PTR(prev->next)) {
-            /* 
-             * 2 blocks create contiguous memory
-             * Is size of 2 blocks together big enough?
-             */
-            if ((block_size + prev->next->size) >= final_size) {
-                /* Merge blocks together by increasing its size and removing it from free list */
-                mem_available_bytes -= prev->next->size;/* For now decrease effective available bytes */
-                block->size = block_size + prev->next->size;/* Increase effective size of new block */
-                prev->next = prev->next->next;  /* Set next to next's next, effectively remove expanded block from free list */
+        /* Check if "block" and next free "prev->next" create contiguous memory with size of at least new requested size */
+        if ((LWMEM_TO_BYTE_PTR(block) + block_size) == LWMEM_TO_BYTE_PTR(prev->next)/* Blocks create contiguous block */
+            && (block_size + prev->next->size) >= final_size) { /* Size is greater or equal to requested */
 
-                prv_split_too_big_block(block, final_size, 1);  /* Split block if necessary and set it as allocated */
-                LWMEM_RETURN(ptr);              /* Return existing pointer */
-            }
+            /*
+             * Merge blocks together by increasing current block with size of next free one
+             * and remove next free from list of free blocks
+             */
+            mem_available_bytes -= prev->next->size;/* For now decrease effective available bytes */
+            block->size = block_size + prev->next->size;/* Increase effective size of new block */
+            prev->next = prev->next->next;      /* Set next to next's next, effectively remove expanded block from free list */
+
+            prv_split_too_big_block(block, final_size); /* Split block if it is too big */
+            LWMEM_BLOCK_SET_ALLOC(block);       /* Set block as allocated */
+            LWMEM_RETURN(ptr);                  /* Return existing pointer */
         }
 
         /* 
-         * Check if current block and one before create contiguous memory
-         * In this case, memory move is requested to shift content up in the address space
-         * Feature not implemented as not 100% necessary
+         * Check if "block" and last free before "prev" create contiguous memory with size of at least new requested size.
+         *
+         * It is necessary to make a memory move and shift content up as new return pointer is now upper on address space
          */
-        if ((LWMEM_TO_BYTE_PTR(prev) + prev->size) == LWMEM_TO_BYTE_PTR(block)) {
-            /* 
-             * 2 blocks create contiguous memory
-             * Is size of 2 blocks together big enough for requested size?
+        if ((LWMEM_TO_BYTE_PTR(prev) + prev->size) == LWMEM_TO_BYTE_PTR(block)  /* Blocks create contiguous block */
+            && (prev->size + block_size) >= final_size) {   /* Size is greater or equal to requested */
+            /* Move memory from block to block previous to current */
+            void* const old_data_ptr = (LWMEM_TO_BYTE_PTR(block) + LWMEM_BLOCK_META_SIZE);
+            void* const new_data_ptr = (LWMEM_TO_BYTE_PTR(prev) + LWMEM_BLOCK_META_SIZE);
+            LWMEM_MEMMOVE(new_data_ptr, old_data_ptr, block_size);  /* Copy old buffer size to new location */
+
+            /*
+             * If memmove overwrites metadata of current block (when shifting content up),
+             * it is not an issue as we know its size and next is already NULL
              */
-            if ((prev->size + block_size) >= final_size) {
-                /* Move memory from block to block previous to current */
-                void* const old_data_ptr = (LWMEM_TO_BYTE_PTR(block) + LWMEM_BLOCK_META_SIZE);
-                void* const new_data_ptr = (LWMEM_TO_BYTE_PTR(prev) + LWMEM_BLOCK_META_SIZE);
-                LWMEM_MEMMOVE(new_data_ptr, old_data_ptr, block_size);  /* Copy old buffer size to new location */
 
-                /*
-                 * If memmove overwrites metadata of current block, it is not an issue
-                 * as we know its size and next is already NULL
-                 */
+            mem_available_bytes -= prev->size;  /* For now decrease effective available bytes */
+            prev->size += block_size;           /* Increase size of input block size */
+            prevprev->next = prev->next;        /* Remove prev from free list as it is now being used for allocation together with existing block */
+            block = prev;                       /* Move block pointer to previous one */
 
-                mem_available_bytes -= prev->size;  /* For now decrease effective available bytes */
-                prev->size += block_size;       /* Increase size of free block size */
-                prevprev->next = prev->next;    /* Remove curr from free list as it is now being used for allocation together with existing block */
-                block = prev;                   /* Block is now current */
-
-                prv_split_too_big_block(block, final_size, 1);  /* Split block if necessary and set it as allocated */
-                LWMEM_RETURN(new_data_ptr);     /* Return new data ptr */
-            }
+            prv_split_too_big_block(block, final_size); /* Split block if it is too big */
+            LWMEM_BLOCK_SET_ALLOC(block);       /* Set block as allocated */
+            LWMEM_RETURN(new_data_ptr);         /* Return new data ptr */
         }
 
         /*
-         * Tt was not possible to expand current block with either previous one or next one only.
-         * Last option is to check if both blocks (before and after) around current one
-         * are free and if all together create block big enough for allocation
+         * At this point, it was not possible to expand existing block with free before or free after due to:
+         * - Input block & next free block do not create contiguous block or its new size is too small
+         * - Last free block & input block do not create contiguous block or its new size is too small
+         *
+         * Last option is to check if last free block before "prev", input block "block" and next free block "prev->next" create contiguous block
+         * and size of new block (from 3 contiguous blocks) together is big enough
          */
-        if ((LWMEM_TO_BYTE_PTR(prev) + prev->size) == LWMEM_TO_BYTE_PTR(block)  /* Input block and free block before create contiguous block? */
-            && (LWMEM_TO_BYTE_PTR(block) + block_size) == LWMEM_TO_BYTE_PTR(prev->next)) {  /* Input block and free block after create contiguous block? */
-            /*
-             * Current situation is:
-             * 
-             * prev block + block + next block make one big contiguous block of size:
-             * 
-             * Free block before + current input + free block after
-             */
-            if ((prev->size + block_size + prev->next->size) >= final_size) {
-                /* Move memory from block to block previous to current */
-                void* const old_data_ptr = (LWMEM_TO_BYTE_PTR(block) + LWMEM_BLOCK_META_SIZE);
-                void* const new_data_ptr = (LWMEM_TO_BYTE_PTR(prev) + LWMEM_BLOCK_META_SIZE);
-                LWMEM_MEMMOVE(new_data_ptr, old_data_ptr, block_size);  /* Copy old buffer size to new location */
+        if ((LWMEM_TO_BYTE_PTR(prev) + prev->size) == LWMEM_TO_BYTE_PTR(block)  /* Input block and free block before create contiguous block */
+            && (LWMEM_TO_BYTE_PTR(block) + block_size) == LWMEM_TO_BYTE_PTR(prev->next) /* Input block and free block after create contiguous block */
+            && (prev->size + block_size + prev->next->size) >= final_size) {/* Size is greater or equal to requested */
 
-                /*
-                 * If memmove overwrites metadata of current block, it is not an issue
-                 * as we know its size and next is already NULL
-                 *
-                 * memmove cannot overwrite free block after current one as we are shifting data up, 
-                 * so there is no need to save temporary variables
-                 */
-
-                mem_available_bytes -= prev->size + prev->next->size;   /* Decrease effective available bytes for free blocks before and after current one */
-                prev->size += block_size + prev->next->size;    /* Increase size of new block */
-                prevprev->next = prev->next->next;  /* Remove free block before current one and block after current one from linked list */
-                block = prev;                   /* Previous block is now current */
-
-                prv_split_too_big_block(block, final_size, 1);  /* Split block if necessary and set it as allocated */
-                LWMEM_RETURN(new_data_ptr);     /* Return new data ptr */
-            }
+            /* Move memory from block to block previous to current */
+            void* const old_data_ptr = (LWMEM_TO_BYTE_PTR(block) + LWMEM_BLOCK_META_SIZE);
+            void* const new_data_ptr = (LWMEM_TO_BYTE_PTR(prev) + LWMEM_BLOCK_META_SIZE);
 
             /*
-             * It was not possible to do any combination of blocks
-             * Next step is to manually allocate new block and copy data
+             * It is necessary to use memmove and not memcpy as memmove takes care of memory overlapping
+             * It is not a problem if data shifted up overwrite old block metadata
              */
+            LWMEM_MEMMOVE(new_data_ptr, old_data_ptr, block_size);  /* Copy old buffer size to new location */
+
+            mem_available_bytes -= prev->size + prev->next->size;   /* Decrease effective available bytes for free blocks before and after input block */
+            prev->size += block_size + prev->next->size;/* Increase size of new block by size of 2 free blocks */
+            prevprev->next = prev->next->next;  /* Remove free block before current one and block after current one from linked list (remove 2) */
+            block = prev;                       /* Previous block is now current */
+
+            prv_split_too_big_block(block, final_size); /* Split block if it is too big */
+            LWMEM_BLOCK_SET_ALLOC(block);       /* Set block as allocated */
+            LWMEM_RETURN(new_data_ptr);         /* Return new data ptr */
         }
+    } else {
+        /* Hard error. Input pointer is not NULL and block is not considered allocated */
+        LWMEM_RETURN(NULL);
     }
 
     /*
-     * At this stage, it was not possible to modify existing block in any possible way
-     * Some manual work is required by allocating new memory and copy content to it
+     * If application reaches this point, it means:
+     * - New requested size is greater than input block size
+     * - Input block & next free block do not create contiguous block or its new size is too small
+     * - Last free block & input block do not create contiguous block or its new size is too small
+     * - Last free block & input block & next free block do not create contiguous block or its size is too small
+     *
+     * Final solution is to find completely new empty block of sufficient size and copy content from old one to new one
      */
     retval = prv_alloc(size);                   /* Try to allocate new block */
     if (retval != NULL) {
-        block_size = block_app_size(ptr);       /* Get application size from input pointer */
-        LWMEM_MEMCPY(retval, ptr, size > block_size ? block_size : size);
-        prv_free(ptr);                          /* Free previous pointer */
+        block_size = (block->size & ~LWMEM_ALLOC_BIT) - LWMEM_BLOCK_META_SIZE;  /* Get application size from input pointer */
+        LWMEM_MEMCPY(retval, ptr, size > block_size ? block_size : size);   /* Copy content to new allocated block */
+        prv_free(ptr);                          /* Free input pointer */
     }
     LWMEM_RETURN(retval);
 
