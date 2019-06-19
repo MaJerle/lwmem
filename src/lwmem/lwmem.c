@@ -164,6 +164,9 @@ typedef struct lwmem {
     lwmem_block_t* end_block;                   /*!< Pointer to the last memory location in regions linked list */
     size_t mem_available_bytes;                 /*!< Memory size available for allocation */
     size_t mem_regions_count;                   /*!< Number of regions used for allocation */
+#if defined(DEVELOPMENT) && !__DOXYGEN__
+    lwmem_block_t start_block_first_use;        /*!< Value of start block for very first time */
+#endif /* defined(DEVELOPMENT) && !__DOXYGEN__ */
 } lwmem_t;
 
 /**
@@ -451,6 +454,11 @@ LWMEM_PREF(assignmem)(const LWMEM_PREF(region_t)* regions, const size_t len) {
         lwmem.mem_available_bytes += first_block->size; /* Increase number of available bytes */
         lwmem.mem_regions_count++;              /* Increase number of used regions */
     }
+
+#if defined(DEVELOPMENT)
+    /* Copy default state of start block */
+    LWMEM_MEMCPY(&lwmem.start_block_first_use, &lwmem.start_block, sizeof(lwmem.start_block));
+#endif /* defined(DEVELOPMENT) */
 
     return lwmem.mem_regions_count;             /* Return number of regions used by manager */
 }
@@ -793,3 +801,132 @@ LWMEM_PREF(free_s)(void** const ptr) {
         *ptr = NULL;
     }
 }
+
+/* Part of library used ONLY for development purposes */
+/* To validate and test library */
+
+#if defined(DEVELOPMENT) && !__DOXYGEN__
+
+#include "stdio.h"
+#include "stdlib.h"
+
+/* Temporary variable for lwmem save */
+static lwmem_t lwmem_temp;
+static lwmem_region_t* regions_orig;
+static lwmem_region_t* regions_temp;
+static size_t regions_count;
+
+static LWMEM_PREF(region_t) *
+create_regions(size_t count, size_t size) {
+    LWMEM_PREF(region_t)* regions;
+    LWMEM_PREF(region_t) tmp;
+
+    /* Allocate pointer structure */
+    regions = malloc(count * sizeof(*regions));
+    if (regions == NULL) {
+        return NULL;
+    }
+
+    /* Allocate memory for regions */
+    for (size_t i = 0; i < count; i++) {
+        regions[i].size = size;
+        regions[i].start_addr = malloc(regions[i].size);
+        if (regions[i].start_addr == NULL) {
+            return NULL;
+        }
+    }
+
+    /* Sort regions, make sure they grow linearly */
+    for (size_t x = 0; x < count; x++) {
+        for (size_t y = 0; y < count; y++) {
+            if (regions[x].start_addr < regions[y].start_addr) {
+                memcpy(&tmp, &regions[x], sizeof(regions[x]));
+                memcpy(&regions[x], &regions[y], sizeof(regions[x]));
+                memcpy(&regions[y], &tmp, sizeof(regions[x]));
+            }
+        }
+    }
+
+    return regions;
+}
+
+void
+lwmem_debug_print(unsigned char print_alloc, unsigned char print_free) {
+    size_t i, is_free, block_size;
+    lwmem_block_t* block;
+
+
+    printf("|-------|----------|--------|------|------------------|----------------|\r\n");
+    printf("| Block | Address  | IsFree | Size | MaxUserAllocSize | Meta           |\r\n");
+    printf("|-------|----------|--------|------|------------------|----------------|\r\n");
+
+    block = &lwmem.start_block_first_use;
+    for (i = 0; ; i++) {
+        /* Determine if block is free and its size */
+        is_free = (block->size & LWMEM_ALLOC_BIT) == 0 && block != &lwmem.start_block_first_use && block->size > 0;
+        block_size = block->size & ~LWMEM_ALLOC_BIT;
+
+        printf("| %5d | %p | %6d | %4d | %16d |",
+            (int)i,
+            block,
+            (int)is_free,
+            (int)block_size,
+            (int)((is_free && block_size > 0) ? (block_size - LWMEM_BLOCK_META_SIZE) : 0));
+        if (block == &lwmem.start_block_first_use) {
+            printf("Start block     ");
+        } else if (block_size == 0) {
+            printf("End of region   ");
+        } else if (is_free) {
+            printf("Free block      ");
+        } else if (!is_free) {
+            printf("Allocated block ");
+        } else {
+            printf("                ");
+        }
+        printf("|");
+        printf("\r\n");
+        if (block == &lwmem.start_block_first_use) {
+            block = block->next;
+        } else {
+            block = (void *)(LWMEM_TO_BYTE_PTR(block) + block_size);
+            if (block_size == 0) {
+                break;
+            }
+        }
+    }
+    printf("|-------|----------|--------|------|------------------|----------------|\r\n");
+}
+
+uint8_t
+lwmem_debug_create_regions(lwmem_region_t** regs_out, size_t count, size_t size) {
+    regions_orig = create_regions(count, size);
+    regions_temp = create_regions(count, size);
+
+    if (regions_orig == NULL || regions_temp == NULL) {
+        return 0;
+    }
+    regions_count = count;
+    *regs_out = regions_orig;
+
+    return 1;
+}
+
+void
+lwmem_debug_save_state(void) {
+    memcpy(&lwmem_temp, &lwmem, sizeof(lwmem_temp));
+    for (size_t i = 0; i < regions_count; i++) {
+        memcpy(regions_temp[i].start_addr, regions_orig[i].start_addr, regions_temp[i].size);
+    }
+    printf(" -- > Current state saved!\r\n");
+}
+
+void
+lwmem_debug_restore_to_saved(void) {
+    memcpy(&lwmem, &lwmem_temp, sizeof(lwmem_temp));
+    for (size_t i = 0; i < regions_count; i++) {
+        memcpy(regions_orig[i].start_addr, regions_temp[i].start_addr, regions_temp[i].size);
+    }
+    printf(" -- > State restored to last saved!\r\n");
+}
+
+#endif /* defined(DEVELOPMENT) && !__DOXYGEN__ */
