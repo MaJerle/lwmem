@@ -132,7 +132,7 @@
  * \param[in]       _p_: Previous of input block
  */
 #define LWMEM_GET_PREV_CURR_OF_BLOCK(_b_, _pp_, _p_) do {               \
-    for ((_pp_) = NULL, (_p_) = &start_block;                           \
+    for ((_pp_) = NULL, (_p_) = &lwmem.start_block;                     \
         (_p_) != NULL && (_p_)->next < (_b_);                           \
         (_pp_) = (_p_), (_p_) = (_p_)->next                             \
     ) {}                                                                \
@@ -156,10 +156,20 @@ typedef struct lwmem_block {
                                                         or `0` when block is free */
 } lwmem_block_t;
 
-static lwmem_block_t start_block;               /*!< Holds beginning of memory allocation regions */
-static lwmem_block_t* end_block;                /*!< Pointer to the last memory location in regions linked list */
-static size_t mem_available_bytes;              /*!< Memory size available for allocation */
-static size_t mem_regions_count;                /*!< Number of regions used for allocation */
+/**
+ * \brief           Lwmem main structure
+ */
+typedef struct lwmem {
+    lwmem_block_t start_block;                  /*!< Holds beginning of memory allocation regions */
+    lwmem_block_t* end_block;                   /*!< Pointer to the last memory location in regions linked list */
+    size_t mem_available_bytes;                 /*!< Memory size available for allocation */
+    size_t mem_regions_count;                   /*!< Number of regions used for allocation */
+} lwmem_t;
+
+/**
+ * \brief           Lwmem data
+ */
+static lwmem_t lwmem;
 #if LWMEM_CFG_OS || __DOXYGEN__
 static LWMEM_CFG_OS_MUTEX_HANDLE mutex;         /*!< System mutex */
 #endif /* LWMEM_CFG_OS || __DOXYGEN__ */
@@ -176,7 +186,7 @@ prv_insert_free_block(lwmem_block_t* nb) {
      * Try to find position to put new block in-between
      * Search until all free block addresses are lower than entry block
      */
-    for (prev = &start_block; prev != NULL && prev->next < nb; prev = prev->next) {}
+    for (prev = &lwmem.start_block; prev != NULL && prev->next < nb; prev = prev->next) {}
 
     /* This is hard error with wrong memory usage */
     if (prev == NULL) {
@@ -208,8 +218,8 @@ prv_insert_free_block(lwmem_block_t* nb) {
      */
     if (prev->next != NULL && prev->next->size > 0  /* Do not remove "end of region" indicator in each region */
         && (LWMEM_TO_BYTE_PTR(nb) + nb->size) == LWMEM_TO_BYTE_PTR(prev->next)) {
-        if (prev->next == end_block) {          /* Does it points to the end? */
-            nb->next = end_block;               /* Set end block pointer */
+        if (prev->next == lwmem.end_block) {    /* Does it points to the end? */
+            nb->next = lwmem.end_block;         /* Set end block pointer */
         } else {
             nb->size += prev->next->size;       /* Expand of current block for size of next free block which is right behind new block */
             nb->next = prev->next->next;        /* Next free is pointed to the next one of previous next */
@@ -253,7 +263,7 @@ prv_split_too_big_block(lwmem_block_t* block, size_t new_block_size) {
         next->size = block_size - new_block_size;   /* Modify block data */
         block->size = new_block_size;           /* Current size is now smaller */
 
-        mem_available_bytes += next->size;      /* Increase available bytes by new block size */
+        lwmem.mem_available_bytes += next->size;/* Increase available bytes by new block size */
         prv_insert_free_block(next);            /* Add new block to the free list */
 
         success = 1;
@@ -288,15 +298,15 @@ prv_alloc(const size_t size) {
     const size_t final_size = LWMEM_ALIGN(size) + LWMEM_BLOCK_META_SIZE;
 
     /* Check if initialized and if size is in the limits */
-    if (end_block == NULL || final_size == LWMEM_BLOCK_META_SIZE || (final_size & LWMEM_ALLOC_BIT)) {
+    if (lwmem.end_block == NULL || final_size == LWMEM_BLOCK_META_SIZE || (final_size & LWMEM_ALLOC_BIT)) {
         return NULL;
     }
 
     /* Try to find first block with at least `size` bytes of available memory */
-    for (prev = &start_block, curr = prev->next;/* Start from very beginning and set curr as first empty block */
+    for (prev = &lwmem.start_block, curr = prev->next;  /* Start from very beginning and set curr as first empty block */
         curr != NULL && curr->size < final_size;/* Loop until block size is smaller than requested */
         prev = curr, curr = curr->next) {       /* Go to next free block */
-        if (curr->next == NULL || curr == end_block) {  /* If no more blocks available */
+        if (curr->next == NULL || curr == lwmem.end_block) {/* If no more blocks available */
             return NULL;                        /* No sufficient memory available to allocate block of memory */
         }
     }
@@ -307,7 +317,7 @@ prv_alloc(const size_t size) {
 
     /* curr block is now removed from linked list */
     
-    mem_available_bytes -= curr->size;          /* Decrease available bytes by allocated block size */
+    lwmem.mem_available_bytes -= curr->size;    /* Decrease available bytes by allocated block size */
     prv_split_too_big_block(curr, final_size);  /* Split block if it is too big */
     LWMEM_BLOCK_SET_ALLOC(curr);                /* Set block as allocated */
 
@@ -324,7 +334,7 @@ prv_free(void* const ptr) {
     if (LWMEM_BLOCK_IS_ALLOC(block)) {          /* Check if block is valid */
         block->size &= ~LWMEM_ALLOC_BIT;        /* Clear allocated bit indication */
 
-        mem_available_bytes += block->size;     /* Increase available bytes */
+        lwmem.mem_available_bytes += block->size;   /* Increase available bytes */
         prv_insert_free_block(block);           /* Put block back to list of free block */
     }
 }
@@ -342,7 +352,7 @@ LWMEM_PREF(assignmem)(const LWMEM_PREF(region_t)* regions, const size_t len) {
     size_t mem_size;
     lwmem_block_t* first_block, *prev_end_block;
 
-    if (end_block != NULL                       /* Init function may only be called once */
+    if (lwmem.end_block != NULL                 /* Init function may only be called once */
         || (LWMEM_ALIGN_NUM & (LWMEM_ALIGN_NUM - 1))/* Must be power of 2 */
         || regions == NULL || len == 0
 #if LWMEM_CFG_OS
@@ -403,23 +413,23 @@ LWMEM_PREF(assignmem)(const LWMEM_PREF(region_t)* regions, const size_t len) {
          * In first indication application shall set start_block and never again
          * end_block value holds
          */
-        if (end_block == NULL) {
+        if (lwmem.end_block == NULL) {
             /*
              * Next entry of start block is first region
              * It points to beginning of region data
              * In the later step(s) first block is manually set on top of memory region
              */
-            start_block.next = (void *)mem_start_addr;
-            start_block.size = 0;               /* Size of dummy start block is zero */
+            lwmem.start_block.next = (void *)mem_start_addr;
+            lwmem.start_block.size = 0;         /* Size of dummy start block is zero */
         }
 
         /* Save current end block status as it is used later for linked list insertion */
-        prev_end_block = end_block;
+        prev_end_block = lwmem.end_block;
 
         /* Put end block to the end of the region with size = 0 */
-        end_block = (void *)(mem_start_addr + mem_size - LWMEM_BLOCK_META_SIZE);
-        end_block->next = NULL;                 /* End block in region does not have next entry */
-        end_block->size = 0;                    /* Size of end block is zero */
+        lwmem.end_block = (void *)(mem_start_addr + mem_size - LWMEM_BLOCK_META_SIZE);
+        lwmem.end_block->next = NULL;           /* End block in region does not have next entry */
+        lwmem.end_block->size = 0;              /* Size of end block is zero */
 
         /*
          * Create memory region first block.
@@ -430,7 +440,7 @@ LWMEM_PREF(assignmem)(const LWMEM_PREF(region_t)* regions, const size_t len) {
          * Actual maximal available size for application in the region is mem_size - 2 * MEM_BLOCK_META_SIZE
          */
         first_block = (void *)mem_start_addr;
-        first_block->next = end_block;          /* Next block of first is last block */
+        first_block->next = lwmem.end_block;    /* Next block of first is last block */
         first_block->size = mem_size - LWMEM_BLOCK_META_SIZE;
 
         /* Check if previous regions exist by checking previous end block state */
@@ -438,11 +448,11 @@ LWMEM_PREF(assignmem)(const LWMEM_PREF(region_t)* regions, const size_t len) {
             prev_end_block->next = first_block; /* End block of previous region now points to start of current region */
         }
 
-        mem_available_bytes += first_block->size;   /* Increase number of available bytes */
-        mem_regions_count++;                    /* Increase number of used regions */
+        lwmem.mem_available_bytes += first_block->size; /* Increase number of available bytes */
+        lwmem.mem_regions_count++;              /* Increase number of used regions */
     }
 
-    return mem_regions_count;                   /* Return number of regions used by manager */
+    return lwmem.mem_regions_count;             /* Return number of regions used by manager */
 }
 
 /**
@@ -581,7 +591,7 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
                     prev->next = (void *)(LWMEM_TO_BYTE_PTR(prev->next) - (block_size - final_size));
                     prev->next->size = tmp_size + (block_size - final_size);
                     prev->next->next = tmp_next;
-                    mem_available_bytes += block_size - final_size; /* Increase available bytes by increase of free block */
+                    lwmem.mem_available_bytes += block_size - final_size;   /* Increase available bytes by increase of free block */
 
                     block->size = final_size;   /* Block size is requested size */
                 }
@@ -612,7 +622,7 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
              * Merge blocks together by increasing current block with size of next free one
              * and remove next free from list of free blocks
              */
-            mem_available_bytes -= prev->next->size;/* For now decrease effective available bytes */
+            lwmem.mem_available_bytes -= prev->next->size;  /* For now decrease effective available bytes */
             block->size = block_size + prev->next->size;/* Increase effective size of new block */
             prev->next = prev->next->next;      /* Set next to next's next, effectively remove expanded block from free list */
 
@@ -638,7 +648,7 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
              * it is not an issue as we know its size and next is already NULL
              */
 
-            mem_available_bytes -= prev->size;  /* For now decrease effective available bytes */
+            lwmem.mem_available_bytes -= prev->size;/* For now decrease effective available bytes */
             prev->size += block_size;           /* Increase size of input block size */
             prevprev->next = prev->next;        /* Remove prev from free list as it is now being used for allocation together with existing block */
             block = prev;                       /* Move block pointer to previous one */
@@ -670,7 +680,7 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
              */
             LWMEM_MEMMOVE(new_data_ptr, old_data_ptr, block_size);  /* Copy old buffer size to new location */
 
-            mem_available_bytes -= prev->size + prev->next->size;   /* Decrease effective available bytes for free blocks before and after input block */
+            lwmem.mem_available_bytes -= prev->size + prev->next->size; /* Decrease effective available bytes for free blocks before and after input block */
             prev->size += block_size + prev->next->size;/* Increase size of new block by size of 2 free blocks */
             prevprev->next = prev->next->next;  /* Remove free block before current one and block after current one from linked list (remove 2) */
             block = prev;                       /* Previous block is now current */
