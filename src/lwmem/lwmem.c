@@ -167,9 +167,9 @@ typedef struct lwmem {
     lwmem_block_t* end_block;                   /*!< Pointer to the last memory location in regions linked list */
     size_t mem_available_bytes;                 /*!< Memory size available for allocation */
     size_t mem_regions_count;                   /*!< Number of regions used for allocation */
-#if defined(DEVELOPMENT) && !__DOXYGEN__
+#if defined(LWMEM_DEV) && !__DOXYGEN__
     lwmem_block_t start_block_first_use;        /*!< Value of start block for very first time */
-#endif /* defined(DEVELOPMENT) && !__DOXYGEN__ */
+#endif /* defined(LWMEM_DEV) && !__DOXYGEN__ */
 } lwmem_t;
 
 /**
@@ -458,10 +458,10 @@ LWMEM_PREF(assignmem)(const LWMEM_PREF(region_t)* regions, const size_t len) {
         lwmem.mem_regions_count++;              /* Increase number of used regions */
     }
 
-#if defined(DEVELOPMENT)
+#if defined(LWMEM_DEV)
     /* Copy default state of start block */
     LWMEM_MEMCPY(&lwmem.start_block_first_use, &lwmem.start_block, sizeof(lwmem.start_block));
-#endif /* defined(DEVELOPMENT) */
+#endif /* defined(LWMEM_DEV) */
 
     return lwmem.mem_regions_count;             /* Return number of regions used by manager */
 }
@@ -804,10 +804,10 @@ LWMEM_PREF(free_s)(void** const ptr) {
     }
 }
 
-/* Part of library used ONLY for development purposes */
+/* Part of library used ONLY for LWMEM_DEV purposes */
 /* To validate and test library */
 
-#if defined(DEVELOPMENT) && !__DOXYGEN__
+#if defined(LWMEM_DEV) && !__DOXYGEN__
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -943,4 +943,4 @@ lwmem_debug_restore_to_saved(void) {
     printf(" -- > State restored to last saved!\r\n");
 }
 
-#endif /* defined(DEVELOPMENT) && !__DOXYGEN__ */
+#endif /* defined(LWMEM_DEV) && !__DOXYGEN__ */
