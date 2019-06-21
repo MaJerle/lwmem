@@ -37,7 +37,7 @@
 extern "C" {
 #endif /* __cplusplus */
 
-#include "string.h"
+#include <string.h>
 #include "lwmem_config.h"
 
 /**
