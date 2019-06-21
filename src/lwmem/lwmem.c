@@ -737,9 +737,9 @@ ret:
  *
  *  - `ptr == NULL`: Invalid input, function returns `0`
  *  - `*ptr == NULL; size == 0`: Function returns `0`, no memory is allocated or freed
- *  - `*ptr == NULL; size`: Function tries to allocate new block of memory with `size` length, equivalent to `malloc(size)`
+ *  - `*ptr == NULL; size > 0`: Function tries to allocate new block of memory with `size` length, equivalent to `malloc(size)`
  *  - `*ptr != NULL; size == 0`: Function frees memory, equivalent to `free(ptr)`, sets input pointer pointing to `NULL`
- *  - `*ptr != NULL; size`: Function tries to allocate new memory of copy content before returning pointer on success
+ *  - `*ptr != NULL; size > 0`: Function tries to reallocate existing pointer with new size and copy content to new block
  *
  * \param[in]       ptr: Pointer to pointer to allocated memory. Must not be set to `NULL`.
  *                      If reallocation is successful, it modified where pointer points to,
@@ -794,12 +794,10 @@ LWMEM_PREF(free)(void* const ptr) {
  */
 void
 LWMEM_PREF(free_s)(void** const ptr) {
-    if (ptr != NULL) {
-        if (*ptr != NULL) {
-            LWMEM_PROTECT();
-            prv_free(*ptr);
-            LWMEM_UNPROTECT();
-        }
+    if (ptr != NULL && *ptr != NULL) {
+        LWMEM_PROTECT();
+        prv_free(*ptr);
+        LWMEM_UNPROTECT();
         *ptr = NULL;
     }
 }
