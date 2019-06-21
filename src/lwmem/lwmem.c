@@ -31,8 +31,11 @@
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
  */
 #include "lwmem/lwmem.h"
+#include <limits.h>
+
+#if LWMEM_CFG_OS
 #include "system/lwmem_sys.h"
-#include "limits.h"
+#endif /* LWMEM_CFG_OS */
 
 /* --- Memory unique part starts --- */
 /* Prefix for all buffer functions and typedefs */
@@ -578,11 +581,10 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
                 prv_split_too_big_block(block, final_size); /* Split block if it is too big */
             } else {
                 /*
-                 * It is not possible to create new empty block as it is not enough memory
-                 * available at the end of current block
+                 * It is not possible to create new empty block at the end of input block
                  * 
-                 * But if block just after current one is free, 
-                 * we could shift it up and increase its size by "block_size - final_size" bytes
+                 * But if next free block is just after input block,
+                 * it is possible to find this block and increase it by "block_size - final_size" bytes
                  */
 
                 /* Find free blocks before input block */
@@ -807,8 +809,8 @@ LWMEM_PREF(free_s)(void** const ptr) {
 
 #if defined(DEVELOPMENT) && !__DOXYGEN__
 
-#include "stdio.h"
-#include "stdlib.h"
+#include <stdio.h>
+#include <stdlib.h>
 
 /* Temporary variable for lwmem save */
 static lwmem_t lwmem_temp;
@@ -850,54 +852,66 @@ create_regions(size_t count, size_t size) {
     return regions;
 }
 
+static void
+print_block(size_t i, lwmem_block_t* block) {
+    size_t is_free, block_size;
+
+    is_free = (block->size & LWMEM_ALLOC_BIT) == 0 && block != &lwmem.start_block_first_use && block->size > 0;
+    block_size = block->size & ~LWMEM_ALLOC_BIT;
+
+    printf("| %5d | %12p | %6d | %4d | %16d |",
+        (int)i,
+        block,
+        (int)is_free,
+        (int)block_size,
+        (int)(is_free ? (block_size - LWMEM_BLOCK_META_SIZE) : 0));
+    if (block == &lwmem.start_block_first_use) {
+        printf(" Start block     ");
+    } else if (block_size == 0) {
+        printf(" End of region   ");
+    } else if (is_free) {
+        printf(" Free block      ");
+    } else if (!is_free) {
+        printf(" Allocated block ");
+    } else {
+        printf("                 ");
+    }
+    printf("|\r\n");
+}
+
 void
 lwmem_debug_print(unsigned char print_alloc, unsigned char print_free) {
-    size_t i, is_free, block_size;
+    size_t block_size;
     lwmem_block_t* block;
 
 
-    printf("|-------|----------|--------|------|------------------|----------------|\r\n");
-    printf("| Block | Address  | IsFree | Size | MaxUserAllocSize | Meta           |\r\n");
-    printf("|-------|----------|--------|------|------------------|----------------|\r\n");
+    printf("|-------|--------------|--------|------|------------------|-----------------|\r\n");
+    printf("| Block |      Address | IsFree | Size | MaxUserAllocSize | Meta            |\r\n");
+    printf("|-------|--------------|--------|------|------------------|-----------------|\r\n");
 
     block = &lwmem.start_block_first_use;
-    for (i = 0; ; i++) {
-        /* Determine if block is free and its size */
-        is_free = (block->size & LWMEM_ALLOC_BIT) == 0 && block != &lwmem.start_block_first_use && block->size > 0;
-        block_size = block->size & ~LWMEM_ALLOC_BIT;
+    print_block(0, &lwmem.start_block_first_use);
+    printf("|-------|--------------|--------|------|------------------|-----------------|\r\n");
+    for (size_t i = 0, j = 1; i < regions_count; i++) {
+        block = regions_orig[i].start_addr;
 
-        printf("| %5d | %p | %6d | %4d | %16d |",
-            (int)i,
-            block,
-            (int)is_free,
-            (int)block_size,
-            (int)((is_free && block_size > 0) ? (block_size - LWMEM_BLOCK_META_SIZE) : 0));
-        if (block == &lwmem.start_block_first_use) {
-            printf("Start block     ");
-        } else if (block_size == 0) {
-            printf("End of region   ");
-        } else if (is_free) {
-            printf("Free block      ");
-        } else if (!is_free) {
-            printf("Allocated block ");
-        } else {
-            printf("                ");
-        }
-        printf("|");
-        printf("\r\n");
-        if (block == &lwmem.start_block_first_use) {
-            block = block->next;
-        } else {
+        /* Print all blocks */
+        for (;; j++) {
+            block_size = block->size & ~LWMEM_ALLOC_BIT;
+
+            print_block(j, block);
+
+            /* Get next block */
             block = (void *)(LWMEM_TO_BYTE_PTR(block) + block_size);
             if (block_size == 0) {
                 break;
             }
         }
+        printf("|-------|--------------|--------|------|------------------|-----------------|\r\n");
     }
-    printf("|-------|----------|--------|------|------------------|----------------|\r\n");
 }
 
-uint8_t
+unsigned char
 lwmem_debug_create_regions(lwmem_region_t** regs_out, size_t count, size_t size) {
     regions_orig = create_regions(count, size);
     regions_temp = create_regions(count, size);
