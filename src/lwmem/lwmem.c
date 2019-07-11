@@ -355,7 +355,7 @@ prv_free(void* const ptr) {
 }
 
 /**
- * \brief           Initialize and assigns user regions for memory used by allocator algorithm
+ * \brief           Initializes and assigns user regions for memory used by allocator algorithm
  * \param[in]       regions: Array of regions with address and its size.
  *                      Regions must be in increasing order (start address) and must not overlap in-between
  * \param[in]       len: Number of regions in array
