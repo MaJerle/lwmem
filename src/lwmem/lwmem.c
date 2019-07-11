@@ -98,16 +98,21 @@
 #define LWMEM_ALLOC_BIT                 ((size_t)((size_t)1 << (sizeof(size_t) * CHAR_BIT - 1)))
 
 /**
+ * \brief           Mark written in `next` field when block is allocated
+ */
+#define LWMEM_BLOCK_ALLOC_MARK          (0xDEADBEEF)
+
+/**
  * \brief           Set block as allocated
  * \param[in]       block: Block to set as allocated
  */
-#define LWMEM_BLOCK_SET_ALLOC(block)    do { if ((block) != NULL) { (block)->size |= LWMEM_ALLOC_BIT; (block)->next = (void *)(LWMEM_TO_BYTE_PTR(0) + 0xDEADBEEF); }} while (0)
+#define LWMEM_BLOCK_SET_ALLOC(block)    do { if ((block) != NULL) { (block)->size |= LWMEM_ALLOC_BIT; (block)->next = (void *)(LWMEM_TO_BYTE_PTR(0) + LWMEM_BLOCK_ALLOC_MARK); }} while (0)
 
 /**
  * \brief           Check if input block is properly allocated and valid
  * \param[in]       block: Block to check if properly set as allocated
  */
-#define LWMEM_BLOCK_IS_ALLOC(block)     ((block) != NULL && ((block)->size & LWMEM_ALLOC_BIT) && (block)->next == (void *)(LWMEM_TO_BYTE_PTR(0) + 0xDEADBEEF))
+#define LWMEM_BLOCK_IS_ALLOC(block)     ((block) != NULL && ((block)->size & LWMEM_ALLOC_BIT) && (block)->next == (void *)(LWMEM_TO_BYTE_PTR(0) + LWMEM_BLOCK_ALLOC_MARK))
 
 /**
  * \brief           Get block handle from application pointer
@@ -154,7 +159,7 @@
  */
 typedef struct lwmem_block {
     struct lwmem_block* next;                   /*!< Next free memory block on linked list.
-                                                        Set to `NULL` when block is allocated and in use */
+                                                        Set to \ref LWMEM_BLOCK_ALLOC_MARK when block is allocated and in use */
     size_t size;                                /*!< Size of block. MSB bit is set to `1` when block is allocated and in use,
                                                         or `0` when block is free */
 } lwmem_block_t;
@@ -263,7 +268,6 @@ prv_split_too_big_block(lwmem_block_t* block, size_t new_block_size) {
      * it is possible to create empty block at the end of existing one
      * and add it back to list of empty blocks
      */
-
     if ((block_size - new_block_size) >= LWMEM_BLOCK_MIN_SIZE) {
         next = (void *)(LWMEM_TO_BYTE_PTR(block) + new_block_size); /* Put next block after size of current allocation */
         next->size = block_size - new_block_size;   /* Modify block data */
@@ -315,6 +319,11 @@ prv_alloc(const size_t size) {
         if (curr->next == NULL || curr == lwmem.end_block) {/* If no more blocks available */
             return NULL;                        /* No sufficient memory available to allocate block of memory */
         }
+    }
+
+    /* Check curr pointer. During normal use, this should be always false */
+    if (curr == NULL) {
+        return NULL;
     }
 
     /* There is a valid block available */
