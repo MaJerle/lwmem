@@ -360,6 +360,8 @@ prv_free(void* const ptr) {
  *                      Regions must be in increasing order (start address) and must not overlap in-between
  * \param[in]       len: Number of regions in array
  * \return          `0` on failure, number of final regions used for memory manager on success
+ * \note            This function is not thread safe when used with operating system.
+ *                  It must be called only once to setup memory regions
  */
 size_t
 LWMEM_PREF(assignmem)(const LWMEM_PREF(region_t)* regions, const size_t len) {
@@ -480,6 +482,7 @@ LWMEM_PREF(assignmem)(const LWMEM_PREF(region_t)* regions, const size_t len) {
  * \note            Function declaration is in-line with standard C function `malloc`
  * \param[in]       size: Number of bytes to allocate
  * \return          Pointer to allocated memory on success, `NULL` otherwise
+ * \note            This function is thread safe when \ref LWMEM_CFG_OS is enabled
  */
 void *
 LWMEM_PREF(malloc)(const size_t size) {
@@ -499,6 +502,7 @@ LWMEM_PREF(malloc)(const size_t size) {
  * \param[in]       nitems: Number of elements to be allocated
  * \param[in]       size: Size of each element, in units of bytes
  * \return          Pointer to allocated memory on success, `NULL` otherwise
+ * \note            This function is thread safe when \ref LWMEM_CFG_OS is enabled
  */
 void *
 LWMEM_PREF(calloc)(const size_t nitems, const size_t size) {
@@ -529,6 +533,7 @@ LWMEM_PREF(calloc)(const size_t nitems, const size_t size) {
  *                      It may be set to `NULL` to create new clean allocation
  * \param[in]       size: Size of new memory to reallocate
  * \return          Pointer to allocated memory on success, `NULL` otherwise
+ * \note            This function is thread safe when \ref LWMEM_CFG_OS is enabled
  */
 void *
 LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
@@ -755,6 +760,7 @@ ret:
  *                      or sets it to `NULL` in case of `free` operation
  * \param[in]       size: New requested size
  * \return          `1` if successfully reallocated, `0` otherwise
+ * \note            This function is thread safe when \ref LWMEM_CFG_OS is enabled
  */
 unsigned char
 LWMEM_PREF(realloc_s)(void** const ptr, const size_t size) {
@@ -783,6 +789,7 @@ LWMEM_PREF(realloc_s)(void** const ptr, const size_t size) {
  * \brief           Free previously allocated memory using one of allocation functions
  * \note            Function declaration is in-line with standard C function `free`
  * \param[in]       ptr: Memory to free. `NULL` pointer is valid input
+ * \note            This function is thread safe when \ref LWMEM_CFG_OS is enabled
  */
 void
 LWMEM_PREF(free)(void* const ptr) {
@@ -800,6 +807,7 @@ LWMEM_PREF(free)(void* const ptr) {
  *
  * \param[in]       ptr: Pointer to pointer to allocated memory.
  *                  When set to non `NULL`, pointer is freed and set to `NULL`
+ * \note            This function is thread safe when \ref LWMEM_CFG_OS is enabled
  */
 void
 LWMEM_PREF(free_s)(void** const ptr) {
