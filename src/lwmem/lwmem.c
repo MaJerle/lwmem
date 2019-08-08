@@ -257,11 +257,11 @@ prv_insert_free_block(lwmem_block_t* nb) {
 static unsigned char
 prv_split_too_big_block(lwmem_block_t* block, size_t new_block_size) {
     lwmem_block_t* next;
-	size_t block_size, is_alloc_bit;
+    size_t block_size, is_alloc_bit;
     unsigned char success = 0;
-	
-	is_alloc_bit = block->size & LWMEM_ALLOC_BIT;   /* Check if allocation bit is set */
-	block_size = block->size & ~LWMEM_ALLOC_BIT;/* Use size without allocated bit */
+    
+    is_alloc_bit = block->size & LWMEM_ALLOC_BIT;   /* Check if allocation bit is set */
+    block_size = block->size & ~LWMEM_ALLOC_BIT;/* Use size without allocated bit */
 
     /*
      * If current block size is greater than requested size,
@@ -282,8 +282,8 @@ prv_split_too_big_block(lwmem_block_t* block, size_t new_block_size) {
         /* This can only happen during reallocation process when allocated block is reallocated to previous one */
         /* Very rare case, but may happen! */
     }
-	
-	/* If allocation bit was set before, set it now again */
+    
+    /* If allocation bit was set before, set it now again */
     if (is_alloc_bit) {
         LWMEM_BLOCK_SET_ALLOC(block);
     }
@@ -633,9 +633,9 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
         if (prev == NULL) {
             LWMEM_RETURN(NULL);
         }
-		
-		/* Order of variables is: | prevprev ---> prev --->--->--->--->--->--->--->--->--->---> prev->next  | */
-		/*                        |                      (input_block, which is not on a list)              | */
+        
+        /* Order of variables is: | prevprev ---> prev --->--->--->--->--->--->--->--->--->---> prev->next  | */
+        /*                        |                      (input_block, which is not on a list)              | */
         /* Input block points to address somewhere between "prev" and "prev->next" pointers                   */
 
         /* Check if "block" and next free "prev->next" create contiguous memory with size of at least new requested size */
