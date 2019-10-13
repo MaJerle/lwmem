@@ -29,7 +29,7 @@
  * This file is part of Lightweight dynamic memory manager library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         v1.1
+ * Version:         $_version_$
  */
 #ifndef LWMEM_HDR_CONFIG_H
 #define LWMEM_HDR_CONFIG_H
