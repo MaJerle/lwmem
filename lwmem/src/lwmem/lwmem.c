@@ -389,7 +389,7 @@ LWMEM_PREF(assignmem)(const LWMEM_PREF(region_t)* regions, const size_t len) {
     /* Ensure regions are growing linearly and do not overlap in between */
     mem_start_addr = (void *)0;
     mem_size = 0;
-    for (size_t i = 0; i < len; i++) {
+    for (size_t i = 0; i < len; ++i) {
         /* New region(s) must be higher (in address space) than previous one */
         if ((mem_start_addr + mem_size) > LWMEM_TO_BYTE_PTR(regions[i].start_addr)) {
             return 0;
@@ -400,7 +400,7 @@ LWMEM_PREF(assignmem)(const LWMEM_PREF(region_t)* regions, const size_t len) {
         mem_size = regions[i].size;
     }
 
-    for (size_t i = 0; i < len; i++, regions++) {
+    for (size_t i = 0; i < len; ++i, ++regions) {
         /* 
          * Check region start address and align start address accordingly
          * It is ok to cast to size_t, even if pointer could be larger
@@ -467,7 +467,7 @@ LWMEM_PREF(assignmem)(const LWMEM_PREF(region_t)* regions, const size_t len) {
         }
 
         lwmem.mem_available_bytes += first_block->size; /* Increase number of available bytes */
-        lwmem.mem_regions_count++;              /* Increase number of used regions */
+        ++lwmem.mem_regions_count;              /* Increase number of used regions */
     }
 
 #if defined(LWMEM_DEV)
@@ -846,7 +846,7 @@ create_regions(size_t count, size_t size) {
     }
 
     /* Allocate memory for regions */
-    for (size_t i = 0; i < count; i++) {
+    for (size_t i = 0; i < count; ++i) {
         regions[i].size = size;
         regions[i].start_addr = malloc(regions[i].size);
         if (regions[i].start_addr == NULL) {
@@ -855,8 +855,8 @@ create_regions(size_t count, size_t size) {
     }
 
     /* Sort regions, make sure they grow linearly */
-    for (size_t x = 0; x < count; x++) {
-        for (size_t y = 0; y < count; y++) {
+    for (size_t x = 0; x < count; ++x) {
+        for (size_t y = 0; y < count; ++y) {
             if (regions[x].start_addr < regions[y].start_addr) {
                 memcpy(&tmp, &regions[x], sizeof(regions[x]));
                 memcpy(&regions[x], &regions[y], sizeof(regions[x]));
@@ -908,11 +908,11 @@ lwmem_debug_print(unsigned char print_alloc, unsigned char print_free) {
     block = &lwmem.start_block_first_use;
     print_block(0, &lwmem.start_block_first_use);
     printf("|-------|--------------|--------|------|------------------|-----------------|\r\n");
-    for (size_t i = 0, j = 1; i < regions_count; i++) {
+    for (size_t i = 0, j = 1; i < regions_count; ++i) {
         block = regions_orig[i].start_addr;
 
         /* Print all blocks */
-        for (;; j++) {
+        for (;; ++j) {
             block_size = block->size & ~LWMEM_ALLOC_BIT;
 
             print_block(j, block);
@@ -944,7 +944,7 @@ lwmem_debug_create_regions(lwmem_region_t** regs_out, size_t count, size_t size)
 void
 lwmem_debug_save_state(void) {
     memcpy(&lwmem_temp, &lwmem, sizeof(lwmem_temp));
-    for (size_t i = 0; i < regions_count; i++) {
+    for (size_t i = 0; i < regions_count; ++i) {
         memcpy(regions_temp[i].start_addr, regions_orig[i].start_addr, regions_temp[i].size);
     }
     printf(" -- > Current state saved!\r\n");
@@ -953,7 +953,7 @@ lwmem_debug_save_state(void) {
 void
 lwmem_debug_restore_to_saved(void) {
     memcpy(&lwmem, &lwmem_temp, sizeof(lwmem_temp));
-    for (size_t i = 0; i < regions_count; i++) {
+    for (size_t i = 0; i < regions_count; ++i) {
         memcpy(regions_orig[i].start_addr, regions_temp[i].start_addr, regions_temp[i].size);
     }
     printf(" -- > State restored to last saved!\r\n");
