@@ -39,8 +39,7 @@
 
 uint8_t
 lwmem_sys_mutex_create(LWMEM_CFG_OS_MUTEX_HANDLE* m) {
-    osMutexDef(mut);
-    *m = osMutexCreate(osMutex(mut));
+    *m = osMutexNew(NULL);
     return 1;
 }
 
@@ -51,7 +50,7 @@ lwmem_sys_mutex_isvalid(LWMEM_CFG_OS_MUTEX_HANDLE* m) {
 
 uint8_t
 lwmem_sys_mutex_wait(LWMEM_CFG_OS_MUTEX_HANDLE* m) {
-    if (osMutexWait(*m, osWaitForever) != osOK) {
+    if (osMutexAcquire(*m, osWaitForever) != osOK) {
         return 0;
     }
     return 1;

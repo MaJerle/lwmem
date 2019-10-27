@@ -51,8 +51,7 @@ regions[] = {
     /* Add more regions if needed */
 };
 
-static void app_thread(void const* arg);
-osThreadDef(app_thread, app_thread, osPriorityNormal, 0, 512);
+static void app_thread(void* arg);
 
 /**
  * \brief           Program entry point
@@ -65,6 +64,8 @@ main(void) {
     
     printf("Application running on STM32L496G-Discovery!\r\n");
     
+    osKernelInitialize();                       /* Initialize kernel */
+
     /* Initialize LwMEM */
     printf("Initializing LwMEM...\r\n");
     if (!lwmem_assignmem(regions, sizeof(regions) / sizeof(regions[0]))) {
@@ -74,7 +75,7 @@ main(void) {
         printf("LwMEM initialized and ready to use\r\n");
     }
 
-    osThreadCreate(osThread(app_thread), NULL); /* Create application thread */
+    osThreadNew(app_thread, NULL, NULL);        /* Create application thread */
     osKernelStart();                            /* Start kernel */
     
     while (1) {}
@@ -85,7 +86,7 @@ main(void) {
  * \param[in]       arg: Thread argument
  */
 static void
-app_thread(void const* arg) {
+app_thread(void* arg) {
     void* ptr1, *ptr2;
 
     /* Allocate */
