@@ -123,7 +123,7 @@ app_thread(void* arg) {
     lwmem_free(ptr1);                           /* Free memory */
 
     printf("Terminating application thread\r\n");
-    osThreadTerminate(NULL);                    /* Terminate thread */
+    osThreadExit();
 }
 
 /**
