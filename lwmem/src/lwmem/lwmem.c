@@ -344,7 +344,7 @@ prv_alloc(const size_t size) {
  * \brief           Free input pointer
  * \param[in]       ptr: Input pointer to free
  */
-void
+static void
 prv_free(void* const ptr) {
     lwmem_block_t* const block = LWMEM_GET_BLOCK_FROM_PTR(ptr);
     if (LWMEM_BLOCK_IS_ALLOC(block)) {          /* Check if block is valid */
@@ -418,7 +418,7 @@ LWMEM_PREF(assignmem)(const LWMEM_PREF(region_t)* regions, const size_t len) {
         mem_start_addr = regions->start_addr;
         if (((size_t)mem_start_addr) & LWMEM_ALIGN_BITS) {  /* Check alignment boundary */
             mem_start_addr += LWMEM_ALIGN_NUM - ((size_t)mem_start_addr & LWMEM_ALIGN_BITS);
-            mem_size -= mem_start_addr - LWMEM_TO_BYTE_PTR(regions->start_addr);
+            mem_size -= (size_t)(mem_start_addr - LWMEM_TO_BYTE_PTR(regions->start_addr));
         }
         
         /* Ensure region size has enough memory after all the alignment checks */
