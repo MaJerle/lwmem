@@ -666,12 +666,16 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
             /* Move memory from block to block previous to current */
             void* const old_data_ptr = LWMEM_GET_PTR_FROM_BLOCK(block);
             void* const new_data_ptr = LWMEM_GET_PTR_FROM_BLOCK(prev);
-            LWMEM_MEMMOVE(new_data_ptr, old_data_ptr, block_size);  /* Copy old buffer size to new location */
 
             /*
              * If memmove overwrites metadata of current block (when shifting content up),
-             * it is not an issue as we know its size and next is already NULL
+             * it is not an issue as we know its size (block_size) and next is already NULL.
+			 *
+			 * Memmove must be used to guarantee move of data as addresses + their sizes may overlap
+			 *
+             * Metadata of "prev" are not modified during memmove
              */
+            LWMEM_MEMMOVE(new_data_ptr, old_data_ptr, block_size);
 
             lwmem.mem_available_bytes -= prev->size;/* For now decrease effective available bytes */
             prev->size += block_size;           /* Increase size of input block size */
@@ -686,9 +690,9 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
         /*
          * At this point, it was not possible to expand existing block with free before or free after due to:
          * - Input block & next free block do not create contiguous block or its new size is too small
-         * - Last free block & input block do not create contiguous block or its new size is too small
+         * - Previous free block & input block do not create contiguous block or its new size is too small
          *
-         * Last option is to check if last free block before "prev", input block "block" and next free block "prev->next" create contiguous block
+         * Last option is to check if previous free block "prev", input block "block" and next free block "prev->next" create contiguous block
          * and size of new block (from 3 contiguous blocks) together is big enough
          */
         if ((LWMEM_TO_BYTE_PTR(prev) + prev->size) == LWMEM_TO_BYTE_PTR(block)  /* Input block and free block before create contiguous block */
@@ -700,8 +704,12 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
             void* const new_data_ptr = LWMEM_GET_PTR_FROM_BLOCK(prev);
 
             /*
-             * It is necessary to use memmove and not memcpy as memmove takes care of memory overlapping
-             * It is not a problem if data shifted up overwrite old block metadata
+             * If memmove overwrites metadata of current block (when shifting content up),
+             * it is not an issue as we know its size (block_size) and next is already NULL.
+			 *
+			 * Memmove must be used to guarantee move of data as addresses + their sizes may overlap
+			 *
+             * Metadata of "prev" are not modified during memmove
              */
             LWMEM_MEMMOVE(new_data_ptr, old_data_ptr, block_size);  /* Copy old buffer size to new location */
 
