@@ -4,11 +4,12 @@
 
 - Written in ANSI C99, compatible with `size_t` for size data types
 - Implements standard C library functions for memory allocation, `malloc`, `calloc`, `realloc` and `free`
-- Supports different memory regions to allow use of framented memories
 - Uses `first-fit` algorithm to search free block
+- Supports different memory regions to allow use of fragmented memories
 - Suitable for embedded applications with fragmented memories
-- Suitable for automotive applications 
-- 100% open source, code available
+- Suitable for automotive applications
+- Supports advanced free/realloc algorithms to optimize memory usage
+- Operating system ready, thread-safe API
 - User friendly MIT license
 
 ## Documentation
