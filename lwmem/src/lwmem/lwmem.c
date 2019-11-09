@@ -29,7 +29,7 @@
  * This file is part of LwMEM - Lightweight dynamic memory manager library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         v1.1
+ * Version:         v1.2.0
  */
 #include "lwmem/lwmem.h"
 #include <limits.h>
@@ -344,7 +344,7 @@ prv_alloc(const size_t size) {
  * \brief           Free input pointer
  * \param[in]       ptr: Input pointer to free
  */
-void
+static void
 prv_free(void* const ptr) {
     lwmem_block_t* const block = LWMEM_GET_BLOCK_FROM_PTR(ptr);
     if (LWMEM_BLOCK_IS_ALLOC(block)) {          /* Check if block is valid */
@@ -389,7 +389,7 @@ LWMEM_PREF(assignmem)(const LWMEM_PREF(region_t)* regions, const size_t len) {
     /* Ensure regions are growing linearly and do not overlap in between */
     mem_start_addr = (void *)0;
     mem_size = 0;
-    for (size_t i = 0; i < len; i++) {
+    for (size_t i = 0; i < len; ++i) {
         /* New region(s) must be higher (in address space) than previous one */
         if ((mem_start_addr + mem_size) > LWMEM_TO_BYTE_PTR(regions[i].start_addr)) {
             return 0;
@@ -400,7 +400,7 @@ LWMEM_PREF(assignmem)(const LWMEM_PREF(region_t)* regions, const size_t len) {
         mem_size = regions[i].size;
     }
 
-    for (size_t i = 0; i < len; i++, regions++) {
+    for (size_t i = 0; i < len; ++i, ++regions) {
         /* 
          * Check region start address and align start address accordingly
          * It is ok to cast to size_t, even if pointer could be larger
@@ -418,7 +418,7 @@ LWMEM_PREF(assignmem)(const LWMEM_PREF(region_t)* regions, const size_t len) {
         mem_start_addr = regions->start_addr;
         if (((size_t)mem_start_addr) & LWMEM_ALIGN_BITS) {  /* Check alignment boundary */
             mem_start_addr += LWMEM_ALIGN_NUM - ((size_t)mem_start_addr & LWMEM_ALIGN_BITS);
-            mem_size -= mem_start_addr - LWMEM_TO_BYTE_PTR(regions->start_addr);
+            mem_size -= (size_t)(mem_start_addr - LWMEM_TO_BYTE_PTR(regions->start_addr));
         }
         
         /* Ensure region size has enough memory after all the alignment checks */
@@ -467,7 +467,7 @@ LWMEM_PREF(assignmem)(const LWMEM_PREF(region_t)* regions, const size_t len) {
         }
 
         lwmem.mem_available_bytes += first_block->size; /* Increase number of available bytes */
-        lwmem.mem_regions_count++;              /* Increase number of used regions */
+        ++lwmem.mem_regions_count;              /* Increase number of used regions */
     }
 
 #if defined(LWMEM_DEV)
@@ -666,12 +666,16 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
             /* Move memory from block to block previous to current */
             void* const old_data_ptr = LWMEM_GET_PTR_FROM_BLOCK(block);
             void* const new_data_ptr = LWMEM_GET_PTR_FROM_BLOCK(prev);
-            LWMEM_MEMMOVE(new_data_ptr, old_data_ptr, block_size);  /* Copy old buffer size to new location */
 
             /*
              * If memmove overwrites metadata of current block (when shifting content up),
-             * it is not an issue as we know its size and next is already NULL
+             * it is not an issue as we know its size (block_size) and next is already NULL.
+			 *
+			 * Memmove must be used to guarantee move of data as addresses + their sizes may overlap
+			 *
+             * Metadata of "prev" are not modified during memmove
              */
+            LWMEM_MEMMOVE(new_data_ptr, old_data_ptr, block_size);
 
             lwmem.mem_available_bytes -= prev->size;/* For now decrease effective available bytes */
             prev->size += block_size;           /* Increase size of input block size */
@@ -686,9 +690,9 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
         /*
          * At this point, it was not possible to expand existing block with free before or free after due to:
          * - Input block & next free block do not create contiguous block or its new size is too small
-         * - Last free block & input block do not create contiguous block or its new size is too small
+         * - Previous free block & input block do not create contiguous block or its new size is too small
          *
-         * Last option is to check if last free block before "prev", input block "block" and next free block "prev->next" create contiguous block
+         * Last option is to check if previous free block "prev", input block "block" and next free block "prev->next" create contiguous block
          * and size of new block (from 3 contiguous blocks) together is big enough
          */
         if ((LWMEM_TO_BYTE_PTR(prev) + prev->size) == LWMEM_TO_BYTE_PTR(block)  /* Input block and free block before create contiguous block */
@@ -700,8 +704,12 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
             void* const new_data_ptr = LWMEM_GET_PTR_FROM_BLOCK(prev);
 
             /*
-             * It is necessary to use memmove and not memcpy as memmove takes care of memory overlapping
-             * It is not a problem if data shifted up overwrite old block metadata
+             * If memmove overwrites metadata of current block (when shifting content up),
+             * it is not an issue as we know its size (block_size) and next is already NULL.
+			 *
+			 * Memmove must be used to guarantee move of data as addresses + their sizes may overlap
+			 *
+             * Metadata of "prev" are not modified during memmove
              */
             LWMEM_MEMMOVE(new_data_ptr, old_data_ptr, block_size);  /* Copy old buffer size to new location */
 
@@ -846,7 +854,7 @@ create_regions(size_t count, size_t size) {
     }
 
     /* Allocate memory for regions */
-    for (size_t i = 0; i < count; i++) {
+    for (size_t i = 0; i < count; ++i) {
         regions[i].size = size;
         regions[i].start_addr = malloc(regions[i].size);
         if (regions[i].start_addr == NULL) {
@@ -855,8 +863,8 @@ create_regions(size_t count, size_t size) {
     }
 
     /* Sort regions, make sure they grow linearly */
-    for (size_t x = 0; x < count; x++) {
-        for (size_t y = 0; y < count; y++) {
+    for (size_t x = 0; x < count; ++x) {
+        for (size_t y = 0; y < count; ++y) {
             if (regions[x].start_addr < regions[y].start_addr) {
                 memcpy(&tmp, &regions[x], sizeof(regions[x]));
                 memcpy(&regions[x], &regions[y], sizeof(regions[x]));
@@ -908,11 +916,11 @@ lwmem_debug_print(unsigned char print_alloc, unsigned char print_free) {
     block = &lwmem.start_block_first_use;
     print_block(0, &lwmem.start_block_first_use);
     printf("|-------|--------------|--------|------|------------------|-----------------|\r\n");
-    for (size_t i = 0, j = 1; i < regions_count; i++) {
+    for (size_t i = 0, j = 1; i < regions_count; ++i) {
         block = regions_orig[i].start_addr;
 
         /* Print all blocks */
-        for (;; j++) {
+        for (;; ++j) {
             block_size = block->size & ~LWMEM_ALLOC_BIT;
 
             print_block(j, block);
@@ -944,7 +952,7 @@ lwmem_debug_create_regions(lwmem_region_t** regs_out, size_t count, size_t size)
 void
 lwmem_debug_save_state(void) {
     memcpy(&lwmem_temp, &lwmem, sizeof(lwmem_temp));
-    for (size_t i = 0; i < regions_count; i++) {
+    for (size_t i = 0; i < regions_count; ++i) {
         memcpy(regions_temp[i].start_addr, regions_orig[i].start_addr, regions_temp[i].size);
     }
     printf(" -- > Current state saved!\r\n");
@@ -953,7 +961,7 @@ lwmem_debug_save_state(void) {
 void
 lwmem_debug_restore_to_saved(void) {
     memcpy(&lwmem, &lwmem_temp, sizeof(lwmem_temp));
-    for (size_t i = 0; i < regions_count; i++) {
+    for (size_t i = 0; i < regions_count; ++i) {
         memcpy(regions_orig[i].start_addr, regions_temp[i].start_addr, regions_temp[i].size);
     }
     printf(" -- > State restored to last saved!\r\n");

@@ -8,19 +8,18 @@
  *
  *  - Written in ANSI C99, compatible with `size_t` for size data types
  *  - Implements standard C library functions for memory allocation, `malloc`, `calloc`, `realloc` and `free`
- *  - Supports different memory regions to allow use of framented memories
  *  - Uses `first-fit` algorithm to search free block
- *  - Implements optimized reallocation algorithm to find best block
+ *  - Supports different memory regions to allow use of fragmented memories
  *  - Suitable for embedded applications with fragmented memories
  *  - Suitable for automotive applications
- *  - Operating system ready
- *  - 100% open source, code available
+ *  - Supports advanced free/realloc algorithms to optimize memory usage
+ *  - Operating system ready, thread-safe API
  *  - User friendly MIT license
  *
  * \section         sect_resources Download & Resources
  *
- *  - <a class="download_url" href="https://github.com/MaJerle/lwmem/releases">Download library from Github releases</a>
- *  - <a href="https://github.com/MaJerle/lwmem_res">Resources and examples repository</a>
+ *  - <a class="download_url" href="https://github.com/MaJerle/lwmem/releases">Download library at Github releases</a>
+ *  - <a href="https://github.com/MaJerle/lwmem">Resources and examples repository</a>
  *  - Read \ref page_appnote before you start development
  *  - <a href="https://github.com/MaJerle/lwmem">Official development repository on Github</a>
  *
