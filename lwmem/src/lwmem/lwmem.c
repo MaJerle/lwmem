@@ -68,7 +68,7 @@
 /**
  * \brief           Aligns input value to next alignment bits
  *
- * As an example, when \ref MEM_ALIGN_NUM is set to `4`:
+ * As an example, when \ref LWMEM_ALIGN_NUM is set to `4`:
  *
  *  - Input: `0`; Output: `0`
  *  - Input: `1`; Output: `4`
@@ -123,7 +123,7 @@
 
 /**
  * \brief           Get block handle from application pointer
- * \param[in]       ptr: Input pointer to get block from
+ * \param[in]       block: Input pointer to get block from
  */
 #define LWMEM_GET_PTR_FROM_BLOCK(block) (void *)((block) != NULL ? ((LWMEM_TO_BYTE_PTR(block)) + LWMEM_BLOCK_META_SIZE) : NULL)
 
@@ -136,14 +136,14 @@
 
 /**
  * \brief           Gets block before input block (marked as prev) and its previous free block
- * \param[in]       _b_: Input block to find previous and its previous
- * \param[in]       _pp_: Previous previous of input block
- * \param[in]       _p_: Previous of input block
+ * \param[in]       in_b: Input block to find previous and its previous
+ * \param[in]       in_pp: Previous previous of input block
+ * \param[in]       in_p: Previous of input block
  */
-#define LWMEM_GET_PREV_CURR_OF_BLOCK(_b_, _pp_, _p_) do {               \
-    for ((_pp_) = NULL, (_p_) = &lwmem.start_block;                     \
-        (_p_) != NULL && (_p_)->next < (_b_);                           \
-        (_pp_) = (_p_), (_p_) = (_p_)->next                             \
+#define LWMEM_GET_PREV_CURR_OF_BLOCK(in_b, in_pp, in_p) do {            \
+    for ((in_pp) = NULL, (in_p) = &lwmem.start_block;                   \
+        (in_p) != NULL && (in_p)->next < (in_b);                        \
+        (in_pp) = (in_p), (in_p) = (in_p)->next                         \
     ) {}                                                                \
 } while (0)
 
@@ -293,10 +293,6 @@ prv_split_too_big_block(lwmem_block_t* block, size_t new_block_size) {
 
 /**
  * \brief           Private allocation function
- * \param[in]       ptr: Pointer to already allocated memory, used in case of memory expand (realloc) feature.
- *                      It shall point to beginning of meta block when used.
- *                      Set to `NULL` for new allocation.
- *                      If parameter is not `NULL` and function returns `NULL`, memory is not automatically freed
  * \param[in]       size: Application wanted size, excluding size of meta header
  * \return          Pointer to allocated memory, `NULL` otherwise
  */
