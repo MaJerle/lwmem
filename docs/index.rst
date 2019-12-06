@@ -1,6 +1,8 @@
 LwMEM documentation!
 ====================
 
+LwMEM is lightweight dynamic memory manager optimized for embedded systems.
+
 .. image:: static/images/logo.svg
 	:align: center
 
@@ -11,22 +13,21 @@ LwMEM documentation!
 Features
 ^^^^^^^^
 
-- Written in ANSI C99, compatible with ``size_t`` for size data types
-- Platform independent, no architecture specific code
-- FIFO (First In First Out) buffer implementation
-- No dynamic memory allocation, data is static array
-- Uses optimized memory copy instead of loops to read/write data from/to memory
-- Thread safe when used as pipe with single write and single read entries
-- Interrupt safe when used as pipe with single write and single read entries
-- Suitable for DMA transfers from and to memory with zero-copy overhead between buffer and application memory
-- Supports data peek, skip for read and advance for write
-- User friendly MIT license
+* Written in ANSI C99, compatible with size_t for size data types
+* Implements standard C library functions for memory allocation, malloc, calloc, realloc and free
+* Uses first-fit algorithm to search free block
+* Supports different memory regions to allow use of fragmented memories
+* Suitable for embedded applications with fragmented memories
+* Suitable for automotive applications
+* Supports advanced free/realloc algorithms to optimize memory usage
+* Operating system ready, thread-safe API
+* User friendly MIT license
 
 Requirements
 ^^^^^^^^^^^^
 
-- C compiler
-- Less than ``2kB`` of memory
+* C compiler
+* Less than ``2kB`` of memory
 
 Contribute
 ^^^^^^^^^^
