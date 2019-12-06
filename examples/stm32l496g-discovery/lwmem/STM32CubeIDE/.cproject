@@ -39,10 +39,10 @@
 								<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.debuglevel.410690589" name="Debug level" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.debuglevel" useByScannerDiscovery="false" value="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.debuglevel.value.g3" valueType="enumerated"/>
 								<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.optimization.level.2125625912" name="Optimization level" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.optimization.level" useByScannerDiscovery="false" value="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.optimization.level.value.o0" valueType="enumerated"/>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.includepaths.118137004" name="Include paths (-I)" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.includepaths" useByScannerDiscovery="false" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;../../../../../third_party/Embedded_Libs/st_hal/STM32L4xx_HAL_Driver/Inc&quot;"/>
-									<listOptionValue builtIn="false" value="../../../../../third_party/Embedded_Libs/st_hal/CMSIS/Device/ST/STM32L4xx/Include"/>
-									<listOptionValue builtIn="false" value="../../../../../third_party/Embedded_Libs/st_hal/CMSIS/Include"/>
-									<listOptionValue builtIn="false" value="../../../../../third_party/Embedded_Libs"/>
+									<listOptionValue builtIn="false" value="&quot;../../../../../third_party/embedded_libs/st_hal/STM32L4xx_HAL_Driver/Inc&quot;"/>
+									<listOptionValue builtIn="false" value="../../../../../third_party/embedded_libs/st_hal/CMSIS/Device/ST/STM32L4xx/Include"/>
+									<listOptionValue builtIn="false" value="../../../../../third_party/embedded_libs/st_hal/CMSIS/Include"/>
+									<listOptionValue builtIn="false" value="../../../../../third_party/embedded_libs"/>
 									<listOptionValue builtIn="false" value="../../inc"/>
 									<listOptionValue builtIn="false" value="../../../../../lwmem/src/include"/>
 								</option>
