@@ -6,15 +6,15 @@ Get started
 Download library
 ^^^^^^^^^^^^^^^^
 
-Library is primarly hosted on `Github <https://github.com/MaJerle/ringbuff>`_.
+Library is primarly hosted on `Github <https://github.com/MaJerle/lwmem>`_.
 
-* Download latest release from `releases area <https://github.com/MaJerle/ringbuff/releases>`_ on Github
+* Download latest release from `releases area <https://github.com/MaJerle/lwmem/releases>`_ on Github
 * Clone `develop` branch for latest development
 
 Download from releases
 **********************
 
-All releases are available on Github releases `releases area <https://github.com/MaJerle/ringbuff/releases>`_.
+All releases are available on Github releases `releases area <https://github.com/MaJerle/lwmem/releases>`_.
 
 Clone from Github
 *****************
@@ -24,8 +24,8 @@ First-time clone
 
 * Download and install ``git`` if not already
 * Open console and navigate to path in the system to clone repository to. Use command ``cd your_path``
-* Run ``git clone --recurse-submodules https://github.com/MaJerle/ringbuff`` command to clone repository including submodules or
-* Run ``git clone --recurse-submodules --branch develop https://github.com/MaJerle/ringbuff`` to clone `development` branch
+* Run ``git clone --recurse-submodules https://github.com/MaJerle/lwmem`` command to clone repository including submodules or
+* Run ``git clone --recurse-submodules --branch develop https://github.com/MaJerle/lwmem`` to clone `development` branch
 * Navigate to ``examples`` directory and run favourite example
 
 Update cloned to latest version
@@ -40,9 +40,9 @@ Add library to project
 
 At this point it is assumed that you have successfully download library, either cloned it or from releases page.
 
-* Copy ``ringbuff`` folder to your project
-* Add ``ringbuff/src/include`` folder to `include path` of your toolchain
-* Add source files from ``ringbuff/src/`` folder to toolchain build
+* Copy ``lwmem`` folder to your project
+* Add ``lwmem/src/include`` folder to `include path` of your toolchain
+* Add source files from ``lwmem/src/`` folder to toolchain build
 * Build the project
 
 Minimal example code
@@ -52,20 +52,30 @@ Run below example to test and verify library
 
 .. code-block:: c
 
-    /* Buffer variables */
-    ringbuff_t buff;                            /* Declare ring buffer structure */
-    uint8_t buff_data[8];                       /* Declare raw buffer data array */
+    #include "lwmem/lwmem.h"
 
-    /* Application variables
-    uint8_t data[2];                            /* Application working data */
+    void* ptr;
 
-    /* Application code ... */
-    ringbuff_init(&buff, buff_data, sizeof(buff_data)); /* Initialize buffer */
+    /* Create regions, address and length of regions */
+    static
+    lwmem_region_t regions[] = {
+        /* Set start address and size of each region */
+        { (void *)0x10000000, 0x00001000 },
+        { (void *)0xA0000000, 0x00008000 },
+        { (void *)0xC0000000, 0x00008000 },
+    };
 
-    /* Write 4 bytes of data */
-    ringbuff_write(&buff, "0123", 4);
+    /* Later in the initialization process */
+    /* Assign regions for manager */
+    lwmem_assignmem(regions, sizeof(regions) / sizeof(regions[0]));
 
-    /* Print number of bytes in buffer */
-    printf("Bytes in buffer: %d\r\n", (int)ringbuff_get_full(&buff));
+    ptr = lwmem_malloc(8);                          /* Allocate 8 bytes of memory */
+    if (ptr != NULL) {
+        /* Allocation successful */
+    }
 
-    /* Will print "4" */
+    /* Later... */                                  /* Free allocated memory */
+    lwmem_free(ptr);
+    ptr = NULL;
+    /* .. or */
+    lwmem_free_s(&ptr);
