@@ -10,7 +10,7 @@ LwMEM is lightweight dynamic memory manager optimized for embedded systems.
 Features
 ^^^^^^^^
 
-* Written in ANSI C99, compatible with size_t for size data types
+* Written in ANSI C99, compatible with ``size_t`` for size data types
 * Implements standard C library functions for memory allocation, malloc, calloc, realloc and free
 * Uses *first-fit* algorithm to search free block
 * Supports different memory regions to allow use of fragmented memories

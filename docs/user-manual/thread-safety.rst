@@ -9,7 +9,7 @@ This means whenever it is used with operating system, user must resolve it with 
 Library has locking mechanism support for thread safety, which needs to be enabled.
 
 .. tip::
-    To enable thread-safety support, parameter `LWMEM_CFG_OS` must be set to `1`.
+    To enable thread-safety support, parameter ``LWMEM_CFG_OS`` must be set to ``1``.
     Please check :ref:`api_lwmem_config` for more information about other options.
 
 After thread-safety features has been enabled, it is necessary to implement
