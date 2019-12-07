@@ -6,4 +6,6 @@ List of all the modules:
 .. toctree::
 	:maxdepth: 2
 
-	ringbuff
+	lwmem
+	lwmem_config
+	lwmem_sys

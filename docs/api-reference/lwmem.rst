@@ -1,8 +1,6 @@
-.. contents::
+.. _api_lwmem:
 
 LwMEM
 =====
-
-.. contents::
 
 .. doxygengroup:: LWMEM

@@ -3,9 +3,6 @@ LwMEM documentation!
 
 LwMEM is lightweight dynamic memory manager optimized for embedded systems.
 
-.. image:: static/images/logo.svg
-	:align: center
-
 .. class::center
 
 :ref:`download_library` · `Github <https://github.com/MaJerle/lwmem>`_
