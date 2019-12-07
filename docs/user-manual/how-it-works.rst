@@ -28,7 +28,7 @@ Example also assumes that:
 
 First step is to define custom regions and assign them to memory manager.
 
-.. literalinclude:: ../examples/example_regions_definitions.c
+.. literalinclude:: ../examples_src/example_regions_definitions.c
     :language: c
 
 .. note::

@@ -19,24 +19,24 @@ If application needs to hold all received numbers, it may be necessary to:
 
 Application needs to define at least single region:
 
-.. literalinclude:: ../examples/example_realloc_region.c
+.. literalinclude:: ../examples_src/example_realloc_region.c
     :language: c
 
 When executed on test machine, it prints:
 
-.. literalinclude:: ../examples/example_realloc_region_log.c
+.. literalinclude:: ../examples_src/example_realloc_region_log.c
 
 .. note:: 
     Please check :ref:`how_it_works` section for more information
 
 After region has been defined, application tries to allocate memory for ``12 integers``.
 
-.. literalinclude:: ../examples/example_realloc_first_malloc.c
+.. literalinclude:: ../examples_src/example_realloc_first_malloc.c
     :language: c
 
 When executed on test machine, it prints:
 
-.. literalinclude:: ../examples/example_realloc_first_malloc_log.c
+.. literalinclude:: ../examples_src/example_realloc_first_malloc_log.c
 
 At first, manager had ``120`` bytes of available memory while after allocation of ``48`` bytes, it only left ``64`` bytes.
 Effectively ``120 - 64 = 56`` bytes have been used to allocate ``48`` bytes of memory.
@@ -55,12 +55,12 @@ Easiest would be to:
 
 Here is the code:
 
-.. literalinclude:: ../examples/example_realloc_custom_realloc.c
+.. literalinclude:: ../examples_src/example_realloc_custom_realloc.c
     :language: c
 
 When executed on test machine, it prints:
 
-.. literalinclude:: ../examples/example_realloc_custom_realloc_log.c
+.. literalinclude:: ../examples_src/example_realloc_custom_realloc_log.c
 
 Outcome of the debug messages:
 
@@ -74,7 +74,7 @@ This was therefore successful custom reallocation from ``12`` to ``13`` integers
 Next step is to verify what would happen when application wants to reallocate to ``15`` integers instead.
 When same code is executed (but with ``15`` instead of ``12``), it prints:
 
-.. literalinclude:: ../examples/example_realloc_custom_realloc_log_2.c
+.. literalinclude:: ../examples_src/example_realloc_custom_realloc_log_2.c
 
 Oooops! It is not anymore possible to allocate new block for new ``15`` integers as there was no available block with at least ``15 * sizeof(int) + metadata_size`` bytes of free memory.
 
@@ -89,12 +89,12 @@ Shrink existing block
 Easiest reallocation algorithm is when application wants to decrease size of previously allocated memory.
 When this is the case, manager only needs to change the size of existing block to lower value.
 
-.. literalinclude:: ../examples/example_realloc_shrink.c
+.. literalinclude:: ../examples_src/example_realloc_shrink.c
     :language: c
 
 When executed on test machine, it prints:
 
-.. literalinclude:: ../examples/example_realloc_shrink_log.c
+.. literalinclude:: ../examples_src/example_realloc_shrink_log.c
 
 Outcome of our reallocation:
 
@@ -119,12 +119,12 @@ Consider new example and dedicated image below.
 
     Shrinking fragmented memory block
 
-.. literalinclude:: ../examples/example_realloc_shrink_fragmented.c
+.. literalinclude:: ../examples_src/example_realloc_shrink_fragmented.c
     :language: c
 
 When executed on test machine, it prints:
 
-.. literalinclude:: ../examples/example_realloc_shrink_fragmented_log.c
+.. literalinclude:: ../examples_src/example_realloc_shrink_fragmented_log.c
 
 Outcome of this example:
 
@@ -171,12 +171,12 @@ Manager covers ``3`` potential cases:
 
     *Free block* after + *allocated block* create one big contiguous block
 
-.. literalinclude:: ../examples/example_realloc_enlarge_1.c
+.. literalinclude:: ../examples_src/example_realloc_enlarge_1.c
     :language: c
 
 When executed on test machine, it prints:
 
-.. literalinclude:: ../examples/example_realloc_enlarge_1_log.c
+.. literalinclude:: ../examples_src/example_realloc_enlarge_1_log.c
 
 * Allocation for first block of memory (``24`` user bytes) uses ``32`` bytes of data
 * Reallocation is successful, block has been extended to ``40`` bytes and next free block has been shrinked down to ``80`` bytes
@@ -190,12 +190,12 @@ When executed on test machine, it prints:
 
     *Free block* before + *allocated block* create one big contiguous block
 
-.. literalinclude:: ../examples/example_realloc_enlarge_2.c
+.. literalinclude:: ../examples_src/example_realloc_enlarge_2.c
     :language: c
 
 When executed on test machine, it prints:
 
-.. literalinclude:: ../examples/example_realloc_enlarge_2_log.c
+.. literalinclude:: ../examples_src/example_realloc_enlarge_2_log.c
 
 * First application allocates big block (``88`` bytes), followed by smaller block (``32`` bytes)
 * Application then frees big block to mark it as free. This is effectively state ``2a``
@@ -229,12 +229,12 @@ In this example manager has always ``2`` allocated blocks and application always
 
 Initial state ``3`` is generated using C code:
 
-.. literalinclude:: ../examples/example_realloc_enlarge_3.c
+.. literalinclude:: ../examples_src/example_realloc_enlarge_3.c
     :language: c
 
 When executed on test machine, it prints:
 
-.. literalinclude:: ../examples/example_realloc_enlarge_3_log.c
+.. literalinclude:: ../examples_src/example_realloc_enlarge_3_log.c
 
 .. tip::
     Image shows (and log confirms) ``3`` free slots of ``16, 12 and 56`` bytes in size respectively.
@@ -245,12 +245,12 @@ When executed on test machine, it prints:
   * Block after is shrinked from ``12`` to ``8`` bytes
   * Code example (follows initial state code example)
   
-  .. literalinclude:: ../examples/example_realloc_enlarge_3a.c
+  .. literalinclude:: ../examples_src/example_realloc_enlarge_3a.c
     :language: c
 
   * When executed on test machine, it prints:
 
-  .. literalinclude:: ../examples/example_realloc_enlarge_3a_log.c
+  .. literalinclude:: ../examples_src/example_realloc_enlarge_3a_log.c
 
 * Case ``3b``: Application tries to reallocate green block from ``12`` to ``28`` bytes
 
@@ -258,12 +258,12 @@ When executed on test machine, it prints:
   * Block before green is big enough (``16 + 12 >= 28``)
   * Green block is merged with previous free block and content is shifted to the beginning of new block
   
-  .. literalinclude:: ../examples/example_realloc_enlarge_3b.c
+  .. literalinclude:: ../examples_src/example_realloc_enlarge_3b.c
     :language: c
 
   - When executed on test machine, it prints:
 
-  .. literalinclude:: ../examples/example_realloc_enlarge_3b_log.c
+  .. literalinclude:: ../examples_src/example_realloc_enlarge_3b_log.c
 
 * Case ``3c``: Application tries to reallocate green block from ``12`` to ``32`` bytes
 
@@ -274,12 +274,12 @@ When executed on test machine, it prints:
   * Content of green block is shifted to the beginning of new block
   * New block is limited to ``32`` bytes, keeping ``8`` bytes marked as free at the end
   
-  .. literalinclude:: ../examples/example_realloc_enlarge_3c.c
+  .. literalinclude:: ../examples_src/example_realloc_enlarge_3c.c
     :language: c
 
   * When executed on test machine, it prints:
 
-  .. literalinclude:: ../examples/example_realloc_enlarge_3c_log.c
+  .. literalinclude:: ../examples_src/example_realloc_enlarge_3c_log.c
 
 * Case ``3d``: Application tries to reallocate green block from ``12`` to ``44`` bytes
 
@@ -287,12 +287,12 @@ When executed on test machine, it prints:
   * Completely new block is created and content is copied to it
   * Existing block is marked as free. All ``3`` free blocks create big contiguous block, they are merged to one block with its size set to ``40``
   
-  .. literalinclude:: ../examples/example_realloc_enlarge_3d.c
+  .. literalinclude:: ../examples_src/example_realloc_enlarge_3d.c
     :language: c
 
   * When executed on test machine, it prints:
 
-  .. literalinclude:: ../examples/example_realloc_enlarge_3d_log.c
+  .. literalinclude:: ../examples_src/example_realloc_enlarge_3d_log.c
 
 Full test code with assert
 **************************
@@ -312,12 +312,12 @@ How it works:
 
 Initial state ``3`` is generated using C code:
 
-.. literalinclude:: ../examples/example_realloc_enlarge_full.c
+.. literalinclude:: ../examples_src/example_realloc_enlarge_full.c
     :language: c
 
 When executed on test machine, it prints:
 
-.. literalinclude:: ../examples/example_realloc_enlarge_full_log.c
+.. literalinclude:: ../examples_src/example_realloc_enlarge_full_log.c
 
 .. toctree::
     :maxdepth: 2
