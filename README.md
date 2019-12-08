@@ -1,23 +1,28 @@
 # Lightweight dynamic memory manager
 
+<h3><a href="http://docs.majerle.eu/projects/lwmem">Documentation</a></h3>
+
 ## Features
 
-- Written in ANSI C99, compatible with `size_t` for size data types
-- Implements standard C library functions for memory allocation, `malloc`, `calloc`, `realloc` and `free`
-- Uses `first-fit` algorithm to search free block
-- Supports different memory regions to allow use of fragmented memories
-- Suitable for embedded applications with fragmented memories
-- Suitable for automotive applications
-- Supports advanced free/realloc algorithms to optimize memory usage
-- Operating system ready, thread-safe API
-- User friendly MIT license
+* Written in ANSI C99, compatible with ``size_t`` for size data types
+* Implements standard C library functions for memory allocation, malloc, calloc, realloc and free
+* Uses *first-fit* algorithm to search free block
+* Supports different memory regions to allow use of fragmented memories
+* Suitable for embedded applications with fragmented memories
+* Suitable for automotive applications
+* Supports advanced free/realloc algorithms to optimize memory usage
+* Operating system ready, thread-safe API
+* User friendly MIT license
 
-## Documentation
+## Contribute
 
-Full API documentation with description and examples is available and is regulary updated with the source changes
+We always welcome new contributors. To be as efficient as possible, we recommend:
 
-http://majerle.eu/documentation/lwmem/html/index.html
+1. Fork Github repository
+2. Respect C style & coding rules used by the library
+3. Make a pull request to develop branch with new features or bug fixes
 
-## Contribution
+Alternatively you may:
 
-I invite you to give feature request or report a bug. Please use issues tracker.
+1. Report a bug
+2. Ask for a feature request
