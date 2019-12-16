@@ -11,8 +11,8 @@ Various examples are provided for fast library evaluation on embedded systems. T
 .. warning::
 	Library is platform independent and can be used on any platform.
 
-Supported architectures
-^^^^^^^^^^^^^^^^^^^^^^^
+Example architectures
+^^^^^^^^^^^^^^^^^^^^^
 
 There are many platforms available today on a market, however supporting them all would be tough task for single person.
 Therefore it has been decided to support (for purpose of examples) ``2`` platforms only, `WIN32` and `STM32`.
