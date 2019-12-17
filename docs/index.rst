@@ -25,7 +25,7 @@ Requirements
 ^^^^^^^^^^^^
 
 * C compiler
-* Less than ``2kB`` of memory
+* Less than ``2kB`` of non-volatile memory
 
 Contribute
 ^^^^^^^^^^
