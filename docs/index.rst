@@ -44,7 +44,7 @@ Alternatively you may:
 License
 ^^^^^^^
 
-.. literalinclude:: license.txt
+.. literalinclude:: ../LICENSE
 
 Table of contents
 ^^^^^^^^^^^^^^^^^
