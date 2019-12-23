@@ -25,6 +25,7 @@ Example code for ``CMSIS-OS V2``
 
 .. literalinclude:: ../../lwmem/src/system/lwmem_sys_cmsis_os.c
     :language: c
+    :caption: System function implementation for CMSIS-OS based operating systems
 
 .. toctree::
     :maxdepth: 2

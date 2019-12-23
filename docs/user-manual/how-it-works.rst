@@ -30,6 +30,7 @@ First step is to define custom regions and assign them to memory manager.
 
 .. literalinclude:: ../examples_src/example_regions_definitions.c
     :language: c
+    :caption: Definitions of different memory regions
 
 .. note::
     Order of regions must be lower address first. Regions must not overlap with their sizes.

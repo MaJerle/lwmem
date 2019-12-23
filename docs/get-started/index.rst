@@ -67,6 +67,7 @@ This file shall be named ``lwmem_config.h`` and its default template looks like 
 
 .. literalinclude:: ../../lwmem/src/include/lwmem/lwmem_config_template.h
     :language: c
+    :caption: Config file template
 
 Minimal example code
 ^^^^^^^^^^^^^^^^^^^^
@@ -75,3 +76,4 @@ Run below example to test and verify library
 
 .. literalinclude:: ../examples_src/example_minimal.c
     :language: c
+    :caption: Absolute minimum example

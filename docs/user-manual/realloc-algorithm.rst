@@ -21,10 +21,12 @@ Application needs to define at least single region:
 
 .. literalinclude:: ../examples_src/example_realloc_region.c
     :language: c
+    :caption: Memory region assignment
 
 When executed on test machine, it prints:
 
 .. literalinclude:: ../examples_src/example_realloc_region_log.c
+    :caption: Memory region assignment output
 
 .. note:: 
     Please check :ref:`how_it_works` section for more information
@@ -33,10 +35,12 @@ After region has been defined, application tries to allocate memory for ``12 int
 
 .. literalinclude:: ../examples_src/example_realloc_first_malloc.c
     :language: c
+    :caption: First memory allocation
 
 When executed on test machine, it prints:
 
 .. literalinclude:: ../examples_src/example_realloc_first_malloc_log.c
+    :caption: First memory allocation output
 
 At first, manager had ``120`` bytes of available memory while after allocation of ``48`` bytes, it only left ``64`` bytes.
 Effectively ``120 - 64 = 56`` bytes have been used to allocate ``48`` bytes of memory.
@@ -57,10 +61,12 @@ Here is the code:
 
 .. literalinclude:: ../examples_src/example_realloc_custom_realloc.c
     :language: c
+    :caption: Custom reallocation
 
 When executed on test machine, it prints:
 
 .. literalinclude:: ../examples_src/example_realloc_custom_realloc_log.c
+    :caption: Custom reallocation output
 
 Outcome of the debug messages:
 
@@ -75,6 +81,7 @@ Next step is to verify what would happen when application wants to reallocate to
 When same code is executed (but with ``15`` instead of ``12``), it prints:
 
 .. literalinclude:: ../examples_src/example_realloc_custom_realloc_log_2.c
+    :caption: Custom reallocation for 15 integers
 
 Oooops! It is not anymore possible to allocate new block for new ``15`` integers as there was no available block with at least ``15 * sizeof(int) + metadata_size`` bytes of free memory.
 
@@ -91,10 +98,12 @@ When this is the case, manager only needs to change the size of existing block t
 
 .. literalinclude:: ../examples_src/example_realloc_shrink.c
     :language: c
+    :caption: Shrink existing block to smaller size
 
 When executed on test machine, it prints:
 
 .. literalinclude:: ../examples_src/example_realloc_shrink_log.c
+    :caption: Shrink existing block to smaller size output
 
 Outcome of our reallocation:
 
@@ -110,7 +119,7 @@ Outcome of our reallocation:
 .. tip:: 
     This was a success now, much better.
 
-However, it is not always possible to increase block size of next free block on linked list.
+It is not always possible to increase block size of next free block on linked list.
 Consider new example and dedicated image below.
 
 .. figure:: ../static/images/structure_realloc_shrink_fragmented.svg
@@ -121,10 +130,12 @@ Consider new example and dedicated image below.
 
 .. literalinclude:: ../examples_src/example_realloc_shrink_fragmented.c
     :language: c
+    :caption: Shrink fragmented memory block
 
 When executed on test machine, it prints:
 
 .. literalinclude:: ../examples_src/example_realloc_shrink_fragmented_log.c
+    :caption: Shrink fragmented memory block output
 
 Outcome of this example:
 
@@ -173,10 +184,12 @@ Manager covers ``3`` potential cases:
 
 .. literalinclude:: ../examples_src/example_realloc_enlarge_1.c
     :language: c
+    :caption: Enlarge existing block
 
 When executed on test machine, it prints:
 
 .. literalinclude:: ../examples_src/example_realloc_enlarge_1_log.c
+    :caption: Enlarge existing block output
 
 * Allocation for first block of memory (``24`` user bytes) uses ``32`` bytes of data
 * Reallocation is successful, block has been extended to ``40`` bytes and next free block has been shrinked down to ``80`` bytes
@@ -192,10 +205,12 @@ When executed on test machine, it prints:
 
 .. literalinclude:: ../examples_src/example_realloc_enlarge_2.c
     :language: c
+    :caption: Enlarge existing block
 
 When executed on test machine, it prints:
 
 .. literalinclude:: ../examples_src/example_realloc_enlarge_2_log.c
+    :caption: Enlarge existing block output
 
 * First application allocates big block (``88`` bytes), followed by smaller block (``32`` bytes)
 * Application then frees big block to mark it as free. This is effectively state ``2a``
@@ -231,10 +246,12 @@ Initial state ``3`` is generated using C code:
 
 .. literalinclude:: ../examples_src/example_realloc_enlarge_3.c
     :language: c
+    :caption: Initial state of blocks within memory
 
 When executed on test machine, it prints:
 
 .. literalinclude:: ../examples_src/example_realloc_enlarge_3_log.c
+    :caption: Initial state of blocks within memory output
 
 .. tip::
     Image shows (and log confirms) ``3`` free slots of ``16, 12 and 56`` bytes in size respectively.
@@ -247,10 +264,12 @@ When executed on test machine, it prints:
   
   .. literalinclude:: ../examples_src/example_realloc_enlarge_3a.c
     :language: c
+    :caption: Enlarge of existing block for case 3A
 
   * When executed on test machine, it prints:
 
   .. literalinclude:: ../examples_src/example_realloc_enlarge_3a_log.c
+    :caption: Enlarge of existing block for case 3A output
 
 * Case ``3b``: Application tries to reallocate green block from ``12`` to ``28`` bytes
 
@@ -260,10 +279,12 @@ When executed on test machine, it prints:
   
   .. literalinclude:: ../examples_src/example_realloc_enlarge_3b.c
     :language: c
+    :caption: Enlarge of existing block for case 3B
 
   - When executed on test machine, it prints:
 
   .. literalinclude:: ../examples_src/example_realloc_enlarge_3b_log.c
+    :caption: Enlarge of existing block for case 3B output
 
 * Case ``3c``: Application tries to reallocate green block from ``12`` to ``32`` bytes
 
@@ -276,10 +297,12 @@ When executed on test machine, it prints:
   
   .. literalinclude:: ../examples_src/example_realloc_enlarge_3c.c
     :language: c
+    :caption: Enlarge of existing block for case 3C
 
   * When executed on test machine, it prints:
 
   .. literalinclude:: ../examples_src/example_realloc_enlarge_3c_log.c
+    :caption: Enlarge of existing block for case 3C output
 
 * Case ``3d``: Application tries to reallocate green block from ``12`` to ``44`` bytes
 
@@ -289,10 +312,12 @@ When executed on test machine, it prints:
   
   .. literalinclude:: ../examples_src/example_realloc_enlarge_3d.c
     :language: c
+    :caption: Enlarge of existing block for case 3D
 
   * When executed on test machine, it prints:
 
   .. literalinclude:: ../examples_src/example_realloc_enlarge_3d_log.c
+    :caption: Enlarge of existing block for case 3D output
 
 Full test code with assert
 **************************
@@ -314,10 +339,12 @@ Initial state ``3`` is generated using C code:
 
 .. literalinclude:: ../examples_src/example_realloc_enlarge_full.c
     :language: c
+    :caption: Full test code with asserts
 
 When executed on test machine, it prints:
 
 .. literalinclude:: ../examples_src/example_realloc_enlarge_full_log.c
+    :caption: Full test code with asserts output
 
 .. toctree::
     :maxdepth: 2
