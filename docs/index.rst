@@ -6,7 +6,7 @@ LwMEM is lightweight dynamic memory manager optimized for embedded systems.
 .. rst-class:: center
 .. rst-class:: index_links
 
-	:ref:`download_library` · `Github <https://github.com/MaJerle/lwmem>`_
+	:ref:`download_library` · `Open Github <https://github.com/MaJerle/lwmem>`_
 
 Features
 ^^^^^^^^
