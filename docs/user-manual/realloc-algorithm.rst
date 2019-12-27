@@ -21,6 +21,7 @@ Application needs to define at least single region:
 
 .. literalinclude:: ../examples_src/example_realloc_region.c
     :language: c
+    :linenos:
     :caption: Memory region assignment
 
 When executed on test machine, it prints:
@@ -35,6 +36,7 @@ After region has been defined, application tries to allocate memory for ``12 int
 
 .. literalinclude:: ../examples_src/example_realloc_first_malloc.c
     :language: c
+    :linenos:
     :caption: First memory allocation
 
 When executed on test machine, it prints:
@@ -61,6 +63,7 @@ Here is the code:
 
 .. literalinclude:: ../examples_src/example_realloc_custom_realloc.c
     :language: c
+    :linenos:
     :caption: Custom reallocation
 
 When executed on test machine, it prints:
@@ -98,6 +101,7 @@ When this is the case, manager only needs to change the size of existing block t
 
 .. literalinclude:: ../examples_src/example_realloc_shrink.c
     :language: c
+    :linenos:
     :caption: Shrink existing block to smaller size
 
 When executed on test machine, it prints:
@@ -130,6 +134,7 @@ Consider new example and dedicated image below.
 
 .. literalinclude:: ../examples_src/example_realloc_shrink_fragmented.c
     :language: c
+    :linenos:
     :caption: Shrink fragmented memory block
 
 When executed on test machine, it prints:
@@ -184,6 +189,7 @@ Manager covers ``3`` potential cases:
 
 .. literalinclude:: ../examples_src/example_realloc_enlarge_1.c
     :language: c
+    :linenos:
     :caption: Enlarge existing block
 
 When executed on test machine, it prints:
@@ -205,6 +211,7 @@ When executed on test machine, it prints:
 
 .. literalinclude:: ../examples_src/example_realloc_enlarge_2.c
     :language: c
+    :linenos:
     :caption: Enlarge existing block
 
 When executed on test machine, it prints:
@@ -246,6 +253,7 @@ Initial state ``3`` is generated using C code:
 
 .. literalinclude:: ../examples_src/example_realloc_enlarge_3.c
     :language: c
+    :linenos:
     :caption: Initial state of blocks within memory
 
 When executed on test machine, it prints:
@@ -264,6 +272,7 @@ When executed on test machine, it prints:
   
   .. literalinclude:: ../examples_src/example_realloc_enlarge_3a.c
     :language: c
+    :linenos:
     :caption: Enlarge of existing block for case 3A
 
   * When executed on test machine, it prints:
@@ -279,6 +288,7 @@ When executed on test machine, it prints:
   
   .. literalinclude:: ../examples_src/example_realloc_enlarge_3b.c
     :language: c
+    :linenos:
     :caption: Enlarge of existing block for case 3B
 
   - When executed on test machine, it prints:
@@ -297,6 +307,7 @@ When executed on test machine, it prints:
   
   .. literalinclude:: ../examples_src/example_realloc_enlarge_3c.c
     :language: c
+    :linenos:
     :caption: Enlarge of existing block for case 3C
 
   * When executed on test machine, it prints:
@@ -312,6 +323,7 @@ When executed on test machine, it prints:
   
   .. literalinclude:: ../examples_src/example_realloc_enlarge_3d.c
     :language: c
+    :linenos:
     :caption: Enlarge of existing block for case 3D
 
   * When executed on test machine, it prints:
@@ -339,6 +351,7 @@ Initial state ``3`` is generated using C code:
 
 .. literalinclude:: ../examples_src/example_realloc_enlarge_full.c
     :language: c
+    :linenos:
     :caption: Full test code with asserts
 
 When executed on test machine, it prints:
