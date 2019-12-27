@@ -1,4 +1,4 @@
-/**	
+/**
  * \file            lwmem.c
  * \brief           Lightweight dynamic memory manager
  */
@@ -666,9 +666,9 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
             /*
              * If memmove overwrites metadata of current block (when shifting content up),
              * it is not an issue as we know its size (block_size) and next is already NULL.
-			 *
-			 * Memmove must be used to guarantee move of data as addresses + their sizes may overlap
-			 *
+             *
+             * Memmove must be used to guarantee move of data as addresses + their sizes may overlap
+             *
              * Metadata of "prev" are not modified during memmove
              */
             LWMEM_MEMMOVE(new_data_ptr, old_data_ptr, block_size);
@@ -702,9 +702,9 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
             /*
              * If memmove overwrites metadata of current block (when shifting content up),
              * it is not an issue as we know its size (block_size) and next is already NULL.
-			 *
-			 * Memmove must be used to guarantee move of data as addresses + their sizes may overlap
-			 *
+             *
+             * Memmove must be used to guarantee move of data as addresses + their sizes may overlap
+             *
              * Metadata of "prev" are not modified during memmove
              */
             LWMEM_MEMMOVE(new_data_ptr, old_data_ptr, block_size);  /* Copy old buffer size to new location */

@@ -1,4 +1,4 @@
-/**	
+/**
  * \file            lwmem.c
  * \brief           Lightweight dynamic memory manager
  */
