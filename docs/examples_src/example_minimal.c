@@ -1,7 +1,5 @@
 #include "lwmem/lwmem.h"
 
-void* ptr;
-
 /* Create regions, address and length of regions */
 static
 lwmem_region_t regions[] = {
@@ -15,12 +13,17 @@ lwmem_region_t regions[] = {
 /* Assign regions for manager */
 lwmem_assignmem(regions, sizeof(regions) / sizeof(regions[0]));
 
-ptr = lwmem_malloc(8);                          /* Allocate 8 bytes of memory */
+/* Usage in program... */
+
+void* ptr;
+/* Allocate 8 bytes of memory */
+ptr = lwmem_malloc(8);
 if (ptr != NULL) {
     /* Allocation successful */
 }
 
-/* Later... */                                  /* Free allocated memory */
+/* Later... */                                  
+/* Free allocated memory when not used */
 lwmem_free(ptr);
 ptr = NULL;
 /* .. or */
