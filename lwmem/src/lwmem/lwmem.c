@@ -156,7 +156,7 @@ typedef struct lwmem_block {
 } lwmem_block_t;
 
 /**
- * \brief           Lwmem main structure
+ * \brief           LwMEM main structure
  */
 typedef struct lwmem {
     lwmem_block_t start_block;                  /*!< Holds beginning of memory allocation regions */
@@ -169,7 +169,7 @@ typedef struct lwmem {
 } lwmem_t;
 
 /**
- * \brief           Lwmem data
+ * \brief           LwMEM data
  */
 static lwmem_t lwmem;
 #if LWMEM_CFG_OS || __DOXYGEN__
@@ -259,7 +259,7 @@ prv_insert_free_block(lwmem_block_t* nb) {
          */
     }
 
-    /* 
+    /*
      * Check if new block and next of previous create big contiguous block
      * Do not merge with "end of region" indication (commented part of if statement)
      */
@@ -342,16 +342,54 @@ prv_alloc(const LWMEM_PREF(region_t)* region, const size_t size) {
     const size_t final_size = LWMEM_ALIGN(size) + LWMEM_BLOCK_META_SIZE;
 
     /* Check if initialized and if size is in the limits */
-    if (lwmem.end_block == NULL || final_size == LWMEM_BLOCK_META_SIZE || (final_size & LWMEM_ALLOC_BIT)) {
+    if (lwmem.end_block == NULL || final_size == LWMEM_BLOCK_META_SIZE || (final_size & LWMEM_ALLOC_BIT) > 0) {
         return NULL;
     }
 
-    /* Try to find first block with at least `size` bytes of available memory */
-    for (prev = &lwmem.start_block, curr = prev->next;  /* Start from very beginning and set curr as first empty block */
-        curr != NULL && curr->size < final_size;/* Loop until block size is smaller than requested */
-        prev = curr, curr = curr->next) {       /* Go to next free block */
-        if (curr->next == NULL || curr == lwmem.end_block) {/* If no more blocks available */
-            return NULL;                        /* No sufficient memory available to allocate block of memory */
+    /* Set default values */
+    prev = &lwmem.start_block;                  /* Previous is set as pure start block which is always entry point */
+    curr = prev->next;                          /* Curr represents first actual free block */
+
+    /*
+     * If region is not set to NULL,
+     * request for memory allocation came from specific region:
+     *
+     * - Start at the beginning like normal (from very first region)
+     * - Loop until free block is between region start addr and its size
+     */
+    if (region != NULL) {
+        unsigned char* region_start_addr;
+        size_t region_size;
+
+        /* Get data about region */
+        if (!prv_get_region_addr_size(region, &region_start_addr, &region_size)) {
+            return NULL;
+        }
+
+        for (; curr != NULL; prev = curr, curr = curr->next) {
+            /* Check bounds */
+            if (curr->next == NULL || curr == lwmem.end_block) {
+                return NULL;
+            }
+            if ((unsigned char*)curr < (unsigned char *)region_start_addr) {     /* Check if we reached region */
+                continue;
+            }
+            if ((unsigned char*)curr >= (unsigned char *)(region_start_addr + region_size)) {   /* Check if we are out already */
+                return NULL;
+            }
+            if (curr->size >= final_size) {
+                break;                          /* Free block identified */
+            }
+        }
+    } else {
+        /*
+         * Try to find first block with at least `size` bytes of available memory
+         * Loop until size of current block is smaller than requested final size
+         */
+        for (; curr != NULL && curr->size < final_size; prev = curr, curr = curr->next) {
+            if (curr->next == NULL || curr == lwmem.end_block) {/* If no more blocks available */
+                return NULL;                    /* No sufficient memory available to allocate block of memory */
+            }
         }
     }
 
@@ -1011,7 +1049,6 @@ void
 lwmem_debug_print(unsigned char print_alloc, unsigned char print_free) {
     size_t block_size;
     lwmem_block_t* block;
-
 
     printf("|-------|------------------|--------|------|------------------|-----------------|\r\n");
     printf("| Block |          Address | IsFree | Size | MaxUserAllocSize | Meta            |\r\n");

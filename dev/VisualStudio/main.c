@@ -9,7 +9,8 @@
 uint8_t mem1[1024];
 lwmem_region_t
 regions[] = {
-    { mem1, sizeof(mem1) },
+    { mem1, sizeof(mem1) / 2 },
+    { mem1 + sizeof(mem1) / 2, sizeof(mem1) / 2 },
 };
 
 #define ASSERT(x)           do {        \
@@ -22,7 +23,7 @@ regions[] = {
 
 /* For debug purposes */
 lwmem_region_t* regions_used;
-size_t regions_count = 1;       /* Use only 1 region for debug purposes of non-free areas */
+size_t regions_count = 4;       /* Use only 1 region for debug purposes of non-free areas */
 
 int
 main(void) {
@@ -50,6 +51,13 @@ main(void) {
     lwmem_debug_print(1, 1);
     printf("Debug above is effectively state 3\r\n");
     lwmem_debug_save_state();       /* Every restore operations rewinds here */
+
+    ptr1 = lwmem_malloc_from(&regions_used[2], 16);
+    lwmem_debug_print(1, 1);
+    ptr1 = lwmem_realloc_from(&regions_used[2], ptr1, 24);
+    lwmem_debug_print(1, 1);
+
+    return 0;
 
     /* We always try to reallocate pointer ptr2 */
 
