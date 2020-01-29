@@ -5,7 +5,6 @@
 
 #define ARRSIZE(x)              (sizeof(x) / (sizeof((x)[0])))
 
-
 /* Define regions in increasing order */
 uint8_t mem1[1024];
 lwmem_region_t
