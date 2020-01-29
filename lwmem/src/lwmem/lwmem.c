@@ -870,7 +870,7 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
  * Function behaves differently, depends on input parameter of `ptr` and `size`:
  *
  *  - `ptr == NULL; size == 0`: Function returns `NULL`, no memory is allocated or freed
- *  - `ptr == NULL; size > 0`: Function tries to allocate new block of memory with `size` length, equivalent to `malloc(size)`
+ *  - `ptr == NULL; size > 0`: Function tries to allocate new block of memory with `size` length, equivalent to `malloc(region, size)`
  *  - `ptr != NULL; size == 0`: Function frees memory, equivalent to `free(ptr)`
  *  - `ptr != NULL; size > 0`: Function tries to allocate new memory of copy content before returning pointer on success
  *
@@ -927,6 +927,53 @@ LWMEM_PREF(realloc_s)(void** const ptr, const size_t size) {
     }
     
     new_ptr = LWMEM_PREF(realloc)(*ptr, size);  /* Try to reallocate existing pointer */
+    if (new_ptr != NULL) {
+        *ptr = new_ptr;
+    } else if (size == 0) {                     /* size == 0 means free input memory */
+        *ptr = NULL;
+        return 1;
+    }
+    return new_ptr != NULL;
+}
+
+/**
+ * \brief           Safe version of classic realloc function from specific region
+ *
+ * It is advised to use this function when reallocating memory.
+ * After memory is reallocated, input pointer automatically points to new memory
+ * to prevent use of dangling pointers.
+ *
+ * Function behaves differently, depends on input parameter of `ptr` and `size`:
+ *
+ *  - `ptr == NULL`: Invalid input, function returns `0`
+ *  - `*ptr == NULL; size == 0`: Function returns `0`, no memory is allocated or freed
+ *  - `*ptr == NULL; size > 0`: Function tries to allocate new block of memory with `size` length, equivalent to `malloc(region, size)`
+ *  - `*ptr != NULL; size == 0`: Function frees memory, equivalent to `free(ptr)`, sets input pointer pointing to `NULL`
+ *  - `*ptr != NULL; size > 0`: Function tries to reallocate existing pointer with new size and copy content to new block
+ *
+ * \param[in]       region: Pointer to region to allocate from.
+ *                      Set to `NULL` for any region
+ * \param[in]       ptr: Pointer to pointer to allocated memory. Must not be set to `NULL`.
+ *                      If reallocation is successful, it modified where pointer points to,
+ *                      or sets it to `NULL` in case of `free` operation
+ * \param[in]       size: New requested size
+ * \return          `1` if successfully reallocated, `0` otherwise
+ * \note            This function is thread safe when \ref LWMEM_CFG_OS is enabled
+ */
+unsigned char
+LWMEM_PREF(realloc_from_s)(const LWMEM_PREF(region_t)* region, void** const ptr, const size_t size) {
+    void* new_ptr;
+
+    /*
+     * Input pointer must not be NULL otherwise,
+     * in case of successful allocation, we have memory leakage
+     * aka. allocated memory where noone is pointing to it
+     */
+    if (ptr == NULL) {
+        return 0;
+    }
+    
+    new_ptr = LWMEM_PREF(realloc_from)(region, *ptr, size); /* Try to reallocate existing pointer */
     if (new_ptr != NULL) {
         *ptr = new_ptr;
     } else if (size == 0) {                     /* size == 0 means free input memory */
