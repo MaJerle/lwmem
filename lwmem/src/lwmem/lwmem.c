@@ -45,16 +45,6 @@
  */
 #define LWMEM_PREF(x)                   lwmem_ ## x
 
-/**
- * \brief           Number of bits to align memory address and size.
- *
- * Most CPUs do not offer unaligned memory access (Cortex-M0 as an example)
- * therefore it is important to have alignment.
- *
- * \note            This value can be a power of `2`. Usually alignment of `4` bytes fits to all processors.
- */
-#define LWMEM_ALIGN_NUM                 ((size_t)4)
-
 #define LWMEM_MEMSET                    memset
 #define LWMEM_MEMCPY                    memcpy
 #define LWMEM_MEMMOVE                   memmove
@@ -63,12 +53,12 @@
 /**
  * \brief           Transform alignment number (power of `2`) to bits
  */
-#define LWMEM_ALIGN_BITS                ((size_t)(LWMEM_ALIGN_NUM - 1))
+#define LWMEM_ALIGN_BITS                ((size_t)(((size_t)LWMEM_CFG_ALIGN_NUM) - 1))
 
 /**
  * \brief           Aligns input value to next alignment bits
  *
- * As an example, when \ref LWMEM_ALIGN_NUM is set to `4`:
+ * As an example, when \ref LWMEM_CFG_ALIGN_NUM is set to `4`:
  *
  *  - Input: `0`; Output: `0`
  *  - Input: `1`; Output: `4`
@@ -367,7 +357,7 @@ LWMEM_PREF(assignmem)(const LWMEM_PREF(region_t)* regions, const size_t len) {
     lwmem_block_t* first_block, *prev_end_block;
 
     if (lwmem.end_block != NULL                 /* Init function may only be called once */
-        || (LWMEM_ALIGN_NUM & (LWMEM_ALIGN_NUM - 1))/* Must be power of 2 */
+        || (((size_t)LWMEM_CFG_ALIGN_NUM) & (((size_t)LWMEM_CFG_ALIGN_NUM) - 1))/* Must be power of 2 */
         || regions == NULL || len == 0
 #if LWMEM_CFG_OS
         || lwmem_sys_mutex_isvalid(&mutex)      /* Check if mutex valid already */
@@ -413,7 +403,7 @@ LWMEM_PREF(assignmem)(const LWMEM_PREF(region_t)* regions, const size_t len) {
          */
         mem_start_addr = regions->start_addr;
         if (((size_t)mem_start_addr) & LWMEM_ALIGN_BITS) {  /* Check alignment boundary */
-            mem_start_addr += LWMEM_ALIGN_NUM - ((size_t)mem_start_addr & LWMEM_ALIGN_BITS);
+            mem_start_addr += ((size_t)LWMEM_CFG_ALIGN_NUM) - ((size_t)mem_start_addr & LWMEM_ALIGN_BITS);
             mem_size -= (size_t)(mem_start_addr - LWMEM_TO_BYTE_PTR(regions->start_addr));
         }
         

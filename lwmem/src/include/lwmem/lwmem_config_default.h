@@ -65,6 +65,17 @@ extern "C" {
 #endif
 
 /**
+ * \brief           Number of bits to align memory address and memory size
+ *
+ * Some CPUs do not offer unaligned memory access (Cortex-M0 as an example)
+ * therefore it is important to have alignment of data addresses and potentialy length of data
+ *
+ * \note            This value must be a power of `2` for number of bytes.
+ *                  Usually alignment of `4` bytes fits to all processors.
+ */
+#define LWMEM_CFG_ALIGN_NUM                     ((size_t)4)
+
+/**
  * \}
  */
 
