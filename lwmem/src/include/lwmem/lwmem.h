@@ -75,6 +75,11 @@ unsigned char   LWMEM_PREF(realloc_s)(void** const ptr, const size_t size);
 void            LWMEM_PREF(free)(void* const ptr);
 void            LWMEM_PREF(free_s)(void** const ptr);
 
+void *          LWMEM_PREF(malloc_from)(const LWMEM_PREF(region_t)* region, const size_t size);
+void *          LWMEM_PREF(calloc_from)(const LWMEM_PREF(region_t)* region, const size_t nitems, const size_t size);
+void *          LWMEM_PREF(realloc_from)(const LWMEM_PREF(region_t)* region, void* const ptr, const size_t size);
+unsigned char   LWMEM_PREF(realloc_from_s)(const LWMEM_PREF(region_t)* region, void** const ptr, const size_t size);
+
 #if defined(LWMEM_DEV) && !__DOXYGEN__
 unsigned char lwmem_debug_create_regions(LWMEM_PREF(region_t)** regs_out, size_t count, size_t size);
 void    lwmem_debug_save_state(void);
