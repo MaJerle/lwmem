@@ -56,6 +56,8 @@ main(void) {
     lwmem_debug_print(1, 1);
     ptr1 = lwmem_realloc_from(&regions_used[2], ptr1, 24);
     lwmem_debug_print(1, 1);
+    lwmem_free(ptr1);
+    lwmem_debug_print(1, 1);
 
     return 0;
 
