@@ -38,17 +38,9 @@
 #include "system/lwmem_sys.h"
 #endif /* LWMEM_CFG_OS */
 
-/* --- Memory unique part starts --- */
-/* Prefix for all buffer functions and typedefs */
-/**
- * \brief           Memory function/typedef prefix string
- */
-#define LWMEM_PREF(x)                   lwmem_ ## x
-
 #define LWMEM_MEMSET                    memset
 #define LWMEM_MEMCPY                    memcpy
 #define LWMEM_MEMMOVE                   memmove
-/* --- Memory unique part ends --- */
 
 /**
  * \brief           Transform alignment number (power of `2`) to bits
@@ -125,56 +117,36 @@
 #define LWMEM_BLOCK_MIN_SIZE            (LWMEM_BLOCK_META_SIZE)
 
 /**
+ * \brief           Get lwmem instance based on user input
+ * \param[in]       _lw_: LwMEM instance
+ */
+#define LWMEM_GET_LW(_lw_)              ((_lw_) != NULL ? (_lw_) : (&lwmem_default))
+
+/**
  * \brief           Gets block before input block (marked as prev) and its previous free block
  * \param[in]       in_b: Input block to find previous and its previous
  * \param[in]       in_pp: Previous previous of input block
  * \param[in]       in_p: Previous of input block
  */
-#define LWMEM_GET_PREV_CURR_OF_BLOCK(in_b, in_pp, in_p) do {            \
-    for ((in_pp) = NULL, (in_p) = &lwmem.start_block;                   \
+#define LWMEM_GET_PREV_CURR_OF_BLOCK(_lw_, in_b, in_pp, in_p) do {      \
+    for ((in_pp) = NULL, (in_p) = &(LWMEM_GET_LW(_lw_)->start_block);  \
         (in_p) != NULL && (in_p)->next < (in_b);                        \
         (in_pp) = (in_p), (in_p) = (in_p)->next                         \
     ) {}                                                                \
 } while (0)
 
 #if LWMEM_CFG_OS
-#define LWMEM_PROTECT()         lwmem_sys_mutex_wait(&mutex)
-#define LWMEM_UNPROTECT()       lwmem_sys_mutex_release(&mutex)
+#define LWMEM_PROTECT(lw)         lwmem_sys_mutex_wait(&(LWMEM_GET_LW(lw)->mutex))
+#define LWMEM_UNPROTECT(lw)       lwmem_sys_mutex_release(&(LWMEM_GET_LW(lw)->mutex))
 #else /* LWMEM_CFG_OS */
-#define LWMEM_PROTECT()
-#define LWMEM_UNPROTECT()
+#define LWMEM_PROTECT(lw)
+#define LWMEM_UNPROTECT(lw)
 #endif /* !LWMEM_CFG_OS */
-
-/**
- * \brief           Memory block structure
- */
-typedef struct lwmem_block {
-    struct lwmem_block* next;                   /*!< Next free memory block on linked list.
-                                                        Set to \ref LWMEM_BLOCK_ALLOC_MARK when block is allocated and in use */
-    size_t size;                                /*!< Size of block. MSB bit is set to `1` when block is allocated and in use,
-                                                        or `0` when block is free */
-} lwmem_block_t;
-
-/**
- * \brief           LwMEM main structure
- */
-typedef struct lwmem {
-    lwmem_block_t start_block;                  /*!< Holds beginning of memory allocation regions */
-    lwmem_block_t* end_block;                   /*!< Pointer to the last memory location in regions linked list */
-    size_t mem_available_bytes;                 /*!< Memory size available for allocation */
-    size_t mem_regions_count;                   /*!< Number of regions used for allocation */
-#if defined(LWMEM_DEV) && !__DOXYGEN__
-    lwmem_block_t start_block_first_use;        /*!< Value of start block for very first time */
-#endif /* defined(LWMEM_DEV) && !__DOXYGEN__ */
-} lwmem_t;
 
 /**
  * \brief           LwMEM data
  */
-static lwmem_t lwmem;
-#if LWMEM_CFG_OS || __DOXYGEN__
-static LWMEM_CFG_OS_MUTEX_HANDLE mutex;         /*!< System mutex */
-#endif /* LWMEM_CFG_OS || __DOXYGEN__ */
+static lwmem_t lwmem_default;
 
 /**
  * \brief           Get region aligned start address and aligned size
@@ -184,7 +156,7 @@ static LWMEM_CFG_OS_MUTEX_HANDLE mutex;         /*!< System mutex */
  * \return          `1` if region valid, `0` otherwise
  */
 static unsigned char
-prv_get_region_addr_size(const LWMEM_PREF(region_t)* region, unsigned char** msa,  size_t* ms) {
+prv_get_region_addr_size(const lwmem_region_t* region, unsigned char** msa,  size_t* ms) {
     size_t mem_size;
     unsigned char* mem_start_addr;
 
@@ -226,14 +198,14 @@ prv_get_region_addr_size(const LWMEM_PREF(region_t)* region, unsigned char** msa
  * \param[in]       nb: New free block to insert into linked list
  */
 static void
-prv_insert_free_block(lwmem_block_t* nb) {
+prv_insert_free_block(lwmem_t* lw, lwmem_block_t* nb) {
     lwmem_block_t* prev;
 
     /* 
      * Try to find position to put new block in-between
      * Search until all free block addresses are lower than entry block
      */
-    for (prev = &lwmem.start_block; prev != NULL && prev->next < nb; prev = prev->next) {}
+    for (prev = &(LWMEM_GET_LW(lw)->start_block); prev != NULL && prev->next < nb; prev = prev->next) {}
 
     /* This is hard error with wrong memory usage */
     if (prev == NULL) {
@@ -265,8 +237,8 @@ prv_insert_free_block(lwmem_block_t* nb) {
      */
     if (prev->next != NULL && prev->next->size > 0  /* Do not remove "end of region" indicator in each region */
         && (LWMEM_TO_BYTE_PTR(nb) + nb->size) == LWMEM_TO_BYTE_PTR(prev->next)) {
-        if (prev->next == lwmem.end_block) {    /* Does it points to the end? */
-            nb->next = lwmem.end_block;         /* Set end block pointer */
+        if (prev->next == LWMEM_GET_LW(lw)->end_block) {/* Does it points to the end? */
+            nb->next = LWMEM_GET_LW(lw)->end_block; /* Set end block pointer */
         } else {
             nb->size += prev->next->size;       /* Expand of current block for size of next free block which is right behind new block */
             nb->next = prev->next->next;        /* Next free is pointed to the next one of previous next */
@@ -291,7 +263,7 @@ prv_insert_free_block(lwmem_block_t* nb) {
  * \return          `1` if block splitted, `0` otherwise
  */
 static unsigned char
-prv_split_too_big_block(lwmem_block_t* block, size_t new_block_size) {
+prv_split_too_big_block(lwmem_t* lw, lwmem_block_t* block, size_t new_block_size) {
     lwmem_block_t* next;
     size_t block_size, is_alloc_bit;
     unsigned char success = 0;
@@ -309,8 +281,8 @@ prv_split_too_big_block(lwmem_block_t* block, size_t new_block_size) {
         next->size = block_size - new_block_size;   /* Modify block data */
         block->size = new_block_size;           /* Current size is now smaller */
 
-        lwmem.mem_available_bytes += next->size;/* Increase available bytes by new block size */
-        prv_insert_free_block(next);            /* Add new block to the free list */
+        LWMEM_GET_LW(lw)->mem_available_bytes += next->size;/* Increase available bytes by new block size */
+        prv_insert_free_block(lw, next);        /* Add new block to the free list */
 
         success = 1;
     } else {
@@ -334,7 +306,7 @@ prv_split_too_big_block(lwmem_block_t* block, size_t new_block_size) {
  * \return          Pointer to allocated memory, `NULL` otherwise
  */
 static void *
-prv_alloc(const LWMEM_PREF(region_t)* region, const size_t size) {
+prv_alloc(lwmem_t* lw, const lwmem_region_t* region, const size_t size) {
     lwmem_block_t* prev, *curr;
     void* retval = NULL;
 
@@ -342,12 +314,12 @@ prv_alloc(const LWMEM_PREF(region_t)* region, const size_t size) {
     const size_t final_size = LWMEM_ALIGN(size) + LWMEM_BLOCK_META_SIZE;
 
     /* Check if initialized and if size is in the limits */
-    if (lwmem.end_block == NULL || final_size == LWMEM_BLOCK_META_SIZE || (final_size & LWMEM_ALLOC_BIT) > 0) {
+    if (LWMEM_GET_LW(lw)->end_block == NULL || final_size == LWMEM_BLOCK_META_SIZE || (final_size & LWMEM_ALLOC_BIT) > 0) {
         return NULL;
     }
 
     /* Set default values */
-    prev = &lwmem.start_block;                  /* Previous is set as pure start block which is always entry point */
+    prev = &(LWMEM_GET_LW(lw)->start_block);    /* Use pointer from custom lwmem block */
     curr = prev->next;                          /* Curr represents first actual free block */
 
     /*
@@ -366,9 +338,13 @@ prv_alloc(const LWMEM_PREF(region_t)* region, const size_t size) {
             return NULL;
         }
 
+        /*
+         * Scan all regions from lwmem and find first available block
+         * which is within address of region and is big enough
+         */
         for (; curr != NULL; prev = curr, curr = curr->next) {
             /* Check bounds */
-            if (curr->next == NULL || curr == lwmem.end_block) {
+            if (curr->next == NULL || curr == LWMEM_GET_LW(lw)->end_block) {
                 return NULL;
             }
             if ((unsigned char*)curr < (unsigned char *)region_start_addr) {     /* Check if we reached region */
@@ -387,7 +363,7 @@ prv_alloc(const LWMEM_PREF(region_t)* region, const size_t size) {
          * Loop until size of current block is smaller than requested final size
          */
         for (; curr != NULL && curr->size < final_size; prev = curr, curr = curr->next) {
-            if (curr->next == NULL || curr == lwmem.end_block) {/* If no more blocks available */
+            if (curr->next == NULL || curr == LWMEM_GET_LW(lw)->end_block) {/* If no more blocks available */
                 return NULL;                    /* No sufficient memory available to allocate block of memory */
             }
         }
@@ -404,8 +380,8 @@ prv_alloc(const LWMEM_PREF(region_t)* region, const size_t size) {
 
     /* curr block is now removed from linked list */
     
-    lwmem.mem_available_bytes -= curr->size;    /* Decrease available bytes by allocated block size */
-    prv_split_too_big_block(curr, final_size);  /* Split block if it is too big */
+    LWMEM_GET_LW(lw)->mem_available_bytes -= curr->size;/* Decrease available bytes by allocated block size */
+    prv_split_too_big_block(lw, curr, final_size);  /* Split block if it is too big */
     LWMEM_BLOCK_SET_ALLOC(curr);                /* Set block as allocated */
 
     return retval;
@@ -416,13 +392,13 @@ prv_alloc(const LWMEM_PREF(region_t)* region, const size_t size) {
  * \param[in]       ptr: Input pointer to free
  */
 static void
-prv_free(void* const ptr) {
+prv_free(lwmem_t* lw, void* const ptr) {
     lwmem_block_t* const block = LWMEM_GET_BLOCK_FROM_PTR(ptr);
     if (LWMEM_BLOCK_IS_ALLOC(block)) {          /* Check if block is valid */
         block->size &= ~LWMEM_ALLOC_BIT;        /* Clear allocated bit indication */
 
-        lwmem.mem_available_bytes += block->size;   /* Increase available bytes */
-        prv_insert_free_block(block);           /* Put block back to list of free block */
+        LWMEM_GET_LW(lw)->mem_available_bytes += block->size;   /* Increase available bytes */
+        prv_insert_free_block(lw, block);       /* Put block back to list of free block */
     }
 }
 
@@ -446,7 +422,7 @@ prv_free(void* const ptr) {
  * \return          Pointer to allocated memory on success, `NULL` otherwise
  */
 void *
-prv_realloc(const LWMEM_PREF(region_t)* region, void* const ptr, const size_t size) {
+prv_realloc(lwmem_t* lw, const lwmem_region_t* region, void* const ptr, const size_t size) {
     lwmem_block_t* block, *prevprev, *prev;
     size_t block_size;                          /* Holds size of input block (ptr), including metadata size */
     const size_t final_size = LWMEM_ALIGN(size) + LWMEM_BLOCK_META_SIZE;/* Holds size of new requested block size, including metadata size */
@@ -455,12 +431,12 @@ prv_realloc(const LWMEM_PREF(region_t)* region, void* const ptr, const size_t si
     /* Check optional input parameters */
     if (size == 0) {
         if (ptr != NULL) {
-            prv_free(ptr);
+            prv_free(lw, ptr);
         }
         return NULL;
     }
     if (ptr == NULL) {
-        return prv_alloc(NULL, size);
+        return prv_alloc(lw, NULL, size);
     }
 
     /* Try to reallocate existing pointer */
@@ -498,7 +474,7 @@ prv_realloc(const LWMEM_PREF(region_t)* region, void* const ptr, const size_t si
          */
         if (final_size < block_size) {
             if ((block_size - final_size) >= LWMEM_BLOCK_MIN_SIZE) {
-                prv_split_too_big_block(block, final_size); /* Split block if it is too big */
+                prv_split_too_big_block(lw, block, final_size); /* Split block if it is too big */
             } else {
                 /*
                  * It is not possible to create new empty block at the end of input block
@@ -508,7 +484,7 @@ prv_realloc(const LWMEM_PREF(region_t)* region, void* const ptr, const size_t si
                  */
 
                 /* Find free blocks before input block */
-                LWMEM_GET_PREV_CURR_OF_BLOCK(block, prevprev, prev);
+                LWMEM_GET_PREV_CURR_OF_BLOCK(lw, block, prevprev, prev);
 
                 /* Check if current block and next free are connected */
                 if ((LWMEM_TO_BYTE_PTR(block) + block_size) == LWMEM_TO_BYTE_PTR(prev->next)
@@ -521,7 +497,7 @@ prv_realloc(const LWMEM_PREF(region_t)* region, void* const ptr, const size_t si
                     prev->next = (void *)(LWMEM_TO_BYTE_PTR(prev->next) - (block_size - final_size));
                     prev->next->size = tmp_size + (block_size - final_size);
                     prev->next->next = tmp_next;
-                    lwmem.mem_available_bytes += block_size - final_size;   /* Increase available bytes by increase of free block */
+                    LWMEM_GET_LW(lw)->mem_available_bytes += block_size - final_size;   /* Increase available bytes by increase of free block */
 
                     block->size = final_size;   /* Block size is requested size */
                 }
@@ -533,7 +509,7 @@ prv_realloc(const LWMEM_PREF(region_t)* region, void* const ptr, const size_t si
         /* New requested size is bigger than current block size is */
 
         /* Find last free (and its previous) block, located just before input block */
-        LWMEM_GET_PREV_CURR_OF_BLOCK(block, prevprev, prev);
+        LWMEM_GET_PREV_CURR_OF_BLOCK(lw, block, prevprev, prev);
 
         /* If entry could not be found, there is a hard error */
         if (prev == NULL) {
@@ -552,11 +528,11 @@ prv_realloc(const LWMEM_PREF(region_t)* region, void* const ptr, const size_t si
              * Merge blocks together by increasing current block with size of next free one
              * and remove next free from list of free blocks
              */
-            lwmem.mem_available_bytes -= prev->next->size;  /* For now decrease effective available bytes */
+            LWMEM_GET_LW(lw)->mem_available_bytes -= prev->next->size;  /* For now decrease effective available bytes */
             block->size = block_size + prev->next->size;/* Increase effective size of new block */
             prev->next = prev->next->next;      /* Set next to next's next, effectively remove expanded block from free list */
 
-            prv_split_too_big_block(block, final_size); /* Split block if it is too big */
+            prv_split_too_big_block(lw, block, final_size); /* Split block if it is too big */
             LWMEM_BLOCK_SET_ALLOC(block);       /* Set block as allocated */
             return ptr;                         /* Return existing pointer */
         }
@@ -582,12 +558,12 @@ prv_realloc(const LWMEM_PREF(region_t)* region, void* const ptr, const size_t si
              */
             LWMEM_MEMMOVE(new_data_ptr, old_data_ptr, block_size);
 
-            lwmem.mem_available_bytes -= prev->size;/* For now decrease effective available bytes */
+            LWMEM_GET_LW(lw)->mem_available_bytes -= prev->size;/* For now decrease effective available bytes */
             prev->size += block_size;           /* Increase size of input block size */
             prevprev->next = prev->next;        /* Remove prev from free list as it is now being used for allocation together with existing block */
             block = prev;                       /* Move block pointer to previous one */
 
-            prv_split_too_big_block(block, final_size); /* Split block if it is too big */
+            prv_split_too_big_block(lw, block, final_size); /* Split block if it is too big */
             LWMEM_BLOCK_SET_ALLOC(block);       /* Set block as allocated */
             return new_data_ptr;                /* Return new data ptr */
         }
@@ -618,12 +594,12 @@ prv_realloc(const LWMEM_PREF(region_t)* region, void* const ptr, const size_t si
              */
             LWMEM_MEMMOVE(new_data_ptr, old_data_ptr, block_size);  /* Copy old buffer size to new location */
 
-            lwmem.mem_available_bytes -= prev->size + prev->next->size; /* Decrease effective available bytes for free blocks before and after input block */
+            LWMEM_GET_LW(lw)->mem_available_bytes -= prev->size + prev->next->size; /* Decrease effective available bytes for free blocks before and after input block */
             prev->size += block_size + prev->next->size;/* Increase size of new block by size of 2 free blocks */
             prevprev->next = prev->next->next;  /* Remove free block before current one and block after current one from linked list (remove 2) */
             block = prev;                       /* Previous block is now current */
 
-            prv_split_too_big_block(block, final_size); /* Split block if it is too big */
+            prv_split_too_big_block(lw, block, final_size); /* Split block if it is too big */
             LWMEM_BLOCK_SET_ALLOC(block);       /* Set block as allocated */
             return new_data_ptr;                /* Return new data ptr */
         }
@@ -641,11 +617,11 @@ prv_realloc(const LWMEM_PREF(region_t)* region, void* const ptr, const size_t si
      *
      * Final solution is to find completely new empty block of sufficient size and copy content from old one to new one
      */
-    retval = prv_alloc(NULL, size);             /* Try to allocate new block */
+    retval = prv_alloc(lw, NULL, size);         /* Try to allocate new block */
     if (retval != NULL) {
         block_size = (block->size & ~LWMEM_ALLOC_BIT) - LWMEM_BLOCK_META_SIZE;  /* Get application size from input pointer */
         LWMEM_MEMCPY(retval, ptr, size > block_size ? block_size : size);   /* Copy content to new allocated block */
-        prv_free(ptr);                          /* Free input pointer */
+        prv_free(lw, ptr);                      /* Free input pointer */
     }
     return retval;
 }
@@ -660,23 +636,23 @@ prv_realloc(const LWMEM_PREF(region_t)* region, void* const ptr, const size_t si
  *                  It must be called only once to setup memory regions
  */
 size_t
-LWMEM_PREF(assignmem)(const LWMEM_PREF(region_t)* regions, const size_t len) {
+lwmem_assignmem_ex(lwmem_t* lw, const lwmem_region_t* regions, const size_t len) {
     unsigned char* mem_start_addr;
     size_t mem_size;
     lwmem_block_t* first_block, *prev_end_block;
 
-    if (lwmem.end_block != NULL                 /* Init function may only be called once */
+    if (LWMEM_GET_LW(lw)->end_block != NULL     /* Init function may only be called once */
         || (((size_t)LWMEM_CFG_ALIGN_NUM) & (((size_t)LWMEM_CFG_ALIGN_NUM) - 1))/* Must be power of 2 */
         || regions == NULL || len == 0
 #if LWMEM_CFG_OS
-        || lwmem_sys_mutex_isvalid(&mutex)      /* Check if mutex valid already */
+        || lwmem_sys_mutex_isvalid(&(LWMEM_GET_LW(lw)->mutex))  /* Check if mutex valid already */
 #endif /* LWMEM_CFG_OS */
         ) {       /* Check inputs */
         return 0;
     }
 
 #if LWMEM_CFG_OS
-    if (!lwmem_sys_mutex_create(&mutex)) {
+    if (!lwmem_sys_mutex_create(&(LWMEM_GET_LW(lw)->mutex))) {
         return 0;
     }
 #endif /* LWMEM_CFG_OS */
@@ -706,23 +682,23 @@ LWMEM_PREF(assignmem)(const LWMEM_PREF(region_t)* regions, const size_t len) {
          * In first indication application shall set start_block and never again
          * end_block value holds
          */
-        if (lwmem.end_block == NULL) {
+        if (LWMEM_GET_LW(lw)->end_block == NULL) {
             /*
              * Next entry of start block is first region
              * It points to beginning of region data
              * In the later step(s) first block is manually set on top of memory region
              */
-            lwmem.start_block.next = (void *)mem_start_addr;
-            lwmem.start_block.size = 0;         /* Size of dummy start block is zero */
+            LWMEM_GET_LW(NULL)->start_block.next = (void *)mem_start_addr;
+            LWMEM_GET_LW(NULL)->start_block.size = 0;   /* Size of dummy start block is zero */
         }
 
         /* Save current end block status as it is used later for linked list insertion */
-        prev_end_block = lwmem.end_block;
+        prev_end_block = LWMEM_GET_LW(lw)->end_block;
 
         /* Put end block to the end of the region with size = 0 */
-        lwmem.end_block = (void *)(mem_start_addr + mem_size - LWMEM_BLOCK_META_SIZE);
-        lwmem.end_block->next = NULL;           /* End block in region does not have next entry */
-        lwmem.end_block->size = 0;              /* Size of end block is zero */
+        LWMEM_GET_LW(lw)->end_block = (void *)(mem_start_addr + mem_size - LWMEM_BLOCK_META_SIZE);
+        LWMEM_GET_LW(lw)->end_block->next = NULL;   /* End block in region does not have next entry */
+        LWMEM_GET_LW(lw)->end_block->size = 0;  /* Size of end block is zero */
 
         /*
          * Create memory region first block.
@@ -733,7 +709,7 @@ LWMEM_PREF(assignmem)(const LWMEM_PREF(region_t)* regions, const size_t len) {
          * Actual maximal available size for application in the region is mem_size - 2 * MEM_BLOCK_META_SIZE
          */
         first_block = (void *)mem_start_addr;
-        first_block->next = lwmem.end_block;    /* Next block of first is last block */
+        first_block->next = LWMEM_GET_LW(lw)->end_block;/* Next block of first is last block */
         first_block->size = mem_size - LWMEM_BLOCK_META_SIZE;
 
         /* Check if previous regions exist by checking previous end block state */
@@ -741,16 +717,16 @@ LWMEM_PREF(assignmem)(const LWMEM_PREF(region_t)* regions, const size_t len) {
             prev_end_block->next = first_block; /* End block of previous region now points to start of current region */
         }
 
-        lwmem.mem_available_bytes += first_block->size; /* Increase number of available bytes */
-        ++lwmem.mem_regions_count;              /* Increase number of used regions */
+        LWMEM_GET_LW(lw)->mem_available_bytes += first_block->size; /* Increase number of available bytes */
+        ++LWMEM_GET_LW(lw)->mem_regions_count;  /* Increase number of used regions */
     }
 
 #if defined(LWMEM_DEV)
     /* Copy default state of start block */
-    LWMEM_MEMCPY(&lwmem.start_block_first_use, &lwmem.start_block, sizeof(lwmem.start_block));
+    LWMEM_MEMCPY(&lwmem_default.start_block_first_use, &lwmem_default.start_block, sizeof(lwmem_default.start_block));
 #endif /* defined(LWMEM_DEV) */
 
-    return lwmem.mem_regions_count;             /* Return number of regions used by manager */
+    return LWMEM_GET_LW(lw)->mem_regions_count; /* Return number of regions used by manager */
 }
 
 /**
@@ -761,28 +737,11 @@ LWMEM_PREF(assignmem)(const LWMEM_PREF(region_t)* regions, const size_t len) {
  * \note            This function is thread safe when \ref LWMEM_CFG_OS is enabled
  */
 void *
-LWMEM_PREF(malloc)(const size_t size) {
+lwmem_malloc_ex(lwmem_t* lw, const lwmem_region_t* region, const size_t size) {
     void* ptr;
-    LWMEM_PROTECT();
-    ptr = prv_alloc(NULL, size);
-    LWMEM_UNPROTECT();
-    return ptr;
-}
-
-/**
- * \brief           Allocate memory of requested size from specific region
- * \param[in]       region: Pointer to region to use for allocation area.
- *                      Set to `NULL` if not used
- * \param[in]       size: Number of bytes to allocate
- * \return          Pointer to allocated memory on success, `NULL` otherwise
- * \note            This function is thread safe when \ref LWMEM_CFG_OS is enabled
- */
-void *
-LWMEM_PREF(malloc_from)(const LWMEM_PREF(region_t)* region, const size_t size) {
-    void* ptr;
-    LWMEM_PROTECT();
-    ptr = prv_alloc(region, size);
-    LWMEM_UNPROTECT();
+    LWMEM_PROTECT(lw);
+    ptr = prv_alloc(lw, region, size);
+    LWMEM_UNPROTECT(lw);
     return ptr;
 }
 
@@ -798,68 +757,16 @@ LWMEM_PREF(malloc_from)(const LWMEM_PREF(region_t)* region, const size_t size) {
  * \note            This function is thread safe when \ref LWMEM_CFG_OS is enabled
  */
 void *
-LWMEM_PREF(calloc)(const size_t nitems, const size_t size) {
+lwmem_calloc_ex(lwmem_t* lw, const lwmem_region_t* region, const size_t nitems, const size_t size) {
     void* ptr;
     const size_t s = size * nitems;
 
-    LWMEM_PROTECT();
-    if ((ptr = prv_alloc(NULL, s)) != NULL) {
+    LWMEM_PROTECT(lw);
+    if ((ptr = prv_alloc(lw, region, s)) != NULL) {
         LWMEM_MEMSET(ptr, 0x00, s);
     }
-    LWMEM_UNPROTECT();
+    LWMEM_UNPROTECT(lw);
     return ptr;
-}
-
-/**
- * \brief           Allocate contiguous block of memory for requested number of items and its size from specific region.
- *
- * It resets allocated block of memory to zero if allocation is successful
- *
- * \param[in]       region: Pointer to region to use for allocation area.
- *                      Set to `NULL` if not used
- * \param[in]       nitems: Number of elements to be allocated
- * \param[in]       size: Size of each element, in units of bytes
- * \return          Pointer to allocated memory on success, `NULL` otherwise
- * \note            This function is thread safe when \ref LWMEM_CFG_OS is enabled
- */
-void *
-LWMEM_PREF(calloc_from)(const LWMEM_PREF(region_t)* region, const size_t nitems, const size_t size) {
-    void* ptr;
-    const size_t s = size * nitems;
-
-    LWMEM_PROTECT();
-    if ((ptr = prv_alloc(region, s)) != NULL) {
-        LWMEM_MEMSET(ptr, 0x00, s);
-    }
-    LWMEM_UNPROTECT();
-    return ptr;
-}
-
-/**
- * \brief           Reallocates already allocated memory with new size
- *
- * Function behaves differently, depends on input parameter of `ptr` and `size`:
- *
- *  - `ptr == NULL; size == 0`: Function returns `NULL`, no memory is allocated or freed
- *  - `ptr == NULL; size > 0`: Function tries to allocate new block of memory with `size` length, equivalent to `malloc(size)`
- *  - `ptr != NULL; size == 0`: Function frees memory, equivalent to `free(ptr)`
- *  - `ptr != NULL; size > 0`: Function tries to allocate new memory of copy content before returning pointer on success
- *
- * \note            Function declaration is in-line with standard C function `realloc`
- *
- * \param[in]       ptr: Memory block previously allocated with one of allocation functions.
- *                      It may be set to `NULL` to create new clean allocation
- * \param[in]       size: Size of new memory to reallocate
- * \return          Pointer to allocated memory on success, `NULL` otherwise
- * \note            This function is thread safe when \ref LWMEM_CFG_OS is enabled
- */
-void *
-LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
-    void* p;
-    LWMEM_PROTECT();
-    p = prv_realloc(NULL, ptr, size);
-    LWMEM_UNPROTECT();
-    return p;
 }
 
 /**
@@ -882,12 +789,12 @@ LWMEM_PREF(realloc)(void* const ptr, const size_t size) {
  * \return          Pointer to allocated memory on success, `NULL` otherwise
  * \note            This function is thread safe when \ref LWMEM_CFG_OS is enabled
  */
-void*
-LWMEM_PREF(realloc_from)(const LWMEM_PREF(region_t)* region, void* const ptr, const size_t size) {
+void *
+lwmem_realloc_ex(lwmem_t* lw, const lwmem_region_t* region, void* const ptr, const size_t size) {
     void* p;
-    LWMEM_PROTECT();
-    p = prv_realloc(region, ptr, size);
-    LWMEM_UNPROTECT();
+    LWMEM_PROTECT(lw);
+    p = prv_realloc(lw, region, ptr, size);
+    LWMEM_UNPROTECT(lw);
     return p;
 }
 
@@ -914,7 +821,7 @@ LWMEM_PREF(realloc_from)(const LWMEM_PREF(region_t)* region, void* const ptr, co
  * \note            This function is thread safe when \ref LWMEM_CFG_OS is enabled
  */
 unsigned char
-LWMEM_PREF(realloc_s)(void** const ptr, const size_t size) {
+lwmem_realloc_s_ex(lwmem_t* lw, const lwmem_region_t* region, void** const ptr, const size_t size) {
     void* new_ptr;
 
     /*
@@ -926,54 +833,7 @@ LWMEM_PREF(realloc_s)(void** const ptr, const size_t size) {
         return 0;
     }
     
-    new_ptr = LWMEM_PREF(realloc)(*ptr, size);  /* Try to reallocate existing pointer */
-    if (new_ptr != NULL) {
-        *ptr = new_ptr;
-    } else if (size == 0) {                     /* size == 0 means free input memory */
-        *ptr = NULL;
-        return 1;
-    }
-    return new_ptr != NULL;
-}
-
-/**
- * \brief           Safe version of classic realloc function from specific region
- *
- * It is advised to use this function when reallocating memory.
- * After memory is reallocated, input pointer automatically points to new memory
- * to prevent use of dangling pointers.
- *
- * Function behaves differently, depends on input parameter of `ptr` and `size`:
- *
- *  - `ptr == NULL`: Invalid input, function returns `0`
- *  - `*ptr == NULL; size == 0`: Function returns `0`, no memory is allocated or freed
- *  - `*ptr == NULL; size > 0`: Function tries to allocate new block of memory with `size` length, equivalent to `malloc(region, size)`
- *  - `*ptr != NULL; size == 0`: Function frees memory, equivalent to `free(ptr)`, sets input pointer pointing to `NULL`
- *  - `*ptr != NULL; size > 0`: Function tries to reallocate existing pointer with new size and copy content to new block
- *
- * \param[in]       region: Pointer to region to allocate from.
- *                      Set to `NULL` for any region
- * \param[in]       ptr: Pointer to pointer to allocated memory. Must not be set to `NULL`.
- *                      If reallocation is successful, it modified where pointer points to,
- *                      or sets it to `NULL` in case of `free` operation
- * \param[in]       size: New requested size
- * \return          `1` if successfully reallocated, `0` otherwise
- * \note            This function is thread safe when \ref LWMEM_CFG_OS is enabled
- */
-unsigned char
-LWMEM_PREF(realloc_from_s)(const LWMEM_PREF(region_t)* region, void** const ptr, const size_t size) {
-    void* new_ptr;
-
-    /*
-     * Input pointer must not be NULL otherwise,
-     * in case of successful allocation, we have memory leakage
-     * aka. allocated memory where noone is pointing to it
-     */
-    if (ptr == NULL) {
-        return 0;
-    }
-    
-    new_ptr = LWMEM_PREF(realloc_from)(region, *ptr, size); /* Try to reallocate existing pointer */
+    new_ptr = lwmem_realloc_ex(lw, region, *ptr, size); /* Try to reallocate existing pointer */
     if (new_ptr != NULL) {
         *ptr = new_ptr;
     } else if (size == 0) {                     /* size == 0 means free input memory */
@@ -990,10 +850,10 @@ LWMEM_PREF(realloc_from_s)(const LWMEM_PREF(region_t)* region, void** const ptr,
  * \note            This function is thread safe when \ref LWMEM_CFG_OS is enabled
  */
 void
-LWMEM_PREF(free)(void* const ptr) {
-    LWMEM_PROTECT();
-    prv_free(ptr);                              /* Free pointer */
-    LWMEM_UNPROTECT();
+lwmem_free_ex(lwmem_t* lw, void* const ptr) {
+    LWMEM_PROTECT(lw);
+    prv_free(lw, ptr);                          /* Free pointer */
+    LWMEM_UNPROTECT(lw);
 }
 
 /**
@@ -1008,11 +868,11 @@ LWMEM_PREF(free)(void* const ptr) {
  * \note            This function is thread safe when \ref LWMEM_CFG_OS is enabled
  */
 void
-LWMEM_PREF(free_s)(void** const ptr) {
+lwmem_free_s_ex(lwmem_t* lw, void** const ptr) {
     if (ptr != NULL && *ptr != NULL) {
-        LWMEM_PROTECT();
-        prv_free(*ptr);
-        LWMEM_UNPROTECT();
+        LWMEM_PROTECT(lw);
+        prv_free(lw, *ptr);
+        LWMEM_UNPROTECT(lw);
         *ptr = NULL;
     }
 }
@@ -1031,10 +891,10 @@ static lwmem_region_t* regions_orig;
 static lwmem_region_t* regions_temp;
 static size_t regions_count;
 
-static LWMEM_PREF(region_t) *
+static lwmem_region_t *
 create_regions(size_t count, size_t size) {
-    LWMEM_PREF(region_t)* regions;
-    LWMEM_PREF(region_t) tmp;
+    lwmem_region_t* regions;
+    lwmem_region_t tmp;
 
     /* Allocate pointer structure */
     regions = malloc(count * sizeof(*regions));
@@ -1069,7 +929,7 @@ static void
 print_block(size_t i, lwmem_block_t* block) {
     size_t is_free, block_size;
 
-    is_free = (block->size & LWMEM_ALLOC_BIT) == 0 && block != &lwmem.start_block_first_use && block->size > 0;
+    is_free = (block->size & LWMEM_ALLOC_BIT) == 0 && block != &lwmem_default.start_block_first_use && block->size > 0;
     block_size = block->size & ~LWMEM_ALLOC_BIT;
 
     printf("| %5d | %16p | %6d | %4d | %16d |",
@@ -1078,7 +938,7 @@ print_block(size_t i, lwmem_block_t* block) {
         (int)is_free,
         (int)block_size,
         (int)(is_free ? (block_size - LWMEM_BLOCK_META_SIZE) : 0));
-    if (block == &lwmem.start_block_first_use) {
+    if (block == &lwmem_default.start_block_first_use) {
         printf(" Start block     ");
     } else if (block_size == 0) {
         printf(" End of region   ");
@@ -1101,8 +961,8 @@ lwmem_debug_print(unsigned char print_alloc, unsigned char print_free) {
     printf("| Block |          Address | IsFree | Size | MaxUserAllocSize | Meta            |\r\n");
     printf("|-------|------------------|--------|------|------------------|-----------------|\r\n");
 
-    block = &lwmem.start_block_first_use;
-    print_block(0, &lwmem.start_block_first_use);
+    block = &lwmem_default.start_block_first_use;
+    print_block(0, &lwmem_default.start_block_first_use);
     printf("|-------|------------------|--------|------|------------------|-----------------|\r\n");
     for (size_t i = 0, j = 1; i < regions_count; ++i) {
         block = regions_orig[i].start_addr;
@@ -1139,7 +999,7 @@ lwmem_debug_create_regions(lwmem_region_t** regs_out, size_t count, size_t size)
 
 void
 lwmem_debug_save_state(void) {
-    memcpy(&lwmem_temp, &lwmem, sizeof(lwmem_temp));
+    memcpy(&lwmem_temp, &lwmem_default, sizeof(lwmem_temp));
     for (size_t i = 0; i < regions_count; ++i) {
         memcpy(regions_temp[i].start_addr, regions_orig[i].start_addr, regions_temp[i].size);
     }
@@ -1148,7 +1008,7 @@ lwmem_debug_save_state(void) {
 
 void
 lwmem_debug_restore_to_saved(void) {
-    memcpy(&lwmem, &lwmem_temp, sizeof(lwmem_temp));
+    memcpy(&lwmem_default, &lwmem_temp, sizeof(lwmem_temp));
     for (size_t i = 0; i < regions_count; ++i) {
         memcpy(regions_orig[i].start_addr, regions_temp[i].start_addr, regions_temp[i].size);
     }
