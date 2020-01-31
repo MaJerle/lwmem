@@ -1,6 +1,6 @@
 # Lightweight dynamic memory manager
 
-<h3><a href="http://docs.majerle.eu/projects/lwmem">Documentation</a></h3>
+<h3><a href="http://docs.majerle.eu/projects/lwmem/">Documentation</a></h3>
 
 ## Features
 
