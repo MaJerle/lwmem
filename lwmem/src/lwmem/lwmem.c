@@ -641,7 +641,7 @@ lwmem_assignmem_ex(lwmem_t* lw, const lwmem_region_t* regions, const size_t len)
     size_t mem_size;
     lwmem_block_t* first_block, *prev_end_block;
 
-    if (LWMEM_GET_LW(lw)->end_block != NULL     /* Init function may only be called once */
+    if (LWMEM_GET_LW(lw)->end_block != NULL     /* Init function may only be called once per lwmem instance */
         || (((size_t)LWMEM_CFG_ALIGN_NUM) & (((size_t)LWMEM_CFG_ALIGN_NUM) - 1))/* Must be power of 2 */
         || regions == NULL || len == 0
 #if LWMEM_CFG_OS
@@ -688,8 +688,8 @@ lwmem_assignmem_ex(lwmem_t* lw, const lwmem_region_t* regions, const size_t len)
              * It points to beginning of region data
              * In the later step(s) first block is manually set on top of memory region
              */
-            LWMEM_GET_LW(NULL)->start_block.next = (void *)mem_start_addr;
-            LWMEM_GET_LW(NULL)->start_block.size = 0;   /* Size of dummy start block is zero */
+            LWMEM_GET_LW(lw)->start_block.next = (void *)mem_start_addr;
+            LWMEM_GET_LW(lw)->start_block.size = 0;   /* Size of dummy start block is zero */
         }
 
         /* Save current end block status as it is used later for linked list insertion */
