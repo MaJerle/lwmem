@@ -198,7 +198,7 @@ prv_get_region_addr_size(const lwmem_region_t* region, unsigned char** msa,  siz
  * \param[in]       nb: New free block to insert into linked list
  */
 static void
-prv_insert_free_block(lwmem_t* lw, lwmem_block_t* nb) {
+prv_insert_free_block(lwmem_t* const lw, lwmem_block_t* nb) {
     lwmem_block_t* prev;
 
     /* 
@@ -263,7 +263,7 @@ prv_insert_free_block(lwmem_t* lw, lwmem_block_t* nb) {
  * \return          `1` if block splitted, `0` otherwise
  */
 static unsigned char
-prv_split_too_big_block(lwmem_t* lw, lwmem_block_t* block, size_t new_block_size) {
+prv_split_too_big_block(lwmem_t* const lw, lwmem_block_t* block, size_t new_block_size) {
     lwmem_block_t* next;
     size_t block_size, is_alloc_bit;
     unsigned char success = 0;
@@ -306,7 +306,7 @@ prv_split_too_big_block(lwmem_t* lw, lwmem_block_t* block, size_t new_block_size
  * \return          Pointer to allocated memory, `NULL` otherwise
  */
 static void *
-prv_alloc(lwmem_t* lw, const lwmem_region_t* region, const size_t size) {
+prv_alloc(lwmem_t* const lw, const lwmem_region_t* region, const size_t size) {
     lwmem_block_t* prev, *curr;
     void* retval = NULL;
 
@@ -392,7 +392,7 @@ prv_alloc(lwmem_t* lw, const lwmem_region_t* region, const size_t size) {
  * \param[in]       ptr: Input pointer to free
  */
 static void
-prv_free(lwmem_t* lw, void* const ptr) {
+prv_free(lwmem_t* const lw, void* const ptr) {
     lwmem_block_t* const block = LWMEM_GET_BLOCK_FROM_PTR(ptr);
     if (LWMEM_BLOCK_IS_ALLOC(block)) {          /* Check if block is valid */
         block->size &= ~LWMEM_ALLOC_BIT;        /* Clear allocated bit indication */
@@ -412,8 +412,6 @@ prv_free(lwmem_t* lw, void* const ptr) {
  *  - `ptr != NULL; size == 0`: Function frees memory, equivalent to `free(ptr)`
  *  - `ptr != NULL; size > 0`: Function tries to allocate new memory of copy content before returning pointer on success
  *
- * \note            Function declaration is in-line with standard C function `realloc`
- *
  * \param[in]       region: Pointer to region to allocate from.
  *                      Set to `NULL` for any region
  * \param[in]       ptr: Memory block previously allocated with one of allocation functions.
@@ -422,7 +420,7 @@ prv_free(lwmem_t* lw, void* const ptr) {
  * \return          Pointer to allocated memory on success, `NULL` otherwise
  */
 void *
-prv_realloc(lwmem_t* lw, const lwmem_region_t* region, void* const ptr, const size_t size) {
+prv_realloc(lwmem_t* const lw, const lwmem_region_t* region, void* const ptr, const size_t size) {
     lwmem_block_t* block, *prevprev, *prev;
     size_t block_size;                          /* Holds size of input block (ptr), including metadata size */
     const size_t final_size = LWMEM_ALIGN(size) + LWMEM_BLOCK_META_SIZE;/* Holds size of new requested block size, including metadata size */
@@ -636,7 +634,7 @@ prv_realloc(lwmem_t* lw, const lwmem_region_t* region, void* const ptr, const si
  *                  It must be called only once to setup memory regions
  */
 size_t
-lwmem_assignmem_ex(lwmem_t* lw, const lwmem_region_t* regions, const size_t len) {
+lwmem_assignmem_ex(lwmem_t* const lw, const lwmem_region_t* regions, const size_t len) {
     unsigned char* mem_start_addr;
     size_t mem_size;
     lwmem_block_t* first_block, *prev_end_block;
@@ -730,14 +728,17 @@ lwmem_assignmem_ex(lwmem_t* lw, const lwmem_region_t* regions, const size_t len)
 }
 
 /**
- * \brief           Allocate memory of requested size
- * \note            Function declaration is in-line with standard C function `malloc`
+ * \brief           Allocate memory of requested size in specific lwmem instance and optional region.
+ * \note            This is an extended malloc version function declaration to support advanced features
+ * \param[in]       lw: LwMEM instance. Set to `NULL` to use default instance
+ * \param[in]       region: Optional region instance within LwMEM instance to force allocation from.
+ *                      Set to `NULL` to use any region within LwMEM instance
  * \param[in]       size: Number of bytes to allocate
  * \return          Pointer to allocated memory on success, `NULL` otherwise
  * \note            This function is thread safe when \ref LWMEM_CFG_OS is enabled
  */
 void *
-lwmem_malloc_ex(lwmem_t* lw, const lwmem_region_t* region, const size_t size) {
+lwmem_malloc_ex(lwmem_t* const lw, const lwmem_region_t* region, const size_t size) {
     void* ptr;
     LWMEM_PROTECT(lw);
     ptr = prv_alloc(lw, region, size);
@@ -746,18 +747,22 @@ lwmem_malloc_ex(lwmem_t* lw, const lwmem_region_t* region, const size_t size) {
 }
 
 /**
- * \brief           Allocate contiguous block of memory for requested number of items and its size.
+ * \brief           Allocate contiguous block of memory for requested number of items and its size
+ *                  in specific lwmem instance and region.
  *
  * It resets allocated block of memory to zero if allocation is successful
- *
- * \note            Function declaration is in-line with standard C function `calloc`
+
+ * \note            This is an extended calloc version function declaration to support advanced features
+ * \param[in]       lw: LwMEM instance. Set to `NULL` to use default instance
+ * \param[in]       region: Optional region instance within LwMEM instance to force allocation from.
+ *                      Set to `NULL` to use any region within LwMEM instance
  * \param[in]       nitems: Number of elements to be allocated
  * \param[in]       size: Size of each element, in units of bytes
  * \return          Pointer to allocated memory on success, `NULL` otherwise
  * \note            This function is thread safe when \ref LWMEM_CFG_OS is enabled
  */
 void *
-lwmem_calloc_ex(lwmem_t* lw, const lwmem_region_t* region, const size_t nitems, const size_t size) {
+lwmem_calloc_ex(lwmem_t* const lw, const lwmem_region_t* region, const size_t nitems, const size_t size) {
     void* ptr;
     const size_t s = size * nitems;
 
@@ -770,7 +775,7 @@ lwmem_calloc_ex(lwmem_t* lw, const lwmem_region_t* region, const size_t nitems, 
 }
 
 /**
- * \brief           Reallocates already allocated memory with new size from specific region
+ * \brief           Reallocates already allocated memory with new size in specific lwmem instance and region.
  *
  * \note            This function may only be used with allocations returned by any of `_from` API functions
  *
@@ -781,8 +786,10 @@ lwmem_calloc_ex(lwmem_t* lw, const lwmem_region_t* region, const size_t nitems, 
  *  - `ptr != NULL; size == 0`: Function frees memory, equivalent to `free(ptr)`
  *  - `ptr != NULL; size > 0`: Function tries to allocate new memory of copy content before returning pointer on success
  *
+ * \param[in]       lw: LwMEM instance. Set to `NULL` to use default instance
  * \param[in]       region: Pointer to region to allocate from.
- *                      Set to `NULL` for any region
+ *                      Set to `NULL` to use any region within LwMEM instance.
+ *                      Instance must be the same as used during allocation procedure
  * \param[in]       ptr: Memory block previously allocated with one of allocation functions.
  *                      It may be set to `NULL` to create new clean allocation
  * \param[in]       size: Size of new memory to reallocate
@@ -790,7 +797,7 @@ lwmem_calloc_ex(lwmem_t* lw, const lwmem_region_t* region, const size_t nitems, 
  * \note            This function is thread safe when \ref LWMEM_CFG_OS is enabled
  */
 void *
-lwmem_realloc_ex(lwmem_t* lw, const lwmem_region_t* region, void* const ptr, const size_t size) {
+lwmem_realloc_ex(lwmem_t* const lw, const lwmem_region_t* region, void* const ptr, const size_t size) {
     void* p;
     LWMEM_PROTECT(lw);
     p = prv_realloc(lw, region, ptr, size);
@@ -799,11 +806,13 @@ lwmem_realloc_ex(lwmem_t* lw, const lwmem_region_t* region, void* const ptr, con
 }
 
 /**
- * \brief           Safe version of classic realloc function
+ * \brief           Safe version of realloc_ex function.
+ *
+ * After memory is reallocated, input pointer automatically points to new memory
+ * to prevent use of dangling pointers. When reallocation is not successful,
+ * original pointer is not modified and application still has control of it.
  *
  * It is advised to use this function when reallocating memory.
- * After memory is reallocated, input pointer automatically points to new memory
- * to prevent use of dangling pointers.
  *
  * Function behaves differently, depends on input parameter of `ptr` and `size`:
  *
@@ -813,6 +822,10 @@ lwmem_realloc_ex(lwmem_t* lw, const lwmem_region_t* region, void* const ptr, con
  *  - `*ptr != NULL; size == 0`: Function frees memory, equivalent to `free(ptr)`, sets input pointer pointing to `NULL`
  *  - `*ptr != NULL; size > 0`: Function tries to reallocate existing pointer with new size and copy content to new block
  *
+ * \param[in]       lw: LwMEM instance. Set to `NULL` to use default instance
+ * \param[in]       region: Pointer to region to allocate from.
+ *                      Set to `NULL` to use any region within LwMEM instance.
+ *                      Instance must be the same as used during allocation procedure
  * \param[in]       ptr: Pointer to pointer to allocated memory. Must not be set to `NULL`.
  *                      If reallocation is successful, it modified where pointer points to,
  *                      or sets it to `NULL` in case of `free` operation
@@ -821,7 +834,7 @@ lwmem_realloc_ex(lwmem_t* lw, const lwmem_region_t* region, void* const ptr, con
  * \note            This function is thread safe when \ref LWMEM_CFG_OS is enabled
  */
 unsigned char
-lwmem_realloc_s_ex(lwmem_t* lw, const lwmem_region_t* region, void** const ptr, const size_t size) {
+lwmem_realloc_s_ex(lwmem_t* const lw, const lwmem_region_t* region, void** const ptr, const size_t size) {
     void* new_ptr;
 
     /*
@@ -845,30 +858,36 @@ lwmem_realloc_s_ex(lwmem_t* lw, const lwmem_region_t* region, void** const ptr, 
 
 /**
  * \brief           Free previously allocated memory using one of allocation functions
- * \note            Function declaration is in-line with standard C function `free`
+ *                  in specific lwmem instance.
+ * \param[in]       lw: LwMEM instance. Set to `NULL` to use default instance.
+ *                      Instance must be the same as used during allocation procedure
+ * \note            This is an extended free version function declaration to support advanced features
  * \param[in]       ptr: Memory to free. `NULL` pointer is valid input
  * \note            This function is thread safe when \ref LWMEM_CFG_OS is enabled
  */
 void
-lwmem_free_ex(lwmem_t* lw, void* const ptr) {
+lwmem_free_ex(lwmem_t* const lw, void* const ptr) {
     LWMEM_PROTECT(lw);
-    prv_free(lw, ptr);                          /* Free pointer */
+    prv_free(lw, ptr);
     LWMEM_UNPROTECT(lw);
 }
 
 /**
  * \brief           Safe version of free function
  * 
- * It is advised to use this function when freeing memory.
  * After memory is freed, input pointer is safely set to `NULL`
  * to prevent use of dangling pointers.
  *
+ * It is advised to use this function when freeing memory.
+ *
+ * \param[in]       lw: LwMEM instance. Set to `NULL` to use default instance.
+ *                      Instance must be the same as used during allocation procedure
  * \param[in]       ptr: Pointer to pointer to allocated memory.
  *                  When set to non `NULL`, pointer is freed and set to `NULL`
  * \note            This function is thread safe when \ref LWMEM_CFG_OS is enabled
  */
 void
-lwmem_free_s_ex(lwmem_t* lw, void** const ptr) {
+lwmem_free_s_ex(lwmem_t* const lw, void** const ptr) {
     if (ptr != NULL && *ptr != NULL) {
         LWMEM_PROTECT(lw);
         prv_free(lw, *ptr);
