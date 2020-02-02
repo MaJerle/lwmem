@@ -8,6 +8,9 @@
     <Filter Include="Source Files\LWMEM">
       <UniqueIdentifier>{a9bad49b-d114-4596-8fe8-162c60f482ee}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Tests">
+      <UniqueIdentifier>{87f67bb1-45c3-4724-b7de-f1e8551453e3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.c">
@@ -18,6 +21,9 @@
     </ClCompile>
     <ClCompile Include="..\..\lwmem\src\system\lwmem_sys_win32.c">
       <Filter>Source Files\LWMEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\tests\lwmem_test.c">
+      <Filter>Source Files\Tests</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
