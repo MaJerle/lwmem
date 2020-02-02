@@ -647,7 +647,7 @@ lwmem_assignmem_ex(lwmem_t* const lw, const lwmem_region_t* regions, const size_
     lwmem_block_t* first_block, *prev_end_block;
 
     if (LWMEM_GET_LW(lw)->end_block != NULL     /* Init function may only be called once per lwmem instance */
-        || (((size_t)LWMEM_CFG_ALIGN_NUM) & (((size_t)LWMEM_CFG_ALIGN_NUM) - 1) > 0)/* Must be power of 2 */
+        || ((((size_t)LWMEM_CFG_ALIGN_NUM) & (((size_t)LWMEM_CFG_ALIGN_NUM) - 1)) > 0)  /* Must be power of 2 */
         || regions == NULL || len == 0
 #if LWMEM_CFG_OS
         || lwmem_sys_mutex_isvalid(&(LWMEM_GET_LW(lw)->mutex))  /* Check if mutex valid already */
