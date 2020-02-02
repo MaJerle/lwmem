@@ -1,5 +1,11 @@
 #include "lwmem/lwmem.h"
 
+/**
+ * \brief           Custom LwMEM instance
+ */
+static
+lwmem_t lw_custom;
+
 /*
  * \brief           Define regions for memory manager
  */
@@ -12,7 +18,5 @@ lwmem_region_t regions[] = {
 };
 
 /* Later in the initialization process */
-/* Assign regions for manager */
-lwmem_assignmem(regions, sizeof(regions) / sizeof(regions[0]));
-/* or */
-lwmem_assignmem_ex(NULL, regions, sizeof(regions) / sizeof(regions[0]));
+/* Assign regions for custom instance */
+lwmem_assignmem_ex(&lw_custom, regions, sizeof(regions) / sizeof(regions[0]));

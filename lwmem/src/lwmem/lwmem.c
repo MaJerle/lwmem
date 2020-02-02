@@ -124,6 +124,7 @@
 
 /**
  * \brief           Gets block before input block (marked as prev) and its previous free block
+ * \param[in]       _lw_: LwMEM instance. Set to `NULL` to use default instance
  * \param[in]       in_b: Input block to find previous and its previous
  * \param[in]       in_pp: Previous previous of input block
  * \param[in]       in_p: Previous of input block
@@ -195,6 +196,7 @@ prv_get_region_addr_size(const lwmem_region_t* region, unsigned char** msa,  siz
 
 /**
  * \brief           Insert free block to linked list of free blocks
+ * \param[in]       lw: LwMEM instance. Set to `NULL` to use default instance
  * \param[in]       nb: New free block to insert into linked list
  */
 static void
@@ -258,6 +260,7 @@ prv_insert_free_block(lwmem_t* const lw, lwmem_block_t* nb) {
 
 /**
  * \brief           Split too big block and add it to list of free blocks
+ * \param[in]       lw: LwMEM instance. Set to `NULL` to use default instance
  * \param[in]       block: Pointer to block with size already set
  * \param[in]       new_block_size: New block size to be set
  * \return          `1` if block splitted, `0` otherwise
@@ -300,6 +303,7 @@ prv_split_too_big_block(lwmem_t* const lw, lwmem_block_t* block, size_t new_bloc
 
 /**
  * \brief           Private allocation function
+ * \param[in]       lw: LwMEM instance. Set to `NULL` to use default instance
  * \param[in]       region: Pointer to region to allocate from.
  *                      Set to `NULL` for any region
  * \param[in]       size: Application wanted size, excluding size of meta header
@@ -389,6 +393,7 @@ prv_alloc(lwmem_t* const lw, const lwmem_region_t* region, const size_t size) {
 
 /**
  * \brief           Free input pointer
+ * \param[in]       lw: LwMEM instance. Set to `NULL` to use default instance
  * \param[in]       ptr: Input pointer to free
  */
 static void
@@ -412,6 +417,7 @@ prv_free(lwmem_t* const lw, void* const ptr) {
  *  - `ptr != NULL; size == 0`: Function frees memory, equivalent to `free(ptr)`
  *  - `ptr != NULL; size > 0`: Function tries to allocate new memory of copy content before returning pointer on success
  *
+ * \param[in]       lw: LwMEM instance. Set to `NULL` to use default instance
  * \param[in]       region: Pointer to region to allocate from.
  *                      Set to `NULL` for any region
  * \param[in]       ptr: Memory block previously allocated with one of allocation functions.
@@ -626,6 +632,7 @@ prv_realloc(lwmem_t* const lw, const lwmem_region_t* region, void* const ptr, co
 
 /**
  * \brief           Initializes and assigns user regions for memory used by allocator algorithm
+ * \param[in]       lw: LwMEM instance. Set to `NULL` to use default instance
  * \param[in]       regions: Array of regions with address and its size.
  *                      Regions must be in increasing order (start address) and must not overlap in-between
  * \param[in]       len: Number of regions in array
@@ -640,7 +647,7 @@ lwmem_assignmem_ex(lwmem_t* const lw, const lwmem_region_t* regions, const size_
     lwmem_block_t* first_block, *prev_end_block;
 
     if (LWMEM_GET_LW(lw)->end_block != NULL     /* Init function may only be called once per lwmem instance */
-        || (((size_t)LWMEM_CFG_ALIGN_NUM) & (((size_t)LWMEM_CFG_ALIGN_NUM) - 1))/* Must be power of 2 */
+        || (((size_t)LWMEM_CFG_ALIGN_NUM) & (((size_t)LWMEM_CFG_ALIGN_NUM) - 1) > 0)/* Must be power of 2 */
         || regions == NULL || len == 0
 #if LWMEM_CFG_OS
         || lwmem_sys_mutex_isvalid(&(LWMEM_GET_LW(lw)->mutex))  /* Check if mutex valid already */

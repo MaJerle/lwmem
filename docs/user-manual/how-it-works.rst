@@ -36,7 +36,7 @@ First step is to define custom regions and assign them to memory manager.
 .. note::
     Order of regions must be lower address first. Regions must not overlap with their sizes.
 
-When calling ``lwmem_assignmem``, manager prepares memory blocks and assigns default values.
+When calling :c:macro:`lwmem_assignmem`, manager prepares memory blocks and assigns default values.
 
 .. figure:: ../static/images/structure_default.svg
     :align: center
@@ -97,6 +97,49 @@ Image shows only first region to simplify process. Same procedure applies to oth
 * ``Case G``: Second block freed. Manager detects blocks before and after current are free and merges all to one big contiguous block.
   
   * No any memory allocated anymore, regions are back to default state
+
+Allocate at specific region
+***************************
+
+When memory allocation is in progress, LwMEM manager will start
+at first free block and will loop through all regions until first free block of sufficient size has been found.
+At this stage, application really does not have any control which region has been used for allocation.
+
+Especially in the world of embedded systems, sometimes application uses external RAM device,
+which are by definition slower than internal one. Let's take an example below.
+
+.. figure:: ../static/images/structure_default.svg
+    :align: center
+    :alt: Region definition with one internal and two external regions
+
+    Region definition with one internal and two external regions
+
+And code example:
+
+.. literalinclude:: ../examples_src/example_regions_definitions.c
+    :language: c
+    :linenos:
+    :caption: Region definition with one internal and two external regions
+
+For the sake of this example, let's say that:
+
+* First region is in very fast internal RAM, coupled with CPU core
+  * Application shall use this only for small chunks of memory, frequently used, not to disturb external RAM interface
+* Second and third regions are used for bigger RAM blocks used less frequently and interface is not overloaded when used
+
+Size of first region is ``0x1000`` bytes.
+When application tries to allocate (example) ``512`` bytes, it will find first free block in first region.
+However, application wants to use (if possible) external RAM for this size of allocation.
+
+There is a way to specify in which region memory shall be allocated, using extended functions.
+
+.. literalinclude:: ../examples_src/example_alloc_from_region.c
+    :language: c
+    :linenos:
+    :caption: Allocate memory from specific region
+
+.. tip::
+    Check :cpp:func:`lwmem_malloc_ex` for more information about parameters and return values
 
 .. toctree::
     :maxdepth: 2
