@@ -50,6 +50,13 @@ extern "C" {
  */
 
 /**
+ * \brief           Get size of statically allocated array
+ * \param[in        x: Object to get array size of
+ * \return          Number of elements in array
+ */
+#define LWMEM_ARRAYSIZE(x)          (sizeof(x) / sizeof((x)[0]))
+
+/**
  * \brief           Memory block structure
  */
 typedef struct lwmem_block {
@@ -153,8 +160,6 @@ void    lwmem_debug_restore_to_saved(void);
 
 void    lwmem_debug_print(unsigned char print_alloc, unsigned char print_free);
 #endif /* defined(LWMEM_DEV) && !__DOXYGEN__ */
-
-#undef LWMEM_PREF
 
 /**
  * \}
