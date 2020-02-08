@@ -118,19 +118,19 @@
 
 /**
  * \brief           Get lwmem instance based on user input
- * \param[in]       _lw_: LwMEM instance
+ * \param[in]       in_lw: LwMEM instance. Set to NULL for default instance
  */
-#define LWMEM_GET_LW(_lw_)              ((_lw_) != NULL ? (_lw_) : (&lwmem_default))
+#define LWMEM_GET_LW(in_lw)             ((in_lw) != NULL ? (in_lw) : (&lwmem_default))
 
 /**
  * \brief           Gets block before input block (marked as prev) and its previous free block
- * \param[in]       _lw_: LwMEM instance. Set to `NULL` to use default instance
+ * \param[in]       in_lw: LwMEM instance. Set to `NULL` to use default instance
  * \param[in]       in_b: Input block to find previous and its previous
  * \param[in]       in_pp: Previous previous of input block
  * \param[in]       in_p: Previous of input block
  */
-#define LWMEM_GET_PREV_CURR_OF_BLOCK(_lw_, in_b, in_pp, in_p) do {      \
-    for ((in_pp) = NULL, (in_p) = &(LWMEM_GET_LW(_lw_)->start_block);  \
+#define LWMEM_GET_PREV_CURR_OF_BLOCK(in_lw, in_b, in_pp, in_p) do {     \
+    for ((in_pp) = NULL, (in_p) = &(LWMEM_GET_LW(in_lw)->start_block);  \
         (in_p) != NULL && (in_p)->next < (in_b);                        \
         (in_pp) = (in_p), (in_p) = (in_p)->next                         \
     ) {}                                                                \
@@ -145,7 +145,7 @@
 #endif /* !LWMEM_CFG_OS */
 
 /**
- * \brief           LwMEM data
+ * \brief           LwMEM default structure used by application
  */
 static lwmem_t lwmem_default;
 
@@ -168,7 +168,7 @@ prv_get_region_addr_size(const lwmem_region_t* region, unsigned char** msa,  siz
     *ms = 0;
 
     /* Check region size and align it to config bits */
-    mem_size = region->size & ~LWMEM_ALIGN_BITS;    /* Size does not include lower bits */
+    mem_size = region->size & ~LWMEM_ALIGN_BITS;/* Size does not include lower bits */
     if (mem_size < (2 * LWMEM_BLOCK_MIN_SIZE)) {
         return 0;
     }
@@ -185,7 +185,6 @@ prv_get_region_addr_size(const lwmem_region_t* region, unsigned char** msa,  siz
 
     /* Check final memory size */
     if (mem_size >= (2 * LWMEM_BLOCK_MIN_SIZE)) {
-        /* Set pointers */
         *msa = mem_start_addr;
         *ms = mem_size;
 
@@ -592,7 +591,7 @@ prv_realloc(lwmem_t* const lw, const lwmem_region_t* region, void* const ptr, co
              * If memmove overwrites metadata of current block (when shifting content up),
              * it is not an issue as we know its size (block_size) and next is already NULL.
              *
-             * Memmove must be used to guarantee move of data as addresses + their sizes may overlap
+             * Memmove must be used to guarantee move of data as addresses and their sizes may overlap
              *
              * Metadata of "prev" are not modified during memmove
              */

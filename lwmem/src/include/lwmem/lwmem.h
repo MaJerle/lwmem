@@ -55,8 +55,9 @@ extern "C" {
 typedef struct lwmem_block {
     struct lwmem_block* next;                   /*!< Next free memory block on linked list.
                                                         Set to \ref LWMEM_BLOCK_ALLOC_MARK when block is allocated and in use */
-    size_t size;                                /*!< Size of block. MSB bit is set to `1` when block is allocated and in use,
-                                                        or `0` when block is free */
+    size_t size;                                /*!< Size of block, including metadata part.
+                                                        MSB bit is set to `1` when block is allocated and in use,
+                                                        or `0` when block is considered free */
 } lwmem_block_t;
 
 /**
@@ -71,7 +72,8 @@ typedef struct lwmem {
     LWMEM_CFG_OS_MUTEX_HANDLE mutex;            /*!< System mutex for OS */
 #endif /* LWMEM_CFG_OS || __DOXYGEN__ */
 #if defined(LWMEM_DEV) && !__DOXYGEN__
-    lwmem_block_t start_block_first_use;        /*!< Value of start block for very first time */
+    lwmem_block_t start_block_first_use;        /*!< Value of start block for very first time.
+                                                    This is used only during validation process and is removed in final use */
 #endif /* defined(LWMEM_DEV) && !__DOXYGEN__ */
 } lwmem_t;
 
