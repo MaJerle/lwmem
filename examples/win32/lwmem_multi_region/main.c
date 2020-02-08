@@ -1,3 +1,9 @@
+/*
+ * This example is showing LwMEM in multiple regions for default instance
+ *
+ * It configures 2 regions and shows simple allocation features
+ */
+
 #include "lwmem/lwmem.h"
 #include <stdio.h>
 

@@ -1,3 +1,10 @@
+/*
+ * This example is adding custom LwMEM instance of top of default one.
+ *
+ * Effectively 2 instances are active, each with its own set of regions.
+ * Purpose is to show the difference between _ex and non _ex functions.
+ */
+
 #include "lwmem/lwmem.h"
 #include <stdio.h>
 

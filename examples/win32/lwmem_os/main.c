@@ -1,3 +1,10 @@
+/*
+ * This example is showing default LwMEM configuration for operating systems.
+ *
+ * It uses simple region config and has mutex feature enabled (see lwmem_config.h file).
+ * Multiple threads try to access to same resource at the same time
+ */
+
 #include "lwmem/lwmem.h"
 #include <stdio.h>
 

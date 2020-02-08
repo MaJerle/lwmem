@@ -1,3 +1,9 @@
+/*
+ * This example is showing default LwMEM application.
+ *
+ * It uses simple region config, single region, without support for operating system
+ */
+
 #include "lwmem/lwmem.h"
 #include <stdio.h>
 
