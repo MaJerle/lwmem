@@ -54,5 +54,19 @@ LwMEM OS
 LwMEM library integrated as application memory manager with operating system.
 It configurex mutual exclusion object ``mutex`` to allow multiple application threads accessing to LwMEM core functions
 
+LwMEM multi regions
+*******************
+
+Multi regions example shows how to configure multiple linear regions to be applied to single LwMEM instance.
+It uses simple varible array to demonstrate memory sections in embedded systems.
+
+LwMEM multi instances & regions
+*******************************
+
+This example shows how can application add custom (or more of them) instances for LwMEM memory management.
+Each LwMEM instance has its own set of regions to work with.
+
+LwMEM instances are between each-other completely isolated.
+
 .. toctree::
 	:maxdepth: 2
