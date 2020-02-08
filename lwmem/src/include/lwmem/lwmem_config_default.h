@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (c) 2019 Tilen MAJERLE
+ * Copyright (c) 2020 Tilen MAJERLE
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -29,7 +29,7 @@
  * This file is part of LwMEM - Lightweight dynamic memory manager library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         v1.2.0
+ * Version:         v1.3.0
  */
 #ifndef LWMEM_HDR_CONFIG_DEFAULT_H
 #define LWMEM_HDR_CONFIG_DEFAULT_H
@@ -63,6 +63,17 @@ extern "C" {
 #ifndef LWMEM_CFG_OS_MUTEX_HANDLE
 #define LWMEM_CFG_OS_MUTEX_HANDLE               void *
 #endif
+
+/**
+ * \brief           Number of bits to align memory address and memory size
+ *
+ * Some CPUs do not offer unaligned memory access (Cortex-M0 as an example)
+ * therefore it is important to have alignment of data addresses and potentialy length of data
+ *
+ * \note            This value must be a power of `2` for number of bytes.
+ *                  Usually alignment of `4` bytes fits to all processors.
+ */
+#define LWMEM_CFG_ALIGN_NUM                     ((size_t)4)
 
 /**
  * \}

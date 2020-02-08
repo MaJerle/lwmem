@@ -1,10 +1,10 @@
-/**	
+/**
  * \file            lwmem.c
  * \brief           Lightweight dynamic memory manager
  */
  
 /*
- * Copyright (c) 2019 Tilen MAJERLE
+ * Copyright (c) 2020 Tilen MAJERLE
  *  
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -29,7 +29,7 @@
  * This file is part of LwMEM - Lightweight dynamic memory manager library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         v1.2.0
+ * Version:         v1.3.0
  */
 #ifndef LWMEM_HDR_H
 #define LWMEM_HDR_H
@@ -39,6 +39,8 @@ extern "C" {
 #endif /* __cplusplus */
 
 #include <string.h>
+#include <stdint.h>
+#include <limits.h>
 #include "lwmem_config.h"
 
 /**
@@ -47,17 +49,40 @@ extern "C" {
  * \{
  */
 
-/* --- Memory unique part starts --- */
 /**
- * \brief           Memory function/typedef prefix string
- * 
- * It is used to change function names in zero time to easily re-use same library between applications.
- * Use `#define LWMEM_PREF(x)   my_prefix_ ## x` to change all function names to (for example) `my_prefix_lwmem_init` 
- *
- * \note            Modification of this macro must be done in header and source file aswell
+ * \brief           Get size of statically allocated array
+ * \param[in        x: Object to get array size of
+ * \return          Number of elements in array
  */
-#define LWMEM_PREF(x)                     lwmem_ ## x
-/* --- Memory unique part ends --- */
+#define LWMEM_ARRAYSIZE(x)          (sizeof(x) / sizeof((x)[0]))
+
+/**
+ * \brief           Memory block structure
+ */
+typedef struct lwmem_block {
+    struct lwmem_block* next;                   /*!< Next free memory block on linked list.
+                                                        Set to \ref LWMEM_BLOCK_ALLOC_MARK when block is allocated and in use */
+    size_t size;                                /*!< Size of block, including metadata part.
+                                                        MSB bit is set to `1` when block is allocated and in use,
+                                                        or `0` when block is considered free */
+} lwmem_block_t;
+
+/**
+ * \brief           LwMEM main structure
+ */
+typedef struct lwmem {
+    lwmem_block_t start_block;                  /*!< Holds beginning of memory allocation regions */
+    lwmem_block_t* end_block;                   /*!< Pointer to the last memory location in regions linked list */
+    size_t mem_available_bytes;                 /*!< Memory size available for allocation */
+    size_t mem_regions_count;                   /*!< Number of regions used for allocation */
+#if LWMEM_CFG_OS || __DOXYGEN__
+    LWMEM_CFG_OS_MUTEX_HANDLE mutex;            /*!< System mutex for OS */
+#endif /* LWMEM_CFG_OS || __DOXYGEN__ */
+#if defined(LWMEM_DEV) && !__DOXYGEN__
+    lwmem_block_t start_block_first_use;        /*!< Value of start block for very first time.
+                                                    This is used only during validation process and is removed in final use */
+#endif /* defined(LWMEM_DEV) && !__DOXYGEN__ */
+} lwmem_t;
 
 /**
  * \brief           Memory region descriptor
@@ -65,25 +90,76 @@ extern "C" {
 typedef struct {
     void* start_addr;                           /*!< Region start address */
     size_t size;                                /*!< Size of region in units of bytes */
-} LWMEM_PREF(region_t);
+} lwmem_region_t;
 
-size_t          LWMEM_PREF(assignmem)(const LWMEM_PREF(region_t)* regions, const size_t len);
-void *          LWMEM_PREF(malloc)(const size_t size);
-void *          LWMEM_PREF(calloc)(const size_t nitems, const size_t size);
-void *          LWMEM_PREF(realloc)(void* const ptr, const size_t size);
-unsigned char   LWMEM_PREF(realloc_s)(void** const ptr, const size_t size);
-void            LWMEM_PREF(free)(void* const ptr);
-void            LWMEM_PREF(free_s)(void** const ptr);
+size_t          lwmem_assignmem_ex(lwmem_t* const lw, const lwmem_region_t* regions, const size_t len);
+void *          lwmem_malloc_ex(lwmem_t* const lw, const lwmem_region_t* region, const size_t size);
+void *          lwmem_calloc_ex(lwmem_t* const lw, const lwmem_region_t* region, const size_t nitems, const size_t size);
+void *          lwmem_realloc_ex(lwmem_t* const lw, const lwmem_region_t* region, void* const ptr, const size_t size);
+unsigned char   lwmem_realloc_s_ex(lwmem_t* const lw, const lwmem_region_t* region, void** const ptr, const size_t size);
+void            lwmem_free_ex(lwmem_t* const lw, void* const ptr);
+void            lwmem_free_s_ex(lwmem_t* const lw, void** const ptr);
+
+/**
+ * \note            This is a wrapper for \ref lwmem_assignmem_ex function
+ * \param[in]       regions: Array of regions with address and its size.
+ *                      Regions must be in increasing order (start address) and must not overlap in-between
+ * \param[in]       len: Number of regions in array
+ */
+#define         lwmem_assignmem(regions, len)           lwmem_assignmem_ex(NULL, (regions), (len))
+
+/**
+ * \note            This is a wrapper for \ref lwmem_malloc_ex function.
+ *                      It operates in default LwMEM instance and uses first available region for memory operations
+ * \param[in]       size: Size to allocate in units of bytes
+ */
+#define         lwmem_malloc(size)                      lwmem_malloc_ex(NULL, NULL, (size))
+
+/**
+ * \note            This is a wrapper for \ref lwmem_calloc_ex function.
+ *                      It operates in default LwMEM instance and uses first available region for memory operations
+ * \param[in]       nitems: Number of elements to be allocated
+ * \param[in]       size: Size of each element, in units of bytes
+ */
+#define         lwmem_calloc(nitems, size)              lwmem_calloc_ex(NULL, NULL, (nitems), (size))
+
+/**
+ * \note            This is a wrapper for \ref lwmem_realloc_ex function
+ * \param[in]       ptr: Memory block previously allocated with one of allocation functions.
+ *                      It may be set to `NULL` to create new clean allocation
+ * \param[in]       size: Size of new memory to reallocate
+ */
+#define         lwmem_realloc(ptr, size)                lwmem_realloc_ex(NULL, NULL, (ptr), (size))
+
+/**
+ * \note            This is a wrapper for \ref lwmem_realloc_s_ex function
+ * \param[in]       ptrptr: Pointer to pointer to allocated memory. Must not be set to `NULL`.
+ *                      If reallocation is successful, it modified where pointer points to,
+ *                      or sets it to `NULL` in case of `free` operation
+ * \param[in]       size: New requested size
+ */
+#define         lwmem_realloc_s(ptrptr, size)           lwmem_realloc_s_ex(NULL, NULL, (ptrptr), (size))
+
+/**
+ * \note            This is a wrapper for \ref lwmem_free_ex function
+ * \param[in]       ptr: Memory to free. `NULL` pointer is valid input
+ */
+#define         lwmem_free(ptr)                         lwmem_free_ex(NULL, (ptr))
+
+/**
+ * \note            This is a wrapper for \ref lwmem_free_s_ex function
+ * \param[in]       ptrptr: Pointer to pointer to allocated memory.
+ *                      When set to non `NULL`, pointer is freed and set to `NULL`
+ */
+#define         lwmem_free_s(ptrptr)                    lwmem_free_s_ex(NULL, (ptrptr))
 
 #if defined(LWMEM_DEV) && !__DOXYGEN__
-unsigned char lwmem_debug_create_regions(LWMEM_PREF(region_t)** regs_out, size_t count, size_t size);
+unsigned char lwmem_debug_create_regions(lwmem_region_t** regs_out, size_t count, size_t size);
 void    lwmem_debug_save_state(void);
 void    lwmem_debug_restore_to_saved(void);
 
 void    lwmem_debug_print(unsigned char print_alloc, unsigned char print_free);
 #endif /* defined(LWMEM_DEV) && !__DOXYGEN__ */
-
-#undef LWMEM_PREF
 
 /**
  * \}
