@@ -36,6 +36,7 @@ res = os.popen('git branch').read().strip()
 for line in res.split("\n"):
     if line[0] == '*':
         git_branch = line[1:].strip()
+printf("GIT BRANCH: " + git_branch)
 if git_branch == 'develop' or git_branch == 'origin/develop':
     version = "latest-develop"
 
