@@ -1,6 +1,8 @@
 LwMEM |version| documentation
 =============================
 
+Welcome to the documentation for version |version|.
+
 LwMEM is lightweight dynamic memory manager optimized for embedded systems.
 
 .. rst-class:: center

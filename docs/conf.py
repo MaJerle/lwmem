@@ -29,6 +29,16 @@ author = 'Tilen MAJERLE'
 # The full version, including alpha/beta/rc tags
 version = '1.3.0'
 
+# Try to get branch at which this is running
+# and try to determine which version to display in sphinx
+git_branch = ''
+res = os.popen('git branch').read().strip()
+for line in res.split("\n"):
+    if line[0] == '*':
+        git_branch = line[1:].strip()
+if git_branch == 'develop' or git_branch == 'origin/develop':
+    version = "latest-develop"
+
 # -- General configuration ---------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be
