@@ -51,7 +51,7 @@ extern "C" {
 
 /**
  * \brief           Get size of statically allocated array
- * \param[in        x: Object to get array size of
+ * \param[in]       x: Object to get array size of
  * \return          Number of elements in array
  */
 #define LWMEM_ARRAYSIZE(x)          (sizeof(x) / sizeof((x)[0]))
