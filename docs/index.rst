@@ -1,5 +1,5 @@
-LwMEM documentation!
-====================
+LwMEM |version| documentation
+=============================
 
 LwMEM is lightweight dynamic memory manager optimized for embedded systems.
 
