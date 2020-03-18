@@ -2,27 +2,27 @@
  * \file            lwmem.c
  * \brief           Lightweight dynamic memory manager
  */
- 
+
 /*
  * Copyright (c) 2020 Tilen MAJERLE
- *  
+ *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
  * files (the "Software"), to deal in the Software without restriction,
  * including without limitation the rights to use, copy, modify, merge,
- * publish, distribute, sublicense, and/or sell copies of the Software, 
- * and to permit persons to whom the Software is furnished to do so, 
+ * publish, distribute, sublicense, and/or sell copies of the Software,
+ * and to permit persons to whom the Software is furnished to do so,
  * subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be
  * included in all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
  * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE
  * AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
  * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
- * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+ * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  * OTHER DEALINGS IN THE SOFTWARE.
  *
@@ -202,7 +202,7 @@ static void
 prv_insert_free_block(lwmem_t* const lw, lwmem_block_t* nb) {
     lwmem_block_t* prev;
 
-    /* 
+    /*
      * Try to find position to put new block in-between
      * Search until all free block addresses are lower than entry block
      */
@@ -225,7 +225,7 @@ prv_insert_free_block(lwmem_t* const lw, lwmem_block_t* nb) {
     if ((LWMEM_TO_BYTE_PTR(prev) + prev->size) == LWMEM_TO_BYTE_PTR(nb)) {
         prev->size += nb->size;                 /* Increase current block by size of new block */
         nb = prev;                              /* New block and current are now the same thing */
-        /* 
+        /*
          * It is important to set new block as current one
          * as this allows merging previous and next blocks together with new block
          * at the same time; follow next steps
@@ -269,7 +269,7 @@ prv_split_too_big_block(lwmem_t* const lw, lwmem_block_t* block, size_t new_bloc
     lwmem_block_t* next;
     size_t block_size, is_alloc_bit;
     unsigned char success = 0;
-    
+
     is_alloc_bit = block->size & LWMEM_ALLOC_BIT;   /* Check if allocation bit is set */
     block_size = block->size & ~LWMEM_ALLOC_BIT;/* Use size without allocated bit */
 
@@ -292,7 +292,7 @@ prv_split_too_big_block(lwmem_t* const lw, lwmem_block_t* block, size_t new_bloc
         /* This can only happen during reallocation process when allocated block is reallocated to previous one */
         /* Very rare case, but may happen! */
     }
-    
+
     /* If allocation bit was set before, set it now again */
     if (is_alloc_bit) {
         LWMEM_BLOCK_SET_ALLOC(block);
@@ -382,7 +382,7 @@ prv_alloc(lwmem_t* const lw, const lwmem_region_t* region, const size_t size) {
     prev->next = curr->next;                    /* Remove this block from linked list by setting next of previous to next of current */
 
     /* curr block is now removed from linked list */
-    
+
     LWMEM_GET_LW(lw)->mem_available_bytes -= curr->size;/* Decrease available bytes by allocated block size */
     prv_split_too_big_block(lw, curr, final_size);  /* Split block if it is too big */
     LWMEM_BLOCK_SET_ALLOC(curr);                /* Set block as allocated */
@@ -481,7 +481,7 @@ prv_realloc(lwmem_t* const lw, const lwmem_region_t* region, void* const ptr, co
             } else {
                 /*
                  * It is not possible to create new empty block at the end of input block
-                 * 
+                 *
                  * But if next free block is just after input block,
                  * it is possible to find this block and increase it by "block_size - final_size" bytes
                  */
@@ -518,7 +518,7 @@ prv_realloc(lwmem_t* const lw, const lwmem_region_t* region, void* const ptr, co
         if (prev == NULL) {
             return NULL;
         }
-        
+
         /* Order of variables is: | prevprev ---> prev --->--->--->--->--->--->--->--->--->---> prev->next  | */
         /*                        |                      (input_block, which is not on a list)              | */
         /* Input block points to address somewhere between "prev" and "prev->next" pointers                   */
@@ -540,7 +540,7 @@ prv_realloc(lwmem_t* const lw, const lwmem_region_t* region, void* const ptr, co
             return ptr;                         /* Return existing pointer */
         }
 
-        /* 
+        /*
          * Check if "block" and last free before "prev" create contiguous memory with size of at least new requested size.
          *
          * It is necessary to make a memory move and shift content up as new return pointer is now upper on address space
@@ -851,7 +851,7 @@ lwmem_realloc_s_ex(lwmem_t* const lw, const lwmem_region_t* region, void** const
     if (ptr == NULL) {
         return 0;
     }
-    
+
     new_ptr = lwmem_realloc_ex(lw, region, *ptr, size); /* Try to reallocate existing pointer */
     if (new_ptr != NULL) {
         *ptr = new_ptr;
@@ -880,7 +880,7 @@ lwmem_free_ex(lwmem_t* const lw, void* const ptr) {
 
 /**
  * \brief           Safe version of free function
- * 
+ *
  * After memory is freed, input pointer is safely set to `NULL`
  * to prevent use of dangling pointers.
  *
