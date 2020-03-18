@@ -1,5 +1,5 @@
 /**
- * \file            lwmem.c
+ * \file            lwmem.h
  * \brief           Lightweight dynamic memory manager
  */
  
