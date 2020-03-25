@@ -34,13 +34,13 @@
 #ifndef LWMEM_HDR_SYS_H
 #define LWMEM_HDR_SYS_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-
 #include <stdint.h>
 #include <stddef.h>
 #include "lwmem/lwmem.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
 
 /**
  * \defgroup        LWMEM_SYS System functions

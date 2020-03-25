@@ -31,8 +31,8 @@
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
  * Version:         v1.3.0
  */
-#include "lwmem/lwmem.h"
 #include <limits.h>
+#include "lwmem/lwmem.h"
 
 #if LWMEM_CFG_OS
 #include "system/lwmem_sys.h"
