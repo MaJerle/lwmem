@@ -117,8 +117,8 @@
 #define LWMEM_BLOCK_MIN_SIZE            (LWMEM_BLOCK_META_SIZE)
 
 /**
- * \brief           Get lwmem instance based on user input
- * \param[in]       in_lw: LwMEM instance. Set to NULL for default instance
+ * \brief           Get LwMEM instance based on user input
+ * \param[in]       in_lw: LwMEM instance. Set to `NULL` for default instance
  */
 #define LWMEM_GET_LW(in_lw)             ((in_lw) != NULL ? (in_lw) : (&lwmem_default))
 
