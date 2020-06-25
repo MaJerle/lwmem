@@ -424,7 +424,7 @@ prv_free(lwmem_t* const lw, void* const ptr) {
  * \param[in]       size: Size of new memory to reallocate
  * \return          Pointer to allocated memory on success, `NULL` otherwise
  */
-void *
+static void *
 prv_realloc(lwmem_t* const lw, const lwmem_region_t* region, void* const ptr, const size_t size) {
     lwmem_block_t* block, *prevprev, *prev;
     size_t block_size;                          /* Holds size of input block (ptr), including metadata size */
