@@ -40,7 +40,4 @@
 #define LWMEM_CFG_OS                            1
 #define LWMEM_CFG_OS_MUTEX_HANDLE               HANDLE
 
-/* After user configuration, call default config to merge config together */
-#include "lwmem/lwmem_config_default.h"
-
 #endif /* LWMEM_HDR_CONFIG_H */

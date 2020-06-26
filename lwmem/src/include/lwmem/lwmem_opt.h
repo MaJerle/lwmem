@@ -34,6 +34,9 @@
 #ifndef LWMEM_HDR_CONFIG_DEFAULT_H
 #define LWMEM_HDR_CONFIG_DEFAULT_H
 
+/* Include application config */
+#include "lwmem_config.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */

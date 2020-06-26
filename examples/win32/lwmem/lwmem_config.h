@@ -36,7 +36,4 @@
 
 /* Rename this file to "lwmem_config.h" for your application */
 
-/* After user configuration, call default config to merge config together */
-#include "lwmem/lwmem_config_default.h"
-
 #endif /* LWMEM_HDR_CONFIG_H */

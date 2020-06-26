@@ -37,7 +37,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <limits.h>
-#include "lwmem_config.h"
+#include "lwmem/lwmem_opt.h"
 
 #ifdef __cplusplus
 extern "C" {
