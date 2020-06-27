@@ -9,5 +9,5 @@ List of all the modules:
 	:maxdepth: 2
 
 	lwmem
-	lwmem_config
+	lwmem_opt
 	lwmem_sys

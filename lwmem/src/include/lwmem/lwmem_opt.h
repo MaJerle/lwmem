@@ -1,6 +1,6 @@
 /**
- * \file            lwmem_config_default.h
- * \brief           LwMEM default config
+ * \file            lwmem_opt.h
+ * \brief           LwMEM options
  */
 
 /*
@@ -31,19 +31,19 @@
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
  * Version:         v1.3.0
  */
-#ifndef LWMEM_HDR_CONFIG_DEFAULT_H
-#define LWMEM_HDR_CONFIG_DEFAULT_H
+#ifndef LWMEM_HDR_OPT_H
+#define LWMEM_HDR_OPT_H
 
-/* Include application config */
-#include "lwmem_config.h"
+/* Include application options */
+#include "lwmem_opts.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
 
 /**
- * \defgroup        LWMEM_CONFIG Configuration
- * \brief           Configuration for LwMEM library
+ * \defgroup        LWMEM_OPT Configuration
+ * \brief           LwMEM options
  * \{
  */
 
@@ -76,7 +76,9 @@ extern "C" {
  * \note            This value must be a power of `2` for number of bytes.
  *                  Usually alignment of `4` bytes fits to all processors.
  */
+#ifndef LWMEM_CFG_ALIGN_NUM
 #define LWMEM_CFG_ALIGN_NUM                     ((size_t)4)
+#endif
 
 /**
  * \}
@@ -86,4 +88,4 @@ extern "C" {
 }
 #endif /* __cplusplus */
 
-#endif /* LWMEM_HDR_CONFIG_DEFAULT_H */
+#endif /* LWMEM_HDR_OPT_H */

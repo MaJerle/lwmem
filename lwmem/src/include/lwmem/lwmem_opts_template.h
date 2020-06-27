@@ -1,6 +1,6 @@
 /**
- * \file            lwmem_config_template.h
- * \brief           LwMEM configuration file
+ * \file            lwmem_opts_template.h
+ * \brief           Template config file
  */
 
 /*
@@ -31,18 +31,14 @@
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
  * Version:         v1.3.0
  */
-#ifndef LWMEM_HDR_CONFIG_H
-#define LWMEM_HDR_CONFIG_H
+#ifndef LWMEM_HDR_OPTS_H
+#define LWMEM_HDR_OPTS_H
 
-/* Rename this file to "lwmem_config.h" for your application */
-
-#include "cmsis_os.h"
+/* Rename this file to "lwmem_opts.h" for your application */
 
 /*
- * Open "include/lwmem/lwmem_config_default.h" and
+ * Open "include/lwmem/lwmem_opt.h" and
  * copy & replace here settings you want to change values
  */
-#define LWMEM_CFG_OS                            1
-#define LWMEM_CFG_OS_MUTEX_HANDLE               osMutexId
 
-#endif /* LWMEM_HDR_CONFIG_H */
+#endif /* LWMEM_HDR_OPTS_H */
