@@ -35,7 +35,9 @@
 #define LWMEM_HDR_OPT_H
 
 /* Include application options */
+#ifndef LWMEM_IGNORE_USER_OPTS
 #include "lwmem_opts.h"
+#endif /* LWMEM_IGNORE_USER_OPTS */
 
 #ifdef __cplusplus
 extern "C" {
