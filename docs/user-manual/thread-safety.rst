@@ -6,7 +6,7 @@ Thread safety
 With default configuration, LwMEM library is *not* thread safe.
 This means whenever it is used with operating system, user must resolve it with care.
 
-Library has locking mechanism support for thread safety, which needs to be enabled.
+Library has locking mechanism support for thread safety, which needs to be enabled manually.
 
 .. tip::
     To enable thread-safety support, parameter ``LWMEM_CFG_OS`` must be set to ``1``.
