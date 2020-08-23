@@ -64,7 +64,7 @@ This file shall be named ``lwmem_opts.h`` and its default template looks like th
 
 .. note::
     Default configuration template file location: ``lwmem/src/include/lwmem/lwmem_opts_template.h``.
-    File must first be renamed to ``lwmem_opts.h`` and then copied to the project directory (or simply renamed in-place) where compiler
+    File must be renamed to ``lwmem_opts.h`` first and then copied to the project directory (or simply renamed in-place) where compiler
     include paths have access to it by using ``#include "lwmem_opts.h"``.
 
 .. tip::
