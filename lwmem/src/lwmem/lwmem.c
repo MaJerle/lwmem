@@ -350,10 +350,10 @@ prv_alloc(lwmem_t* const lw, const lwmem_region_t* region, const size_t size) {
             if (curr->next == NULL || curr == LWMEM_GET_LW(lw)->end_block) {
                 return NULL;
             }
-            if ((unsigned char*)curr < (unsigned char*)region_start_addr) {      /* Check if we reached region */
+            if ((unsigned char*)curr < (unsigned char*)region_start_addr) { /* Check if we reached region */
                 continue;
             }
-            if ((unsigned char*)curr >= (unsigned char*)(region_start_addr + region_size)) {    /* Check if we are out already */
+            if ((unsigned char*)curr >= (unsigned char*)(region_start_addr + region_size)) {/* Check if we are out already */
                 return NULL;
             }
             if (curr->size >= final_size) {
@@ -651,7 +651,7 @@ lwmem_assignmem_ex(lwmem_t* const lw, const lwmem_region_t* regions, const size_
 #if LWMEM_CFG_OS
         || lwmem_sys_mutex_isvalid(&(LWMEM_GET_LW(lw)->mutex))  /* Check if mutex valid already */
 #endif /* LWMEM_CFG_OS */
-       ) {       /* Check inputs */
+       ) {                                      /* Check inputs */
         return 0;
     }
 
@@ -693,7 +693,7 @@ lwmem_assignmem_ex(lwmem_t* const lw, const lwmem_region_t* regions, const size_
              * In the later step(s) first block is manually set on top of memory region
              */
             LWMEM_GET_LW(lw)->start_block.next = (void*)mem_start_addr;
-            LWMEM_GET_LW(lw)->start_block.size = 0;   /* Size of dummy start block is zero */
+            LWMEM_GET_LW(lw)->start_block.size = 0; /* Size of dummy start block is zero */
         }
 
         /* Save current end block status as it is used later for linked list insertion */
