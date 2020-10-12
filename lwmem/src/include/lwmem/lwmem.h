@@ -99,9 +99,11 @@ void*           lwmem_realloc_ex(lwmem_t* const lw, const lwmem_region_t* region
 unsigned char   lwmem_realloc_s_ex(lwmem_t* const lw, const lwmem_region_t* region, void** const ptr, const size_t size);
 void            lwmem_free_ex(lwmem_t* const lw, void* const ptr);
 void            lwmem_free_s_ex(lwmem_t* const lw, void** const ptr);
+size_t          lwmem_get_size_ex(lwmem_t* const lw, void* ptr);
 
 /**
- * \note            This is a wrapper for \ref lwmem_assignmem_ex function
+ * \note            This is a wrapper for \ref lwmem_assignmem_ex function.
+ *                      It operates in default LwMEM instance and uses first available region for memory operations
  * \param[in]       regions: Array of regions with address and its size.
  *                      Regions must be in increasing order (start address) and must not overlap in-between
  * \param[in]       len: Number of regions in array
@@ -124,7 +126,8 @@ void            lwmem_free_s_ex(lwmem_t* const lw, void** const ptr);
 #define         lwmem_calloc(nitems, size)              lwmem_calloc_ex(NULL, NULL, (nitems), (size))
 
 /**
- * \note            This is a wrapper for \ref lwmem_realloc_ex function
+ * \note            This is a wrapper for \ref lwmem_realloc_ex function.
+ *                      It operates in default LwMEM instance and uses first available region for memory operations
  * \param[in]       ptr: Memory block previously allocated with one of allocation functions.
  *                      It may be set to `NULL` to create new clean allocation
  * \param[in]       size: Size of new memory to reallocate
@@ -132,7 +135,8 @@ void            lwmem_free_s_ex(lwmem_t* const lw, void** const ptr);
 #define         lwmem_realloc(ptr, size)                lwmem_realloc_ex(NULL, NULL, (ptr), (size))
 
 /**
- * \note            This is a wrapper for \ref lwmem_realloc_s_ex function
+ * \note            This is a wrapper for \ref lwmem_realloc_s_ex function.
+ *                      It operates in default LwMEM instance and uses first available region for memory operations
  * \param[in]       ptrptr: Pointer to pointer to allocated memory. Must not be set to `NULL`.
  *                      If reallocation is successful, it modified where pointer points to,
  *                      or sets it to `NULL` in case of `free` operation
@@ -141,17 +145,27 @@ void            lwmem_free_s_ex(lwmem_t* const lw, void** const ptr);
 #define         lwmem_realloc_s(ptrptr, size)           lwmem_realloc_s_ex(NULL, NULL, (ptrptr), (size))
 
 /**
- * \note            This is a wrapper for \ref lwmem_free_ex function
+ * \note            This is a wrapper for \ref lwmem_free_ex function.
+ *                      It operates in default LwMEM instance and uses first available region for memory operations
  * \param[in]       ptr: Memory to free. `NULL` pointer is valid input
  */
 #define         lwmem_free(ptr)                         lwmem_free_ex(NULL, (ptr))
 
 /**
- * \note            This is a wrapper for \ref lwmem_free_s_ex function
+ * \note            This is a wrapper for \ref lwmem_free_s_ex function.
+ *                      It operates in default LwMEM instance and uses first available region for memory operations
  * \param[in]       ptrptr: Pointer to pointer to allocated memory.
  *                      When set to non `NULL`, pointer is freed and set to `NULL`
  */
 #define         lwmem_free_s(ptrptr)                    lwmem_free_s_ex(NULL, (ptrptr))
+
+/**
+ * \note            This is a wrapper for \ref lwmem_get_size_ex function.
+ *                      It operates in default LwMEM instance and uses first available region for memory operations
+ * \param[in]       ptr: Pointer to allocated memory
+ * \return          Block size for user in units of bytes
+ */
+#define         lwmem_get_size(ptr)                     lwmem_get_size(NULL, (ptr))
 
 #if defined(LWMEM_DEV) && !__DOXYGEN__
 unsigned char lwmem_debug_create_regions(lwmem_region_t** regs_out, size_t count, size_t size);
