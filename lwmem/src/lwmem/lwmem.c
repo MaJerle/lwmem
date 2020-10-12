@@ -902,6 +902,29 @@ lwmem_free_s_ex(lwmem_t* const lw, void** const ptr) {
     }
 }
 
+/**
+ * \brief           Get user size of allocated memory
+ * \param[in]       lw: LwMEM instance. Set to `NULL` to use default instance.
+ *                      Instance must be the same as used during allocation procedure
+ * \param[in]       ptr: Pointer to allocated memory
+ * \return          Block size for user in units of bytes
+ */
+size_t
+lwmem_get_size_ex(lwmem_t* const lw, void* ptr) {
+    lwmem_block_t* block;
+    uint32_t len = 0;
+
+    if (ptr != NULL) {
+        LWMEM_PROTECT(lw);
+        block = LWMEM_GET_BLOCK_FROM_PTR(ptr);
+        if (LWMEM_BLOCK_IS_ALLOC(block)) {
+            len = (block->size & ~LWMEM_ALLOC_BIT) - LWMEM_BLOCK_META_SIZE;
+        }
+        LWMEM_UNPROTECT(lw);
+    }
+    return len;
+}
+
 /* Part of library used ONLY for LWMEM_DEV purposes */
 /* To validate and test library */
 
