@@ -73,7 +73,7 @@
  * \brief           Cast input pointer to byte
  * \param[in]       p: Input pointer to cast to byte pointer
  */
-#define LWMEM_TO_BYTE_PTR(p)            ((unsigned char *)(p))
+#define LWMEM_TO_BYTE_PTR(p)            ((uint8_t *)(p))
 
 /**
  * \brief           Bit indicating memory block is allocated
@@ -156,10 +156,10 @@ static lwmem_t lwmem_default;
  * \param[out]      ms: Memory size output variable
  * \return          `1` if region valid, `0` otherwise
  */
-static unsigned char
-prv_get_region_addr_size(const lwmem_region_t* region, unsigned char** msa,  size_t* ms) {
+static uint8_t
+prv_get_region_addr_size(const lwmem_region_t* region, uint8_t** msa,  size_t* ms) {
     size_t mem_size;
-    unsigned char* mem_start_addr;
+    uint8_t* mem_start_addr;
 
     if (region == NULL || msa == NULL || ms == NULL) {
         return 0;
@@ -264,11 +264,11 @@ prv_insert_free_block(lwmem_t* const lw, lwmem_block_t* nb) {
  * \param[in]       new_block_size: New block size to be set
  * \return          `1` if block splitted, `0` otherwise
  */
-static unsigned char
+static uint8_t
 prv_split_too_big_block(lwmem_t* const lw, lwmem_block_t* block, size_t new_block_size) {
     lwmem_block_t* next;
     size_t block_size, is_alloc_bit;
-    unsigned char success = 0;
+    uint8_t success = 0;
 
     is_alloc_bit = block->size & LWMEM_ALLOC_BIT;   /* Check if allocation bit is set */
     block_size = block->size & ~LWMEM_ALLOC_BIT;/* Use size without allocated bit */
@@ -333,7 +333,7 @@ prv_alloc(lwmem_t* const lw, const lwmem_region_t* region, const size_t size) {
      * - Loop until free block is between region start addr and its size
      */
     if (region != NULL) {
-        unsigned char* region_start_addr;
+        uint8_t* region_start_addr;
         size_t region_size;
 
         /* Get data about region */
@@ -350,10 +350,10 @@ prv_alloc(lwmem_t* const lw, const lwmem_region_t* region, const size_t size) {
             if (curr->next == NULL || curr == LWMEM_GET_LW(lw)->end_block) {
                 return NULL;
             }
-            if ((unsigned char*)curr < (unsigned char*)region_start_addr) { /* Check if we reached region */
+            if ((uint8_t*)curr < (uint8_t*)region_start_addr) { /* Check if we reached region */
                 continue;
             }
-            if ((unsigned char*)curr >= (unsigned char*)(region_start_addr + region_size)) {/* Check if we are out already */
+            if ((uint8_t*)curr >= (uint8_t*)(region_start_addr + region_size)) {/* Check if we are out already */
                 return NULL;
             }
             if (curr->size >= final_size) {
@@ -641,7 +641,7 @@ prv_realloc(lwmem_t* const lw, const lwmem_region_t* region, void* const ptr, co
  */
 size_t
 lwmem_assignmem_ex(lwmem_t* const lw, const lwmem_region_t* regions, const size_t len) {
-    unsigned char* mem_start_addr;
+    uint8_t* mem_start_addr;
     size_t mem_size;
     lwmem_block_t* first_block, *prev_end_block;
 
@@ -839,7 +839,7 @@ lwmem_realloc_ex(lwmem_t* const lw, const lwmem_region_t* region, void* const pt
  * \return          `1` if successfully reallocated, `0` otherwise
  * \note            This function is thread safe when \ref LWMEM_CFG_OS is enabled
  */
-unsigned char
+uint8_t
 lwmem_realloc_s_ex(lwmem_t* const lw, const lwmem_region_t* region, void** const ptr, const size_t size) {
     void* new_ptr;
 
@@ -1001,7 +1001,7 @@ print_block(size_t i, lwmem_block_t* block) {
 }
 
 void
-lwmem_debug_print(unsigned char print_alloc, unsigned char print_free) {
+lwmem_debug_print(uint8_t print_alloc, uint8_t print_free) {
     size_t block_size;
     lwmem_block_t* block;
 
@@ -1031,7 +1031,7 @@ lwmem_debug_print(unsigned char print_alloc, unsigned char print_free) {
     }
 }
 
-unsigned char
+uint8_t
 lwmem_debug_create_regions(lwmem_region_t** regs_out, size_t count, size_t size) {
     regions_orig = create_regions(count, size);
     regions_temp = create_regions(count, size);
