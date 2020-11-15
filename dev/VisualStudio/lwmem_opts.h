@@ -1,6 +1,6 @@
 /**
- * \file            lwmem_config.h
- * \brief           LwMEM configuration file
+ * \file            lwmem_opts.h
+ * \brief           LwMEM application options
  */
 
 /*
@@ -26,21 +26,23 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  * OTHER DEALINGS IN THE SOFTWARE.
  *
- * This file is part of LwMEM - Lightweight dynamic memory manager library.
+ * This file is part of Lightweight dynamic memory manager library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         v1.3.0
+ * Version:         v1.4.0
  */
-#ifndef LWMEM_HDR_CONFIG_H
-#define LWMEM_HDR_CONFIG_H
+#ifndef LWMEM_HDR_OPTS_H
+#define LWMEM_HDR_OPTS_H
+
+/* Rename this file to "lwmem_opts.h" for your application */
 
 #include "windows.h"
 
-/* Configure LwMEM to support OS */
-#define LWMEM_CFG_OS                            1
-#define LWMEM_CFG_OS_MUTEX_HANDLE               HANDLE
+/*
+ * Open "include/lwmem/lwmem_opt.h" and
+ * copy & replace here settings you want to change values
+ */
+#define LWMEM_CFG_OS                    1
+#define LWMEM_CFG_OS_MUTEX_HANDLE       HANDLE
 
-/* After user configuration, call default config to merge config together */
-#include "lwmem/lwmem_config_default.h"
-
-#endif /* LWMEM_HDR_CONFIG_H */
+#endif /* OW_HDR_OPTS_H */

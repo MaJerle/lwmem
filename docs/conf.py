@@ -27,7 +27,26 @@ copyright = '2020, Tilen MAJERLE'
 author = 'Tilen MAJERLE'
 
 # The full version, including alpha/beta/rc tags
-release = '1.3.0'
+version = '1.4.0'
+
+# Try to get branch at which this is running
+# and try to determine which version to display in sphinx
+git_branch = ''
+res = os.popen('git branch').read().strip()
+for line in res.split("\n"):
+    if line[0] == '*':
+        git_branch = line[1:].strip()
+
+# Decision for display version
+try:
+    if git_branch.index('develop') >= 0:
+        version = "latest-develop"
+except Exception:
+    print("Exception for index check")
+
+# For debugging purpose
+print("GIT BRANCH: " + git_branch)
+print("VERSION: " + version)
 
 # -- General configuration ---------------------------------------------------
 
@@ -45,7 +64,7 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx_sitemap',
 
-	'breathe',
+    'breathe',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -70,7 +89,7 @@ html_theme_options = {
     'display_version': True,
     'prev_next_buttons_location': 'bottom',
     'style_external_links': False,
-    
+
     'logo_only': False,
 
     # Toc options

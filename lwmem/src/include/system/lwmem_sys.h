@@ -29,18 +29,18 @@
  * This file is part of LwMEM - Lightweight dynamic memory manager library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         v1.3.0
+ * Version:         v1.4.0
  */
 #ifndef LWMEM_HDR_SYS_H
 #define LWMEM_HDR_SYS_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-
 #include <stdint.h>
 #include <stddef.h>
 #include "lwmem/lwmem.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
 
 /**
  * \defgroup        LWMEM_SYS System functions

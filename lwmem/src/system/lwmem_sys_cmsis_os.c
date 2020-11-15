@@ -29,7 +29,7 @@
  * This file is part of LwMEM - Lightweight dynamic memory manager library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         v1.3.0
+ * Version:         v1.4.0
  */
 #include "system/lwmem_sys.h"
 
@@ -40,7 +40,7 @@
 uint8_t
 lwmem_sys_mutex_create(LWMEM_CFG_OS_MUTEX_HANDLE* m) {
     *m = osMutexNew(NULL);
-    return 1;
+    return lwmem_sys_mutex_isvalid(m);
 }
 
 uint8_t
@@ -50,18 +50,12 @@ lwmem_sys_mutex_isvalid(LWMEM_CFG_OS_MUTEX_HANDLE* m) {
 
 uint8_t
 lwmem_sys_mutex_wait(LWMEM_CFG_OS_MUTEX_HANDLE* m) {
-    if (osMutexAcquire(*m, osWaitForever) != osOK) {
-        return 0;
-    }
-    return 1;
+    return osMutexAcquire(*m, osWaitForever) == osOK;
 }
 
 uint8_t
 lwmem_sys_mutex_release(LWMEM_CFG_OS_MUTEX_HANDLE* m) {
-    if (osMutexRelease(*m) != osOK) {
-        return 0;
-    }
-    return 1;
+    return osMutexRelease(*m) == osOK;
 }
 
 #endif /* LWMEM_CFG_OS && !__DOXYGEN__ */
