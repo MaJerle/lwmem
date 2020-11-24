@@ -144,6 +144,13 @@
 #define LWMEM_UNPROTECT(lw)
 #endif /* !LWMEM_CFG_OS */
 
+/* Statistics part */
+#if LWMEM_CFG_ENABLE_STATS
+#define LWMEM_INC_STATS(field)              (++(field))
+#else
+#define LWMEM_INC_STATS(field)
+#endif /* LWMEM_CFG_ENABLE_STATS */
+
 /**
  * \brief           LwMEM default structure used by application
  */
@@ -387,6 +394,8 @@ prv_alloc(lwmem_t* const lw, const lwmem_region_t* region, const size_t size) {
     prv_split_too_big_block(lw, curr, final_size);  /* Split block if it is too big */
     LWMEM_BLOCK_SET_ALLOC(curr);                /* Set block as allocated */
 
+    LWMEM_INC_STATS(LWMEM_GET_LW(lw)->stats.nr_alloc);
+
     return retval;
 }
 
@@ -403,6 +412,8 @@ prv_free(lwmem_t* const lw, void* const ptr) {
 
         LWMEM_GET_LW(lw)->mem_available_bytes += block->size;   /* Increase available bytes */
         prv_insert_free_block(lw, block);       /* Put block back to list of free block */
+
+        LWMEM_INC_STATS(LWMEM_GET_LW(lw)->stats.nr_free);
     }
 }
 

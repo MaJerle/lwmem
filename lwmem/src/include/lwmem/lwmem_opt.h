@@ -83,6 +83,14 @@ extern "C" {
 #endif
 
 /**
+ * \brief           Enables `1` or disables `0` statistics in the library
+ *
+ */
+#ifndef LWMEM_CFG_ENABLE_STATS
+#define LWMEM_CFG_ENABLE_STATS                  0
+#endif
+
+/**
  * \}
  */
 
