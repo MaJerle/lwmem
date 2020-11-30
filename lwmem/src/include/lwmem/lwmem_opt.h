@@ -34,6 +34,9 @@
 #ifndef LWMEM_HDR_OPT_H
 #define LWMEM_HDR_OPT_H
 
+/* Uncomment to ignore user options (or set macro in compiler flags) */
+/* #define LWMEM_IGNORE_USER_OPTS */
+
 /* Include application options */
 #ifndef LWMEM_IGNORE_USER_OPTS
 #include "lwmem_opts.h"
