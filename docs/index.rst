@@ -5,6 +5,9 @@ Welcome to the documentation for version |version|.
 
 LwMEM is lightweight dynamic memory manager optimized for embedded systems.
 
+.. image:: static/images/logo.svg
+    :align: center
+
 .. rst-class:: center
 .. rst-class:: index_links
 
