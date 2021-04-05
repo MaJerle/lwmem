@@ -1,5 +1,9 @@
 # Changelog
 
+## Develop
+
+- Add option to cleanup memory on free and realloc operations
+
 ## v1.4.0
 
 - New artistic code style
