@@ -86,6 +86,16 @@ extern "C" {
 #endif
 
 /**
+ * \brief           Enables `1` or disables `0` memory cleanup on free operation (or realloc).
+ *
+ * It resets unused memory to `0x00` and prevents other applications seeing old data.
+ * It is disabled by default since it has performance penalties.
+ * /
+#ifndef LWMEM_CFG_CLEAN_MEMORY
+#define LWMEM_CFG_CLEAN_MEMORY                  0
+#endif
+
+/**
  * \brief           Enables `1` or disables `0` statistics in the library
  *
  */

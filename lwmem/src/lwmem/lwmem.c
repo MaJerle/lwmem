@@ -32,6 +32,7 @@
  * Version:         v1.4.0
  */
 #include <limits.h>
+#include <string.h>
 #include "lwmem/lwmem.h"
 
 #if LWMEM_CFG_OS
@@ -209,6 +210,11 @@ static void
 prv_insert_free_block(lwmem_t* const lw, lwmem_block_t* nb) {
     lwmem_block_t* prev;
 
+    /* Check valid inputs */
+    if (nb == NULL) {
+        return;
+    }
+
     /*
      * Try to find position to put new block in-between
      * Search until all free block addresses are lower than entry block
@@ -224,6 +230,17 @@ prv_insert_free_block(lwmem_t* const lw, lwmem_block_t* nb) {
      * At this point we have valid previous block
      * Previous block is last free block before input block
      */
+
+#if LWMEM_CFG_CLEAN_MEMORY
+    /*
+     * Reset user memory. This is to reset memory
+     * after it has been freed by the application.
+     *
+     * By doing this, we protect data left by app
+     * and we make sure new allocations cannot see old information
+     */
+    LWMEM_MEMSET(LWMEM_GET_PTR_FROM_BLOCK(nb), 0x00, nb->size - LWMEM_BLOCK_META_SIZE);
+#endif /* LWMEM_CFG_RESET_MEMORY */
 
     /*
      * Check if previous block and input block together create one big contiguous block
