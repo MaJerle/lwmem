@@ -45,5 +45,6 @@
 #define LWMEM_CFG_OS                            1
 #define LWMEM_CFG_OS_MUTEX_HANDLE               HANDLE
 #define LWMEM_CFG_ENABLE_STATS                  0
+#define LWMEM_CFG_CLEAN_MEMORY                  1
 
-#endif /* OW_HDR_OPTS_H */
+#endif /* LWMEM_HDR_OPTS_H */
