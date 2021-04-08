@@ -26,23 +26,23 @@ project = 'LwMEM'
 copyright = '2020, Tilen MAJERLE'
 author = 'Tilen MAJERLE'
 
-# Default version
-version = 'v0.0.0'
-
 # Try to get branch at which this is running
 # and try to determine which version to display in sphinx
 # Version is using git tag if on master or "latest-develop" if on develop branch
+version = ''
 git_branch = ''
+
+# Get current branch
 res = os.popen('git branch').read().strip()
 for line in res.split("\n"):
     if line[0] == '*':
         git_branch = line[1:].strip()
 
 # Decision for display version
-if git_branch == 'master' || git_branch == 'main':
+if git_branch == 'master' or git_branch == 'main':
     version = os.popen('git describe --tags --abbrev=0').read().strip()
     if version == '':
-        version = 'v.0.0.0'
+        version = 'v0.0.0'
 elif git_branch == 'develop':
     version = 'latest-develop'
 else:
