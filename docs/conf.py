@@ -19,18 +19,19 @@ import subprocess, os
 # Run doxygen first
 # read_the_docs_build = os.environ.get('READTHEDOCS', None) == 'True'
 # if read_the_docs_build:
-subprocess.call('doxygen doxyfile.doxy', shell=True)
+# subprocess.call('doxygen doxyfile.doxy', shell=True)
 # -- Project information -----------------------------------------------------
 
 project = 'LwMEM'
 copyright = '2020, Tilen MAJERLE'
 author = 'Tilen MAJERLE'
 
-# The full version, including alpha/beta/rc tags
-version = 'v1.4.0'
+# Default version
+version = 'v0.0.0'
 
 # Try to get branch at which this is running
 # and try to determine which version to display in sphinx
+# Version is using git tag if on master or "latest-develop" if on develop branch
 git_branch = ''
 res = os.popen('git branch').read().strip()
 for line in res.split("\n"):
@@ -38,15 +39,18 @@ for line in res.split("\n"):
         git_branch = line[1:].strip()
 
 # Decision for display version
-try:
-    if git_branch.index('develop') >= 0:
-        version = "latest-develop"
-except Exception:
-    print("Exception for index check")
+if git_branch == 'master' || git_branch == 'main':
+    version = os.popen('git describe --tags --abbrev=0').read().strip()
+    if version == '':
+        version = 'v.0.0.0'
+elif git_branch == 'develop':
+    version = 'latest-develop'
+else:
+    version = 'branch-' + git_branch
 
-# For debugging purpose
+# For debugging purpose only
 print("GIT BRANCH: " + git_branch)
-print("VERSION: " + version)
+print("GIT VERSION: " + version)
 
 # -- General configuration ---------------------------------------------------
 
@@ -99,7 +103,7 @@ html_theme_options = {
     'includehidden': True,
     'titles_only': False
 }
-html_logo = 'static/images/logo.svg'
+html_logo = 'static/images/logo_tm.png'
 github_url = 'https://github.com/MaJerle/lwmem'
 html_baseurl = 'https://docs.majerle.eu/projects/lwmem/'
 
@@ -112,7 +116,7 @@ html_css_files = [
     'css/custom.css',
 ]
 html_js_files = [
-    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css'
+    'https://kit.fontawesome.com/3102794088.js'
 ]
 
 master_doc = 'index'
@@ -123,7 +127,7 @@ master_doc = 'index'
 #
 #
 breathe_projects = {
-	"lwmem": "_build/xml/"
+    "lwmem": "_build/xml/"
 }
 breathe_default_project = "lwmem"
 breathe_default_members = ('members', 'undoc-members')
