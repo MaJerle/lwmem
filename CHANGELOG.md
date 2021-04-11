@@ -2,6 +2,8 @@
 
 ## Develop
 
+## v1.5.0
+
 - Add option to cleanup memory on free and realloc operations
 
 ## v1.4.0
