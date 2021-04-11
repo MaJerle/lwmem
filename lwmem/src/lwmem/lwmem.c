@@ -29,9 +29,10 @@
  * This file is part of LwMEM - Lightweight dynamic memory manager library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         v1.4.0
+ * Version:         v1.5.0
  */
 #include <limits.h>
+#include <string.h>
 #include "lwmem/lwmem.h"
 
 #if LWMEM_CFG_OS
@@ -144,6 +145,13 @@
 #define LWMEM_UNPROTECT(lw)
 #endif /* !LWMEM_CFG_OS */
 
+/* Statistics part */
+#if LWMEM_CFG_ENABLE_STATS
+#define LWMEM_INC_STATS(field)              (++(field))
+#else
+#define LWMEM_INC_STATS(field)
+#endif /* LWMEM_CFG_ENABLE_STATS */
+
 /**
  * \brief           LwMEM default structure used by application
  */
@@ -202,6 +210,11 @@ static void
 prv_insert_free_block(lwmem_t* const lw, lwmem_block_t* nb) {
     lwmem_block_t* prev;
 
+    /* Check valid inputs */
+    if (nb == NULL) {
+        return;
+    }
+
     /*
      * Try to find position to put new block in-between
      * Search until all free block addresses are lower than entry block
@@ -217,6 +230,17 @@ prv_insert_free_block(lwmem_t* const lw, lwmem_block_t* nb) {
      * At this point we have valid previous block
      * Previous block is last free block before input block
      */
+
+#if LWMEM_CFG_CLEAN_MEMORY
+    /*
+     * Reset user memory. This is to reset memory
+     * after it has been freed by the application.
+     *
+     * By doing this, we protect data left by app
+     * and we make sure new allocations cannot see old information
+     */
+    LWMEM_MEMSET(LWMEM_GET_PTR_FROM_BLOCK(nb), 0x00, nb->size - LWMEM_BLOCK_META_SIZE);
+#endif /* LWMEM_CFG_RESET_MEMORY */
 
     /*
      * Check if previous block and input block together create one big contiguous block
@@ -387,6 +411,8 @@ prv_alloc(lwmem_t* const lw, const lwmem_region_t* region, const size_t size) {
     prv_split_too_big_block(lw, curr, final_size);  /* Split block if it is too big */
     LWMEM_BLOCK_SET_ALLOC(curr);                /* Set block as allocated */
 
+    LWMEM_INC_STATS(LWMEM_GET_LW(lw)->stats.nr_alloc);
+
     return retval;
 }
 
@@ -403,6 +429,8 @@ prv_free(lwmem_t* const lw, void* const ptr) {
 
         LWMEM_GET_LW(lw)->mem_available_bytes += block->size;   /* Increase available bytes */
         prv_insert_free_block(lw, block);       /* Put block back to list of free block */
+
+        LWMEM_INC_STATS(LWMEM_GET_LW(lw)->stats.nr_free);
     }
 }
 

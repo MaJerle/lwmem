@@ -29,12 +29,11 @@
  * This file is part of LwMEM - Lightweight dynamic memory manager library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         v1.4.0
+ * Version:         v1.5.0
  */
 #ifndef LWMEM_HDR_H
 #define LWMEM_HDR_H
 
-#include <string.h>
 #include <stdint.h>
 #include <limits.h>
 #include "lwmem/lwmem_opt.h"
@@ -68,6 +67,14 @@ typedef struct lwmem_block {
 } lwmem_block_t;
 
 /**
+ * \brief           Statistics structure
+ */
+typedef struct {
+    uint32_t nr_alloc;                          /*!< Number of all allocated blocks in single instance  */
+    uint32_t nr_free;                           /*!< Number of frees in the LwMEM instance */
+} lwmem_stats_t;
+
+/**
  * \brief           LwMEM main structure
  */
 typedef struct lwmem {
@@ -78,6 +85,9 @@ typedef struct lwmem {
 #if LWMEM_CFG_OS || __DOXYGEN__
     LWMEM_CFG_OS_MUTEX_HANDLE mutex;            /*!< System mutex for OS */
 #endif /* LWMEM_CFG_OS || __DOXYGEN__ */
+#if LWMEM_CFG_ENABLE_STATS || __DOXYGEN__
+    lwmem_stats_t stats;                        /*!< Statistics */
+#endif /* LWMEM_CFG_ENABLE_STATS || __DOXYGEN__ */
 #if defined(LWMEM_DEV) && !__DOXYGEN__
     lwmem_block_t start_block_first_use;        /*!< Value of start block for very first time.
                                                     This is used only during validation process and is removed in final use */

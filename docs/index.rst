@@ -5,10 +5,13 @@ Welcome to the documentation for version |version|.
 
 LwMEM is lightweight dynamic memory manager optimized for embedded systems.
 
+.. image:: static/images/logo.svg
+    :align: center
+
 .. rst-class:: center
 .. rst-class:: index_links
 
-	:ref:`download_library` :ref:`getting_started` `Open Github <https://github.com/MaJerle/lwmem>`_
+	:ref:`download_library` :ref:`getting_started` `Open Github <https://github.com/MaJerle/lwmem>`_ `Donate <https://paypal.me/tilz0R>`_
 
 Features
 ^^^^^^^^

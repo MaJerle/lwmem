@@ -29,10 +29,13 @@
  * This file is part of LwMEM - Lightweight dynamic memory manager library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         v1.4.0
+ * Version:         v1.5.0
  */
 #ifndef LWMEM_HDR_OPT_H
 #define LWMEM_HDR_OPT_H
+
+/* Uncomment to ignore user options (or set macro in compiler flags) */
+/* #define LWMEM_IGNORE_USER_OPTS */
 
 /* Include application options */
 #ifndef LWMEM_IGNORE_USER_OPTS
@@ -80,6 +83,24 @@ extern "C" {
  */
 #ifndef LWMEM_CFG_ALIGN_NUM
 #define LWMEM_CFG_ALIGN_NUM                     ((size_t)4)
+#endif
+
+/**
+ * \brief           Enables `1` or disables `0` memory cleanup on free operation (or realloc).
+ *
+ * It resets unused memory to `0x00` and prevents other applications seeing old data.
+ * It is disabled by default since it has performance penalties.
+ * /
+#ifndef LWMEM_CFG_CLEAN_MEMORY
+#define LWMEM_CFG_CLEAN_MEMORY                  0
+#endif
+
+/**
+ * \brief           Enables `1` or disables `0` statistics in the library
+ *
+ */
+#ifndef LWMEM_CFG_ENABLE_STATS
+#define LWMEM_CFG_ENABLE_STATS                  0
 #endif
 
 /**

@@ -29,7 +29,7 @@
  * This file is part of Lightweight dynamic memory manager library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         v1.4.0
+ * Version:         v1.5.0
  */
 #ifndef LWMEM_HDR_OPTS_H
 #define LWMEM_HDR_OPTS_H
@@ -42,7 +42,9 @@
  * Open "include/lwmem/lwmem_opt.h" and
  * copy & replace here settings you want to change values
  */
-#define LWMEM_CFG_OS                    1
-#define LWMEM_CFG_OS_MUTEX_HANDLE       HANDLE
+#define LWMEM_CFG_OS                            1
+#define LWMEM_CFG_OS_MUTEX_HANDLE               HANDLE
+#define LWMEM_CFG_ENABLE_STATS                  0
+#define LWMEM_CFG_CLEAN_MEMORY                  1
 
-#endif /* OW_HDR_OPTS_H */
+#endif /* LWMEM_HDR_OPTS_H */
