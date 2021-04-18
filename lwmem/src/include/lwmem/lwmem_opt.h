@@ -29,7 +29,7 @@
  * This file is part of LwMEM - Lightweight dynamic memory manager library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         v1.5.0
+ * Version:         v1.5.1
  */
 #ifndef LWMEM_HDR_OPT_H
 #define LWMEM_HDR_OPT_H
@@ -90,7 +90,7 @@ extern "C" {
  *
  * It resets unused memory to `0x00` and prevents other applications seeing old data.
  * It is disabled by default since it has performance penalties.
- * /
+ */
 #ifndef LWMEM_CFG_CLEAN_MEMORY
 #define LWMEM_CFG_CLEAN_MEMORY                  0
 #endif

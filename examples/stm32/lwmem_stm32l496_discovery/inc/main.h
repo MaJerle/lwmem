@@ -27,7 +27,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         v1.5.0
+ * Version:         v1.5.1
  */
 #ifndef __MAIN_H
 #define __MAIN_H

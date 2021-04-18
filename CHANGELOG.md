@@ -2,6 +2,10 @@
 
 ## Develop
 
+## v1.5.1
+
+- Fix memory cleanup macro setup
+
 ## v1.5.0
 
 - Add option to cleanup memory on free and realloc operations
