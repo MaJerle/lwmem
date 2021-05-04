@@ -2,6 +2,8 @@
 
 ## Develop
 
+## v1.5.2
+
 - Fix missing region parameter in some allocation or reallocation cases
 
 ## v1.5.1
