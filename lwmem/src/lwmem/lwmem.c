@@ -467,7 +467,7 @@ prv_realloc(lwmem_t* const lw, const lwmem_region_t* region, void* const ptr, co
         return NULL;
     }
     if (ptr == NULL) {
-        return prv_alloc(lw, NULL, size);
+        return prv_alloc(lw, region, size);
     }
 
     /* Try to reallocate existing pointer */
