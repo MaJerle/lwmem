@@ -27,7 +27,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         v1.5.1
+ * Version:         v1.5.2
  */
 #include "main.h"
 #include "lwmem/lwmem.h"

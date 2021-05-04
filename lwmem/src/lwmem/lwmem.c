@@ -29,7 +29,7 @@
  * This file is part of LwMEM - Lightweight dynamic memory manager library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         v1.5.1
+ * Version:         v1.5.2
  */
 #include <limits.h>
 #include <string.h>
@@ -467,7 +467,7 @@ prv_realloc(lwmem_t* const lw, const lwmem_region_t* region, void* const ptr, co
         return NULL;
     }
     if (ptr == NULL) {
-        return prv_alloc(lw, NULL, size);
+        return prv_alloc(lw, region, size);
     }
 
     /* Try to reallocate existing pointer */
@@ -648,7 +648,7 @@ prv_realloc(lwmem_t* const lw, const lwmem_region_t* region, void* const ptr, co
      *
      * Final solution is to find completely new empty block of sufficient size and copy content from old one to new one
      */
-    retval = prv_alloc(lw, NULL, size);         /* Try to allocate new block */
+    retval = prv_alloc(lw, region, size);       /* Try to allocate new block */
     if (retval != NULL) {
         block_size = (block->size & ~LWMEM_ALLOC_BIT) - LWMEM_BLOCK_META_SIZE;  /* Get application size from input pointer */
         LWMEM_MEMCPY(retval, ptr, size > block_size ? block_size : size);   /* Copy content to new allocated block */
