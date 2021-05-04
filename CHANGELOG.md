@@ -2,6 +2,8 @@
 
 ## Develop
 
+- Fix missing region parameter in some allocation or reallocation cases
+
 ## v1.5.1
 
 - Fix memory cleanup macro setup
