@@ -27,7 +27,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         v1.5.2
+ * Version:         v1.5.3
  */
 #include "main.h"
 #include "cmsis_os.h"

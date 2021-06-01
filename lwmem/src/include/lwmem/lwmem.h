@@ -29,7 +29,7 @@
  * This file is part of LwMEM - Lightweight dynamic memory manager library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         v1.5.2
+ * Version:         v1.5.3
  */
 #ifndef LWMEM_HDR_H
 #define LWMEM_HDR_H

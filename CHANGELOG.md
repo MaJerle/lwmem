@@ -2,6 +2,10 @@
 
 ## Develop
 
+## v1.5.3
+
+- Update CMSIS OS driver to support FreeRTOS aware kernel
+
 ## v1.5.2
 
 - Fix missing region parameter in some allocation or reallocation cases

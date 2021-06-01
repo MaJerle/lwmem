@@ -29,7 +29,7 @@
  * This file is part of LwMEM - Lightweight dynamic memory manager library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         v1.5.2
+ * Version:         v1.5.3
  */
 #include "system/lwmem_sys.h"
 
@@ -39,8 +39,10 @@
 
 uint8_t
 lwmem_sys_mutex_create(LWMEM_CFG_OS_MUTEX_HANDLE* m) {
-    *m = osMutexNew(NULL);
-    return lwmem_sys_mutex_isvalid(m);
+    const osMutexAttr_t attr = {
+        .name = "lwmem_mutex",
+    };
+    return (*m = osMutexNew(&attr)) != NULL;
 }
 
 uint8_t
