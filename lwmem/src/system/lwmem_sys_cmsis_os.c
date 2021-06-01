@@ -39,8 +39,10 @@
 
 uint8_t
 lwmem_sys_mutex_create(LWMEM_CFG_OS_MUTEX_HANDLE* m) {
-    *m = osMutexNew(NULL);
-    return lwmem_sys_mutex_isvalid(m);
+    const osMutexAttr_t attr = {
+        .name = "lwmem_mutex",
+    };
+    return (*m = osMutexNew(&attr)) != NULL;
 }
 
 uint8_t
