@@ -7,7 +7,7 @@ LwMEM architecture allows multiple instances, to completely isolate memory manag
 This may allow separation of memory management at hardware level with different security feature.
 
 By default, LwMEM has single instance created at library level, called *default instance*.
-Default instance does need any special attention as it is embedded at library core,
+Default instance does not need any special attention as it is embedded at library core,
 instead application has to assign memory regions for the instance.
 
 Every instance has:
