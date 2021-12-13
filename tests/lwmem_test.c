@@ -1,4 +1,5 @@
 #include "lwmem/lwmem.h"
+#include <stdio.h>
 
 /* Assert check */
 #define ASSERT(x)           do {        \
@@ -11,7 +12,11 @@
 
 /********************************************/
 /* Test case helpers                        */
-#define IS_ALLOC_IN_REGION(ptr, region)     ASSERT((unsigned char *)(ptr) >= (region)->start_addr && (unsigned char *)(ptr) < ((unsigned char *)(region)->start_addr + (region)->size))
+#define UINT_PTR_CAST(x)                        ((uintptr_t)(x))
+#define IS_ALLOC_IN_REGION(ptr, region)         ASSERT(                             \
+    UINT_PTR_CAST(ptr) >= UINT_PTR_CAST((region)->start_addr)                       \
+    && UINT_PTR_CAST(ptr) < (UINT_PTR_CAST((region)->start_addr) + (region)->size)  \
+)
 
 /********************************************/
 /* Configuration for default lwmem instance */
