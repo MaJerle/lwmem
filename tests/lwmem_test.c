@@ -1,4 +1,5 @@
 #include "lwmem/lwmem.h"
+#include <stdio.h>
 
 /* Assert check */
 #define ASSERT(x)           do {        \
@@ -11,7 +12,11 @@
 
 /********************************************/
 /* Test case helpers                        */
-#define IS_ALLOC_IN_REGION(ptr, region)     ASSERT((unsigned char *)(ptr) >= (region)->start_addr && (unsigned char *)(ptr) < ((unsigned char *)(region)->start_addr + (region)->size))
+#define UINT_PTR_CAST(x)                        ((uintptr_t)(x))
+#define IS_ALLOC_IN_REGION(ptr, region)         ASSERT(                             \
+    UINT_PTR_CAST(ptr) >= UINT_PTR_CAST((region)->start_addr)                       \
+    && UINT_PTR_CAST(ptr) < (UINT_PTR_CAST((region)->start_addr) + (region)->size)  \
+)
 
 /********************************************/
 /* Configuration for default lwmem instance */
@@ -126,14 +131,25 @@ void
 lwmem_test_memory_structure(void) {
     uint8_t* ptr1, *ptr2, *ptr3, *ptr4;
     uint8_t* rptr1, *rptr2, *rptr3, *rptr4;
+    size_t used_regions;
 
-    /* Create regions for debug purpose */
+    /*
+     * Create regions for debug purpose
+     *
+     * Size of regions array is 1 longer than count passed,
+     * and has size set to 0 and address to NULL
+     */
     if (!lwmem_debug_create_regions(&regions_used, regions_count, 128)) {
         printf("Cannot allocate memory for regions for debug purpose!\r\n");
         return;
     }
-    lwmem_assignmem(regions_used, regions_count);
-    printf("Manager is ready!\r\n");
+
+    /*
+     * Assign memory for LwMEM. Set len parameter to 0 to calculate
+     * Number of regions with regions pointer, with last entry being set to NULL and 0
+     */
+    used_regions = lwmem_assignmem(regions_used, 0);
+    printf("Manager is ready with %d regions!\r\n", (int)used_regions);
     lwmem_debug_print(1, 1);
 
     /* Test case 1, allocate 3 blocks, each of different size */

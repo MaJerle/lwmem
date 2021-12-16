@@ -29,7 +29,7 @@
  * This file is part of LwMEM - Lightweight dynamic memory manager library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         v1.5.3
+ * Version:         v1.6.0
  */
 #ifndef LWMEM_HDR_H
 #define LWMEM_HDR_H
@@ -102,7 +102,7 @@ typedef struct {
     size_t size;                                /*!< Size of region in units of bytes */
 } lwmem_region_t;
 
-size_t      lwmem_assignmem_ex(lwmem_t* const lw, const lwmem_region_t* regions, const size_t len);
+size_t      lwmem_assignmem_ex(lwmem_t* const lw, const lwmem_region_t* regions, size_t len);
 void*       lwmem_malloc_ex(lwmem_t* const lw, const lwmem_region_t* region, const size_t size);
 void*       lwmem_calloc_ex(lwmem_t* const lw, const lwmem_region_t* region, const size_t nitems, const size_t size);
 void*       lwmem_realloc_ex(lwmem_t* const lw, const lwmem_region_t* region, void* const ptr, const size_t size);
@@ -115,8 +115,12 @@ size_t      lwmem_get_size_ex(lwmem_t* const lw, void* ptr);
  * \note            This is a wrapper for \ref lwmem_assignmem_ex function.
  *                      It operates in default LwMEM instance and uses first available region for memory operations
  * \param[in]       regions: Array of regions with address and its size.
- *                      Regions must be in increasing order (start address) and must not overlap in-between
- * \param[in]       len: Number of regions in array
+ *                      Regions must be in increasing order (start address) and must not overlap in-between.
+ *                      When `len` param is set to `0`, regions array must contain last entry with `NULL` address and `0` length
+ * \param[in]       len: Number of regions in array.
+ *                      Can be set to `0` to describe number of regions with `regions` parameter.
+ *                      Array must have last entry with `0` length and `NULL` address, indicating end of array (similar to end of string)
+ * \return          `0` on failure, number of final regions used for memory manager on success
  */
 #define     lwmem_assignmem(regions, len)           lwmem_assignmem_ex(NULL, (regions), (len))
 
@@ -124,6 +128,8 @@ size_t      lwmem_get_size_ex(lwmem_t* const lw, void* ptr);
  * \note            This is a wrapper for \ref lwmem_malloc_ex function.
  *                      It operates in default LwMEM instance and uses first available region for memory operations
  * \param[in]       size: Size to allocate in units of bytes
+ * \return          Pointer to allocated memory on success, `NULL` otherwise
+ * \note            This function is thread safe when \ref LWMEM_CFG_OS is enabled
  */
 #define     lwmem_malloc(size)                      lwmem_malloc_ex(NULL, NULL, (size))
 
@@ -132,6 +138,8 @@ size_t      lwmem_get_size_ex(lwmem_t* const lw, void* ptr);
  *                      It operates in default LwMEM instance and uses first available region for memory operations
  * \param[in]       nitems: Number of elements to be allocated
  * \param[in]       size: Size of each element, in units of bytes
+ * \return          Pointer to allocated memory on success, `NULL` otherwise
+ * \note            This function is thread safe when \ref LWMEM_CFG_OS is enabled
  */
 #define     lwmem_calloc(nitems, size)              lwmem_calloc_ex(NULL, NULL, (nitems), (size))
 
@@ -141,6 +149,8 @@ size_t      lwmem_get_size_ex(lwmem_t* const lw, void* ptr);
  * \param[in]       ptr: Memory block previously allocated with one of allocation functions.
  *                      It may be set to `NULL` to create new clean allocation
  * \param[in]       size: Size of new memory to reallocate
+ * \return          Pointer to allocated memory on success, `NULL` otherwise
+ * \note            This function is thread safe when \ref LWMEM_CFG_OS is enabled
  */
 #define     lwmem_realloc(ptr, size)                lwmem_realloc_ex(NULL, NULL, (ptr), (size))
 
@@ -148,9 +158,11 @@ size_t      lwmem_get_size_ex(lwmem_t* const lw, void* ptr);
  * \note            This is a wrapper for \ref lwmem_realloc_s_ex function.
  *                      It operates in default LwMEM instance and uses first available region for memory operations
  * \param[in]       ptrptr: Pointer to pointer to allocated memory. Must not be set to `NULL`.
- *                      If reallocation is successful, it modified where pointer points to,
+ *                      If reallocation is successful, it modifies pointer's pointing address,
  *                      or sets it to `NULL` in case of `free` operation
- * \param[in]       size: New requested size
+ * \param[in]       size: New requested size in bytes
+ * \return          `1` if successfully reallocated, `0` otherwise
+ * \note            This function is thread safe when \ref LWMEM_CFG_OS is enabled
  */
 #define     lwmem_realloc_s(ptrptr, size)           lwmem_realloc_s_ex(NULL, NULL, (ptrptr), (size))
 
@@ -158,6 +170,7 @@ size_t      lwmem_get_size_ex(lwmem_t* const lw, void* ptr);
  * \note            This is a wrapper for \ref lwmem_free_ex function.
  *                      It operates in default LwMEM instance and uses first available region for memory operations
  * \param[in]       ptr: Memory to free. `NULL` pointer is valid input
+ * \note            This function is thread safe when \ref LWMEM_CFG_OS is enabled
  */
 #define     lwmem_free(ptr)                         lwmem_free_ex(NULL, (ptr))
 
@@ -166,6 +179,7 @@ size_t      lwmem_get_size_ex(lwmem_t* const lw, void* ptr);
  *                      It operates in default LwMEM instance and uses first available region for memory operations
  * \param[in]       ptrptr: Pointer to pointer to allocated memory.
  *                      When set to non `NULL`, pointer is freed and set to `NULL`
+ * \note            This function is thread safe when \ref LWMEM_CFG_OS is enabled
  */
 #define     lwmem_free_s(ptrptr)                    lwmem_free_s_ex(NULL, (ptrptr))
 
