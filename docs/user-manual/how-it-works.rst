@@ -36,6 +36,11 @@ First step is to define custom regions and assign them to memory manager.
 .. note::
     Order of regions must be lower address first. Regions must not overlap with their sizes.
 
+.. tip::
+    Regions could be defined with array descriptor only, where last entry must be set to `NULL` address and `0` size.
+    This is useful for dynamic length definition with single descriptor file/address.
+    It allows application to define regions by setting linker scripts when compiling the code.
+
 When calling :c:macro:`lwmem_assignmem`, manager prepares memory blocks and assigns default values.
 
 .. figure:: ../static/images/structure_default.svg
