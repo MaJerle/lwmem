@@ -695,17 +695,12 @@ lwmem_assignmem_ex(lwmem_t* const lw, const lwmem_region_t* regions, size_t len)
     /* Process further checks of valid inputs */
     if (regions == NULL || len == 0
 #if LWMEM_CFG_OS
-        || lwmem_sys_mutex_isvalid(&(LWMEM_GET_LW(lw)->mutex))  /* Check if mutex valid already */
+        || lwmem_sys_mutex_isvalid(&(LWMEM_GET_LW(lw)->mutex))  /* Check if mutex valid already = must not be */
+        || !lwmem_sys_mutex_create(&(LWMEM_GET_LW(lw)->mutex))  /* Final step = try to create mutex for new instance */
 #endif /* LWMEM_CFG_OS */
-       ) {                                      /* Check inputs */
+       ) {
         return 0;
     }
-
-#if LWMEM_CFG_OS
-    if (!lwmem_sys_mutex_create(&(LWMEM_GET_LW(lw)->mutex))) {
-        return 0;
-    }
-#endif /* LWMEM_CFG_OS */
 
     /* Ensure regions are growing linearly and do not overlap in between */
     mem_start_addr = (void*)0;
