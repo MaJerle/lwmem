@@ -661,21 +661,39 @@ prv_realloc(lwmem_t* const lw, const lwmem_region_t* region, void* const ptr, co
  * \brief           Initializes and assigns user regions for memory used by allocator algorithm
  * \param[in]       lw: LwMEM instance. Set to `NULL` to use default instance
  * \param[in]       regions: Array of regions with address and its size.
- *                      Regions must be in increasing order (start address) and must not overlap in-between
- * \param[in]       len: Number of regions in array
+ *                      Regions must be in increasing order (start address) and must not overlap in-between.
+ *                      When `len` param is set to `0`, regions array must contain last entry with `NULL` address and `0` length
+ * \param[in]       len: Number of regions in array.
+ *                      Can be set to `0` to describe number of regions with `regions` parameter.
+ *                      Array must have last entry with `0` length and `NULL` address, indicating end of array (similar to end of string)
  * \return          `0` on failure, number of final regions used for memory manager on success
  * \note            This function is not thread safe when used with operating system.
- *                  It must be called only once to setup memory regions
+ *                      It must be called only once to setup memory regions
  */
 size_t
-lwmem_assignmem_ex(lwmem_t* const lw, const lwmem_region_t* regions, const size_t len) {
+lwmem_assignmem_ex(lwmem_t* const lw, const lwmem_region_t* regions, size_t len) {
     uint8_t* mem_start_addr;
     size_t mem_size;
     lwmem_block_t* first_block, *prev_end_block;
 
+    /* Check first entries */
     if (LWMEM_GET_LW(lw)->end_block != NULL     /* Init function may only be called once per lwmem instance */
-        || ((((size_t)LWMEM_CFG_ALIGN_NUM) & (((size_t)LWMEM_CFG_ALIGN_NUM) - 1)) > 0)  /* Must be power of 2 */
-        || regions == NULL || len == 0
+        || (((size_t)LWMEM_CFG_ALIGN_NUM) & (((size_t)LWMEM_CFG_ALIGN_NUM) - 1)) > 0) { /* Must be power of 2 */
+        return 0;    
+    }
+
+    /*
+     * When len == 0, number of regions is defined by pointer to regions.
+     *
+     * Last entry, indicating end of region, must have address and length to `NULL` and `0` respectively
+     */
+    if (regions != NULL && len == 0) {
+        /* Go through array of regions */
+        for (const lwmem_region_t* r = regions; r->size > 0 && r->start_addr != NULL; ++len, ++r) {}
+    }
+
+    /* Process further checks of valid inputs */
+    if (regions == NULL || len == 0
 #if LWMEM_CFG_OS
         || lwmem_sys_mutex_isvalid(&(LWMEM_GET_LW(lw)->mutex))  /* Check if mutex valid already */
 #endif /* LWMEM_CFG_OS */
@@ -693,6 +711,12 @@ lwmem_assignmem_ex(lwmem_t* const lw, const lwmem_region_t* regions, const size_
     mem_start_addr = (void*)0;
     mem_size = 0;
     for (size_t i = 0; i < len; ++i) {
+        /* Make sure for valid entry */
+        if (regions[i].size == 0 && regions[i].start_addr == NULL) {
+            len = i;
+            break;
+        }
+
         /* New region(s) must be higher (in address space) than previous one */
         if ((mem_start_addr + mem_size) > LWMEM_TO_BYTE_PTR(regions[i].start_addr)) {
             return 0;
@@ -861,9 +885,9 @@ lwmem_realloc_ex(lwmem_t* const lw, const lwmem_region_t* region, void* const pt
  *                      Set to `NULL` to use any region within LwMEM instance.
  *                      Instance must be the same as used during allocation procedure
  * \param[in]       ptr: Pointer to pointer to allocated memory. Must not be set to `NULL`.
- *                      If reallocation is successful, it modified where pointer points to,
+ *                      If reallocation is successful, it modifies pointer's pointing address,
  *                      or sets it to `NULL` in case of `free` operation
- * \param[in]       size: New requested size
+ * \param[in]       size: New requested size in bytes
  * \return          `1` if successfully reallocated, `0` otherwise
  * \note            This function is thread safe when \ref LWMEM_CFG_OS is enabled
  */
@@ -972,20 +996,24 @@ create_regions(size_t count, size_t size) {
     lwmem_region_t* regions;
     lwmem_region_t tmp;
 
-    /* Allocate pointer structure */
-    regions = malloc(count * sizeof(*regions));
-    if (regions == NULL) {
+    /*
+     * Allocate pointer structure
+     *
+     * Length 1 entry more, to set default values for NULL entry
+     */
+    if ((regions = calloc(count + 1, sizeof(*regions))) == NULL) {
         return NULL;
     }
 
     /* Allocate memory for regions */
     for (size_t i = 0; i < count; ++i) {
         regions[i].size = size;
-        regions[i].start_addr = malloc(regions[i].size);
-        if (regions[i].start_addr == NULL) {
+        if ((regions[i].start_addr = malloc(regions[i].size)) == NULL) {
             return NULL;
         }
     }
+    regions[count].size = 0;
+    regions[count].start_addr = NULL;
 
     /* Sort regions, make sure they grow linearly */
     for (size_t x = 0; x < count; ++x) {

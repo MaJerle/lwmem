@@ -7,11 +7,12 @@ lwmem_region_t regions[] = {
     { (void *)0x10000000, 0x00001000 },
     { (void *)0xA0000000, 0x00008000 },
     { (void *)0xC0000000, 0x00008000 },
+    { NULL, 0}
 };
 
 /* Later in the initialization process */
 /* Assign regions for manager */
-lwmem_assignmem(regions, sizeof(regions) / sizeof(regions[0]));
+lwmem_assignmem(regions, 0);
 
 /* Usage in program... */
 

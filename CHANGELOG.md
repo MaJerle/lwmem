@@ -2,6 +2,9 @@
 
 ## Develop
 
+- Add option to define regions with array only, setting length to `0` by default
+- Update documentation for functions
+
 ## v1.5.3
 
 - Update CMSIS OS driver to support FreeRTOS aware kernel
