@@ -116,10 +116,20 @@ size_t      lwmem_get_size_ex(lwmem_t* const lw, void* ptr);
  *                      It operates in default LwMEM instance and uses first available region for memory operations
  * \param[in]       regions: Array of regions with address and its size.
  *                      Regions must be in increasing order (start address) and must not overlap in-between.
- *                      When `len` param is set to `0`, regions array must contain last entry with `NULL` address and `0` length
+ *                      When `len` param is set to `0`, regions array must contain last entry with `NULL` address and `0` length,
+ *                      indicating end of regions (similar to end of string)
+ * \code{.c}
+lwmem_region_t regions[] = {
+    { addr1, size1 },
+    { addr2, size2 },
+    { addr3, size3 },
+    { NULL, 0 }             //Regions array termination = end of descriptor
+}
+\endcode
  * \param[in]       len: Number of regions in array.
- *                      Can be set to `0` to describe number of regions with `regions` parameter.
- *                      Array must have last entry with `0` length and `NULL` address, indicating end of array (similar to end of string)
+ *                      Can be set to `0` to describe number of regions with `regions` parameter only.
+ *                      \note `len` is deprecated and will be removed in the future versions.
+ *                              Describe regions with `regions` parameter only instead
  * \return          `0` on failure, number of final regions used for memory manager on success
  */
 #define     lwmem_assignmem(regions, len)           lwmem_assignmem_ex(NULL, (regions), (len))

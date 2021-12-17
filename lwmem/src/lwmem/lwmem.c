@@ -662,10 +662,20 @@ prv_realloc(lwmem_t* const lw, const lwmem_region_t* region, void* const ptr, co
  * \param[in]       lw: LwMEM instance. Set to `NULL` to use default instance
  * \param[in]       regions: Array of regions with address and its size.
  *                      Regions must be in increasing order (start address) and must not overlap in-between.
- *                      When `len` param is set to `0`, regions array must contain last entry with `NULL` address and `0` length
+ *                      When `len` param is set to `0`, regions array must contain last entry with `NULL` address and `0` length,
+ *                      indicating end of regions (similar to end of string)
+ * \code{.c}
+lwmem_region_t regions[] = {
+    { addr1, size1 },
+    { addr2, size2 },
+    { addr3, size3 },
+    { NULL, 0 }             //Regions array termination = end of descriptor
+}
+\endcode
  * \param[in]       len: Number of regions in array.
- *                      Can be set to `0` to describe number of regions with `regions` parameter.
- *                      Array must have last entry with `0` length and `NULL` address, indicating end of array (similar to end of string)
+ *                      Can be set to `0` to describe number of regions with `regions` parameter only.
+ *                      \note `len` is deprecated and will be removed in the future versions.
+ *                              Describe regions with `regions` parameter only instead
  * \return          `0` on failure, number of final regions used for memory manager on success
  * \note            This function is not thread safe when used with operating system.
  *                      It must be called only once to setup memory regions

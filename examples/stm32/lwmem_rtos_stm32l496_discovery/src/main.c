@@ -49,6 +49,7 @@ static lwmem_region_t
 regions[] = {
     { region1_data, sizeof(region1_data) },
     /* Add more regions if needed */
+    { NULL, 0 }
 };
 
 static void app_thread(void* arg);
@@ -68,7 +69,7 @@ main(void) {
 
     /* Initialize LwMEM */
     printf("Initializing LwMEM...\r\n");
-    if (!lwmem_assignmem(regions, sizeof(regions) / sizeof(regions[0]))) {
+    if (!lwmem_assignmem(regions, 0)) {
         printf("Cannot initialize LwMEM. Make sure your regions are not overlapping each other and are in ascending memory order\r\n");
         while (1) {}
     } else {
