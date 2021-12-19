@@ -2,6 +2,9 @@
 
 ## Develop
 
+- Make `len` parameter deprecated for memory assignment
+- Prepare for version v2
+
 ## v1.6.0
 
 - Add option to define regions with array only, setting length to `0` by default
