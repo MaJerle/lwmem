@@ -16,10 +16,12 @@ For the sake of this understanding, application is using ``3`` regions
 * Region ``1`` memory starts at ``0x1000 0000`` and is ``0x0000 1000`` bytes long
 * Region ``2`` memory starts at ``0xA000 0000`` and is ``0x0000 8000`` bytes long
 * Region ``3`` memory starts at ``0xC000 0000`` and is ``0x0000 8000`` bytes long
+* Entry ``4`` indicates end of regions array descriptor 
 
 .. note::
     Total size of memory used by application for memory manager is ``0x0001 1000`` bytes or ``69 kB``.
     This is a sum of all ``3`` regions.
+    Last entry indicates end of regions with start address set as ``NULL`` and size as ``0``
 
 Example also assumes that:
 
@@ -35,11 +37,6 @@ First step is to define custom regions and assign them to memory manager.
 
 .. note::
     Order of regions must be lower address first. Regions must not overlap with their sizes.
-
-.. tip::
-    Regions could be defined with array descriptor only, where last entry must be set to `NULL` address and `0` size.
-    This is useful for dynamic length definition with single descriptor file/address.
-    It allows application to define regions by setting linker scripts when compiling the code.
 
 When calling :c:macro:`lwmem_assignmem`, manager prepares memory blocks and assigns default values.
 

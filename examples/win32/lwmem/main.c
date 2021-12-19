@@ -9,9 +9,9 @@
 
 /* Define single region */
 uint8_t region_data[1024];
-lwmem_region_t region = {
-    .start_addr = region_data,
-    .size = sizeof(region_data)
+lwmem_region_t regions[] = {
+    { .start_addr = region_data, .size = sizeof(region_data) },
+    { .start_addr = NULL, .size = 0 }
 };
 
 int
@@ -19,7 +19,7 @@ main(void) {
     void* ptr, *ptr2;
 
     /* Initialize default LwMEM instance with single region */
-    if (!lwmem_assignmem(&region, 1)) {
+    if (!lwmem_assignmem(regions, 0)) {
         printf("Could not initialize LwMEM!");
         return -1;
     }

@@ -30,6 +30,7 @@ lw_regions[] = {
     { lw_mem3, sizeof(lw_mem3) },
     { lw_mem2, sizeof(lw_mem2) },
     { lw_mem1, sizeof(lw_mem1) },
+    { NULL, 0 }
 };
 
 /********************************************/
@@ -47,6 +48,7 @@ lw_c_regions[] = {
     { lw_c_mem3, sizeof(lw_c_mem3) },
     { lw_c_mem2, sizeof(lw_c_mem2) },
     { lw_c_mem1, sizeof(lw_c_mem1) },
+    { NULL, 0 }
 };
 /********************************************/
 
@@ -57,11 +59,11 @@ lwmem_test_run(void) {
 
     /* Initialize default lwmem instance */
     /* Use one of 2 possible function calls: */
-    lwmem_assignmem(lw_regions, sizeof(lw_regions) / sizeof(lw_regions[0]));
-    //lwmem_assignmem_ex(NULL, lw_regions, sizeof(lw_regions) / sizeof(lw_regions[0]));
+    lwmem_assignmem(lw_regions, 0);
+    //lwmem_assignmem_ex(NULL, lw_regions, 0);
 
     /* Initialize another, custom instance */
-    lwmem_assignmem_ex(&lw_c, lw_c_regions, sizeof(lw_c_regions) / sizeof(lw_c_regions[0]));
+    lwmem_assignmem_ex(&lw_c, lw_c_regions, 0);
 
     /* Regions initialized... */
 

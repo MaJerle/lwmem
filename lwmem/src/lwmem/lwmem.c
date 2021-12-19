@@ -662,10 +662,20 @@ prv_realloc(lwmem_t* const lw, const lwmem_region_t* region, void* const ptr, co
  * \param[in]       lw: LwMEM instance. Set to `NULL` to use default instance
  * \param[in]       regions: Array of regions with address and its size.
  *                      Regions must be in increasing order (start address) and must not overlap in-between.
- *                      When `len` param is set to `0`, regions array must contain last entry with `NULL` address and `0` length
+ *                      When `len` param is set to `0`, regions array must contain last entry with `NULL` address and `0` length,
+ *                      indicating end of regions (similar to end of string)
+ * \code{.c}
+lwmem_region_t regions[] = {
+    { addr1, size1 },
+    { addr2, size2 },
+    { addr3, size3 },
+    { NULL, 0 }             //Regions array termination = end of descriptor
+}
+\endcode
  * \param[in]       len: Number of regions in array.
- *                      Can be set to `0` to describe number of regions with `regions` parameter.
- *                      Array must have last entry with `0` length and `NULL` address, indicating end of array (similar to end of string)
+ *                      Can be set to `0` to describe number of regions with `regions` parameter only.
+ *                      \note `len` is deprecated and will be removed in the future versions.
+ *                              Describe regions with `regions` parameter only instead
  * \return          `0` on failure, number of final regions used for memory manager on success
  * \note            This function is not thread safe when used with operating system.
  *                      It must be called only once to setup memory regions
@@ -695,17 +705,12 @@ lwmem_assignmem_ex(lwmem_t* const lw, const lwmem_region_t* regions, size_t len)
     /* Process further checks of valid inputs */
     if (regions == NULL || len == 0
 #if LWMEM_CFG_OS
-        || lwmem_sys_mutex_isvalid(&(LWMEM_GET_LW(lw)->mutex))  /* Check if mutex valid already */
+        || lwmem_sys_mutex_isvalid(&(LWMEM_GET_LW(lw)->mutex))  /* Check if mutex valid already = must not be */
+        || !lwmem_sys_mutex_create(&(LWMEM_GET_LW(lw)->mutex))  /* Final step = try to create mutex for new instance */
 #endif /* LWMEM_CFG_OS */
-       ) {                                      /* Check inputs */
+       ) {
         return 0;
     }
-
-#if LWMEM_CFG_OS
-    if (!lwmem_sys_mutex_create(&(LWMEM_GET_LW(lw)->mutex))) {
-        return 0;
-    }
-#endif /* LWMEM_CFG_OS */
 
     /* Ensure regions are growing linearly and do not overlap in between */
     mem_start_addr = (void*)0;
