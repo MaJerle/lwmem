@@ -2,6 +2,11 @@
 
 ## Develop
 
+## v1.6.1
+
+- Will not be actively maintained with new features
+- Critical bugs will be updated
+- Suggested is migration to v2 instead
 - Make `len` parameter deprecated for memory assignment
 - Prepare for version v2
 
