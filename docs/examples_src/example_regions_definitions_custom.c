@@ -20,4 +20,4 @@ lwmem_region_t regions[] = {
 
 /* Later in the initialization process */
 /* Assign regions for custom instance */
-lwmem_assignmem_ex(&lw_custom, regions, 0);
+lwmem_assignmem_ex(&lw_custom, regions);

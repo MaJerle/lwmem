@@ -2,8 +2,9 @@
 
 ## Develop
 
-- Make `len` parameter deprecated for memory assignment
-- Prepare for version v2
+- Remove `len` parameter
+- Move to v2.x
+- Create separate branch for v1.x, for critical maintenance purpose only
 
 ## v1.6.0
 

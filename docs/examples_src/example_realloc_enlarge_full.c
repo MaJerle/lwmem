@@ -20,7 +20,7 @@ main(void) {
         printf("Cannot allocate memory for regions for debug purpose!\r\n");
         return -1;
     }
-    lwmem_assignmem(regions_used, 0);
+    lwmem_assignmem(regions_used);
     printf("Manager is ready!\r\n");
     lwmem_debug_print(1, 1);
 

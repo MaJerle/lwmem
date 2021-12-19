@@ -14,6 +14,6 @@ lwmem_region_t regions[] = {
 
 /* Later in the initialization process */
 /* Assign regions for manager */
-lwmem_assignmem(regions, 0);
+lwmem_assignmem(regions);
 /* or */
-lwmem_assignmem_ex(NULL, regions, 0);
+lwmem_assignmem_ex(NULL, regions);

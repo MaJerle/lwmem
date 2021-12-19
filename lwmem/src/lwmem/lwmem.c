@@ -29,7 +29,7 @@
  * This file is part of LwMEM - Lightweight dynamic memory manager library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         v1.6.0
+ * Version:         v2.0.0
  */
 #include <limits.h>
 #include <string.h>
@@ -660,46 +660,60 @@ prv_realloc(lwmem_t* const lw, const lwmem_region_t* region, void* const ptr, co
 /**
  * \brief           Initializes and assigns user regions for memory used by allocator algorithm
  * \param[in]       lw: LwMEM instance. Set to `NULL` to use default instance
- * \param[in]       regions: Array of regions with address and its size.
+ * \param[in]       regions: Pointer to array of regions with address and respective size.
  *                      Regions must be in increasing order (start address) and must not overlap in-between.
- *                      When `len` param is set to `0`, regions array must contain last entry with `NULL` address and `0` length,
- *                      indicating end of regions (similar to end of string)
+ *                      Last region entry must have address `NULL` and size set to `0`
  * \code{.c}
+//Example definition
 lwmem_region_t regions[] = {
-    { addr1, size1 },
-    { addr2, size2 },
-    { addr3, size3 },
-    { NULL, 0 }             //Regions array termination = end of descriptor
+    { (void *)0x10000000, 0x1000 }, //Region starts at address 0x10000000 and is 0x1000 bytes long
+    { (void *)0x20000000, 0x2000 }, //Region starts at address 0x20000000 and is 0x2000 bytes long
+    { (void *)0x30000000, 0x3000 }, //Region starts at address 0x30000000 and is 0x3000 bytes long
+    { NULL, 0 }                     //Array termination indicator
 }
 \endcode
- * \param[in]       len: Number of regions in array.
- *                      Can be set to `0` to describe number of regions with `regions` parameter only.
- *                      \note `len` is deprecated and will be removed in the future versions.
- *                              Describe regions with `regions` parameter only instead
  * \return          `0` on failure, number of final regions used for memory manager on success
  * \note            This function is not thread safe when used with operating system.
  *                      It must be called only once to setup memory regions
  */
 size_t
-lwmem_assignmem_ex(lwmem_t* const lw, const lwmem_region_t* regions, size_t len) {
+lwmem_assignmem_ex(lwmem_t* const lw, const lwmem_region_t* regions) {
     uint8_t* mem_start_addr;
-    size_t mem_size;
+    size_t mem_size, len = 0;
     lwmem_block_t* first_block, *prev_end_block;
 
-    /* Check first entries */
-    if (LWMEM_GET_LW(lw)->end_block != NULL     /* Init function may only be called once per lwmem instance */
+    /* Check first things first */
+    if (regions == NULL
+        || LWMEM_GET_LW(lw)->end_block != NULL  /* Init function may only be called once per lwmem instance */
         || (((size_t)LWMEM_CFG_ALIGN_NUM) & (((size_t)LWMEM_CFG_ALIGN_NUM) - 1)) > 0) { /* Must be power of 2 */
         return 0;    
     }
 
-    /*
-     * When len == 0, number of regions is defined by pointer to regions.
-     *
-     * Last entry, indicating end of region, must have address and length to `NULL` and `0` respectively
-     */
-    if (regions != NULL && len == 0) {
-        /* Go through array of regions */
-        for (const lwmem_region_t* r = regions; r->size > 0 && r->start_addr != NULL; ++len, ++r) {}
+    /* Check values entered by application */
+    mem_start_addr = (void*)0;
+    mem_size = 0;
+    for (size_t i = 0;; ++i) {
+        /* 
+         * Check for valid entry or end of array descriptor
+         *
+         * Invalid entry is considered as "end-of-region" indicator
+         */
+        if (regions[i].size == 0 && regions[i].start_addr == NULL) {
+            len = i;
+            if (len == 0) {
+                return 0;
+            }
+            break;
+        }
+
+        /* New region(s) must be higher (in address space) than previous one */
+        if ((mem_start_addr + mem_size) > LWMEM_TO_BYTE_PTR(regions[i].start_addr)) {
+            return 0;
+        }
+
+        /* Save new values for next round */
+        mem_start_addr = regions[i].start_addr;
+        mem_size = regions[i].size;
     }
 
     /* Process further checks of valid inputs */
@@ -710,26 +724,6 @@ lwmem_assignmem_ex(lwmem_t* const lw, const lwmem_region_t* regions, size_t len)
 #endif /* LWMEM_CFG_OS */
        ) {
         return 0;
-    }
-
-    /* Ensure regions are growing linearly and do not overlap in between */
-    mem_start_addr = (void*)0;
-    mem_size = 0;
-    for (size_t i = 0; i < len; ++i) {
-        /* Make sure for valid entry */
-        if (regions[i].size == 0 && regions[i].start_addr == NULL) {
-            len = i;
-            break;
-        }
-
-        /* New region(s) must be higher (in address space) than previous one */
-        if ((mem_start_addr + mem_size) > LWMEM_TO_BYTE_PTR(regions[i].start_addr)) {
-            return 0;
-        }
-
-        /* Save new values for next try */
-        mem_start_addr = regions[i].start_addr;
-        mem_size = regions[i].size;
     }
 
     for (size_t i = 0; i < len; ++i, ++regions) {

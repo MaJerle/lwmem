@@ -1,6 +1,6 @@
 {
 	"name": "LwMEM",
-	"version": "1.6.0",
+	"version": "2.0.0",
 	"description": "Lightweight dynamic memory manager optimized for embedded systems",
 	"keywords": "lwmem, memory, dynamic, heap, malloc, calloc, realloc, free, lightweight, manager, embedded, stm32, win32",
 	"repository": {

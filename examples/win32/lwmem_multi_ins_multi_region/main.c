@@ -7,6 +7,7 @@
 
 #include "lwmem/lwmem.h"
 #include <stdio.h>
+#include <string.h>
 
 /* Define multiple regions for default instance */
 uint8_t lw0_region1_data[1024];
@@ -47,14 +48,14 @@ main(void) {
     }
 
     /* Initialize default LwMEM instance with single region */
-    if (!lwmem_assignmem(lw0_regions, 0)) {
+    if (!lwmem_assignmem(lw0_regions)) {
         printf("Could not initialize default LwMEM instance!");
         return -1;
     }
     printf("Default LwMEM instance initialized and ready to use!\r\n");
 
     /* Initialize custom LwMEM instance with its custom regions */
-    if (!lwmem_assignmem_ex(&lw1, lw1_regions, 0)) {
+    if (!lwmem_assignmem_ex(&lw1, lw1_regions)) {
         printf("Could not initialize custom LwMEM instance!");
         return -1;
     }

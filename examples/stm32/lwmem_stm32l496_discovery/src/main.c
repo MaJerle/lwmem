@@ -27,7 +27,6 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         v1.6.0
  */
 #include "main.h"
 #include "lwmem/lwmem.h"
@@ -66,7 +65,7 @@ main(void) {
 
     /* Initialize LwMEM */
     printf("Initializing LwMEM...\r\n");
-    if (!lwmem_assignmem(regions, 0)) {
+    if (!lwmem_assignmem(regions)) {
         printf("Cannot initialize LwMEM. Make sure your regions are not overlapping each other and are in ascending memory order\r\n");
         while (1) {}
     } else {

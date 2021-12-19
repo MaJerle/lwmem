@@ -19,7 +19,7 @@ main(void) {
     void* ptr, *ptr2;
 
     /* Initialize default LwMEM instance with single region */
-    if (!lwmem_assignmem(regions, 0)) {
+    if (!lwmem_assignmem(regions)) {
         printf("Could not initialize LwMEM!");
         return -1;
     }
