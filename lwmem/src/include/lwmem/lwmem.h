@@ -29,7 +29,7 @@
  * This file is part of LwMEM - Lightweight dynamic memory manager library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         v1.6.0
+ * Version:         v2.0.0
  */
 #ifndef LWMEM_HDR_H
 #define LWMEM_HDR_H
@@ -102,7 +102,7 @@ typedef struct {
     size_t size;                                /*!< Size of region in units of bytes */
 } lwmem_region_t;
 
-size_t      lwmem_assignmem_ex(lwmem_t* const lw, const lwmem_region_t* regions, size_t len);
+size_t      lwmem_assignmem_ex(lwmem_t* const lw, const lwmem_region_t* regions);
 void*       lwmem_malloc_ex(lwmem_t* const lw, const lwmem_region_t* region, const size_t size);
 void*       lwmem_calloc_ex(lwmem_t* const lw, const lwmem_region_t* region, const size_t nitems, const size_t size);
 void*       lwmem_realloc_ex(lwmem_t* const lw, const lwmem_region_t* region, void* const ptr, const size_t size);
@@ -114,15 +114,21 @@ size_t      lwmem_get_size_ex(lwmem_t* const lw, void* ptr);
 /**
  * \note            This is a wrapper for \ref lwmem_assignmem_ex function.
  *                      It operates in default LwMEM instance and uses first available region for memory operations
- * \param[in]       regions: Array of regions with address and its size.
+ * \param[in]       regions: Pointer to array of regions with address and respective size.
  *                      Regions must be in increasing order (start address) and must not overlap in-between.
- *                      When `len` param is set to `0`, regions array must contain last entry with `NULL` address and `0` length
- * \param[in]       len: Number of regions in array.
- *                      Can be set to `0` to describe number of regions with `regions` parameter.
- *                      Array must have last entry with `0` length and `NULL` address, indicating end of array (similar to end of string)
+ *                      Last region entry must have address `NULL` and size set to `0`
+ * \code{.c}
+//Example definition
+lwmem_region_t regions[] = {
+    { (void *)0x10000000, 0x1000 }, //Region starts at address 0x10000000 and is 0x1000 bytes long
+    { (void *)0x20000000, 0x2000 }, //Region starts at address 0x20000000 and is 0x2000 bytes long
+    { (void *)0x30000000, 0x3000 }, //Region starts at address 0x30000000 and is 0x3000 bytes long
+    { NULL, 0 }                     //Array termination indicator
+}
+\endcode
  * \return          `0` on failure, number of final regions used for memory manager on success
  */
-#define     lwmem_assignmem(regions, len)           lwmem_assignmem_ex(NULL, (regions), (len))
+#define     lwmem_assignmem(regions)                lwmem_assignmem_ex(NULL, (regions))
 
 /**
  * \note            This is a wrapper for \ref lwmem_malloc_ex function.

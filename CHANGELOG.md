@@ -2,6 +2,11 @@
 
 ## Develop
 
+## v2.0.0
+
+- Remove `len` parameter for regions definition. Affected functions: `lwmem_assignmem` and `lwmem_assignmem_ex`
+- Create separate branch for v1.x, for critical maintenance purpose only
+
 ## v1.6.0
 
 - Add option to define regions with array only, setting length to `0` by default

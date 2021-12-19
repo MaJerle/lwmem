@@ -7,13 +7,15 @@
 
 #include "lwmem/lwmem.h"
 #include <stdio.h>
+#include <string.h>
 
 /* Define multiple regions for default instance */
 uint8_t lw0_region1_data[1024];
 uint8_t lw0_region2_data[256];
 lwmem_region_t lw0_regions[] = {
     { .start_addr = lw0_region1_data, .size = sizeof(lw0_region1_data) },
-    { .start_addr = lw0_region2_data, .size = sizeof(lw0_region2_data) }
+    { .start_addr = lw0_region2_data, .size = sizeof(lw0_region2_data) },
+    { .start_addr = NULL, .size = 0 },
 };
 
 /* Define second LwMEM instance and multiple regions for new instance */
@@ -21,8 +23,9 @@ lwmem_t lw1;
 uint8_t lw1_region1_data[1024];
 uint8_t lw1_region2_data[512];
 lwmem_region_t lw1_regions[] = {
-    {.start_addr = lw1_region1_data, .size = sizeof(lw1_region1_data) },
-    {.start_addr = lw1_region2_data, .size = sizeof(lw1_region2_data) }
+    { .start_addr = lw1_region1_data, .size = sizeof(lw1_region1_data) },
+    { .start_addr = lw1_region2_data, .size = sizeof(lw1_region2_data) },
+    { .start_addr = NULL, .size = 0 },
 };
 
 int
@@ -45,14 +48,14 @@ main(void) {
     }
 
     /* Initialize default LwMEM instance with single region */
-    if (!lwmem_assignmem(lw0_regions, LWMEM_ARRAYSIZE(lw0_regions))) {
+    if (!lwmem_assignmem(lw0_regions)) {
         printf("Could not initialize default LwMEM instance!");
         return -1;
     }
     printf("Default LwMEM instance initialized and ready to use!\r\n");
 
     /* Initialize custom LwMEM instance with its custom regions */
-    if (!lwmem_assignmem_ex(&lw1, lw1_regions, LWMEM_ARRAYSIZE(lw1_regions))) {
+    if (!lwmem_assignmem_ex(&lw1, lw1_regions)) {
         printf("Could not initialize custom LwMEM instance!");
         return -1;
     }

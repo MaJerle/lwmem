@@ -6,13 +6,15 @@
 
 #include "lwmem/lwmem.h"
 #include <stdio.h>
+#include <string.h>
 
 /* Define multiple regions */
 uint8_t region1_data[1024];
 uint8_t region2_data[256];
 lwmem_region_t regions[] = {
     { .start_addr = region1_data, .size = sizeof(region1_data) },
-    { .start_addr = region2_data, .size = sizeof(region2_data) }
+    { .start_addr = region2_data, .size = sizeof(region2_data) },
+    { .start_addr = NULL, .size = 0 },
 };
 
 int
@@ -28,7 +30,7 @@ main(void) {
     }
 
     /* Initialize default LwMEM instance with single region */
-    if (!lwmem_assignmem(regions, LWMEM_ARRAYSIZE(regions))) {
+    if (!lwmem_assignmem(regions)) {
         printf("Could not initialize LwMEM!");
         return -1;
     }
