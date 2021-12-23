@@ -1,19 +1,19 @@
 cmake_minimum_required(VERSION 3.0.0)
+
+# Setup project
 project(LwLibPROJECT VERSION 0.1.0)
 
-include(CTest)
-enable_testing()
+# Add executable and library
+add_executable(${PROJECT_NAME})
 
-add_executable(${PROJECT_NAME}
-    lwmem/src/lwmem/lwmem.c
-    lwmem/src/system/lwmem_sys_win32.c
-    tests/lwmem_test.c
-    dev/VisualStudio/main.c
+# Add key executable block
+target_sources(${PROJECT_NAME} PUBLIC
+    ${CMAKE_CURRENT_LIST_DIR}/tests/lwmem_test.c
+    ${CMAKE_CURRENT_LIST_DIR}/dev/VisualStudio/main.c
     )
 
 target_include_directories(${PROJECT_NAME} PRIVATE
-    dev/VisualStudio
-    lwmem/src/include
+    ${CMAKE_CURRENT_LIST_DIR}/dev/VisualStudio
     )
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE
@@ -23,6 +23,5 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
     LWMEM_DEV
     )
 
-set(CPACK_PROJECT_NAME ${PROJECT_NAME})
-set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
-include(CPack)
+# Go to sub directory
+add_subdirectory(lwmem)
