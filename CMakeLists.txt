@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.0.0)
 
 # Setup project
 project(LwMEM VERSION 2.0.1)
-set(LWMEM_LIB_NAME lwmem)
 
 # ------------------------
 # Configuration used if this is used as

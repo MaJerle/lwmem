@@ -16,7 +16,7 @@ endif()
 add_library(${LWMEM_LIB_NAME} INTERFACE)
 
 # Setup generic source files
-target_sources(${LWMEM_LIB_NAME} INTERFACE
+target_sources(${LWMEM_LIB_NAME} PUBLIC
     ${CMAKE_CURRENT_LIST_DIR}/src/lwmem/lwmem.c
     ${CMAKE_CURRENT_LIST_DIR}/src/system/lwmem_sys_${LWMEM_SYS_ARCH}.c
     )
