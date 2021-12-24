@@ -73,7 +73,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>..\..\lwmem\src\include;.;$(IncludePath)</IncludePath>
+    <IncludePath>..\lwmem\src\include;.;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
@@ -143,9 +143,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\lwmem\src\lwmem\lwmem.c" />
-    <ClCompile Include="..\..\lwmem\src\system\lwmem_sys_win32.c" />
-    <ClCompile Include="..\..\tests\lwmem_test.c" />
+    <ClCompile Include="..\lwmem\src\lwmem\lwmem.c" />
+    <ClCompile Include="..\lwmem\src\system\lwmem_sys_win32.c" />
+    <ClCompile Include="..\tests\lwmem_test.c" />
     <ClCompile Include="main.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
