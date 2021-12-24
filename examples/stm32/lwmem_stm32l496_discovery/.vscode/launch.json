@@ -5,16 +5,20 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "(Windows) Launch",
-            "type": "cppdbg",
+            "cwd": "${workspaceFolder}",
+            "executable": "build/lwmem_l496vg.elf",
+            "name": "Debug Microcontroller",
             "request": "launch",
-            "program": "${workspaceFolder}\\build\\lwmem_l496vg.elf",
-            "miDebuggerPath": "gdb.exe",
-            "args": [],
-            "stopAtEntry": false,
-            "cwd": "${fileDirname}",
-            "environment": [],
-            "console": "integratedTerminal"
+            "type": "cortex-debug",
+            "servertype": "stlink",
+            "serverpath": "c:/ST/STM32CubeIDE_1.0.2/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.stlink-gdb-server.win32_2.0.100.202109301221/tools/bin/ST-LINK_gdbserver.exe",
+            "armToolchainPath": "d:/_WORK/gcc-arm-none-eabi/10.3-2021.10/bin",
+            "device": "STM32L496VG",
+            "interface": "swd",
+            "serialNumber": "", // add J-Link serial number if having multiple attached the same time.
+            "runToMain": true,
+            "svdFile": "",
+            "v1": false
         }
     ]
 }
