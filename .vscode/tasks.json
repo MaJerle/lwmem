@@ -46,7 +46,7 @@
         {
             "type": "shell",
             "label": "Run application",
-            "command": "${workspaceFolder}\\build\\LwLibPROJECT.exe",
+            "command": "${workspaceFolder}\\build\\LwMEM.exe",
             "args": [],
             "problemMatcher": [],
         },

@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.0.0)
 project(LwMEM VERSION 2.0.1)
 
 # ------------------------
-# Configuration used if this is used as
+# Configuration used if cmake uses this as
 # top-level project CMakeLists.txt file
 # This is normally used for development purpose only
 if (PROJECT_IS_TOP_LEVEL)
@@ -26,8 +26,10 @@ if (PROJECT_IS_TOP_LEVEL)
         CONSOLE
         LWMEM_DEV
         )
-endif()
 
-# Add subdir with lwmem and link to the project
-add_subdirectory("lwmem")
-target_link_libraries(${PROJECT_NAME} lwmem)
+    # Add subdir with lwmem and link to the project
+    add_subdirectory("lwmem")
+    target_link_libraries(${PROJECT_NAME} lwmem)
+else()
+    message("LWMEM: For library link, use CMakeLists.txt in /lwmem directory")
+endif()
