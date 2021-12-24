@@ -2,6 +2,8 @@
 
 ## Develop
 
+- Split CMakeLists.txt files between library and executable
+
 ## v2.0.0
 
 - Remove `len` parameter for regions definition. Affected functions: `lwmem_assignmem` and `lwmem_assignmem_ex`
