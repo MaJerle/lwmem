@@ -29,18 +29,18 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS        ON)
 
 # Include headers
-set(CUBE_INCLUDE_DIRECTORIES
+set(st_cube_include_DIRS
     ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/st/${MCU_FAMILY}_HAL_Driver/Inc
     ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/st/${MCU_FAMILY}_HAL_Driver/Inc/Legacy
     ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/st/CMSIS/Device/ST/${MCU_FAMILY}/Include
     ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/st/CMSIS/include
     )
-set(PROJECT_INCLUDE_DIRECTORIES
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../../lwmem/src/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/inc)
+set(project_include_DIRS
+    ${CMAKE_CURRENT_SOURCE_DIR}/inc
+    )
 
 # Source files
-set(CUBE_SOURCES
+set(st_cube_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/st/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_dma.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/st/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_exti.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/st/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_gpio.c
@@ -49,7 +49,7 @@ set(CUBE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/st/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_usart.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/st/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_utils.c
     )
-set(PROJECT_SOURCES
+set(project_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/main.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/stm32l4xx_it.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/syscalls.c
@@ -58,8 +58,8 @@ set(PROJECT_SOURCES
 
 # Executable files
 add_executable(${EXECUTABLE}
-    ${CUBE_SOURCES} 
-    ${PROJECT_SOURCES}
+    ${st_cube_SRCS} 
+    ${project_SOURCES}
     ${STARTUP_SCRIPT}
     )
 
@@ -73,12 +73,11 @@ target_compile_definitions(${EXECUTABLE} PRIVATE
 
 # Add header directories (AFTER add_executable !!)
 target_include_directories(${EXECUTABLE} PRIVATE
-    ${CUBE_INCLUDE_DIRECTORIES}
-    ${PROJECT_INCLUDE_DIRECTORIES}
+    ${st_cube_include_DIRS}
+    ${project_include_DIRS}
     )
 
 # Add lwmem to the project
-set(LWMEM_SYS_ADD_FILES OFF)
 add_subdirectory("../../../lwmem" lwmem)
 target_link_libraries(${EXECUTABLE} lwmem)
 

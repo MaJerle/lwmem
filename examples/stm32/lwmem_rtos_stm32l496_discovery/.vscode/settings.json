@@ -2,6 +2,8 @@
     "files.associations": {
         "cmsis_os.h": "c",
         "freertos.h": "c",
-        "lwmem.h": "c"
+        "lwmem.h": "c",
+        "main.h": "c",
+        "lwmem_opts.h": "c"
     }
 }

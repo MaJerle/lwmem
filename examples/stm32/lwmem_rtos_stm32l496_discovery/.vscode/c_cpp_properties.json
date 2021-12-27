@@ -5,7 +5,7 @@
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder}",   
-                "${workspaceFolder}\\inc",   
+                "${workspaceFolder}\\inc",
                 "${workspaceFolder}\\..\\..\\lib\\st\\STM32L4xx_HAL_Driver\\Inc",
                 "${workspaceFolder}\\..\\..\\lib\\st\\CMSIS\\Device\\ST\\STM32L4xx\\Include",
                 "${workspaceFolder}\\..\\..\\lib\\st\\CMSIS\\include",

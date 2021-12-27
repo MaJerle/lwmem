@@ -20,6 +20,9 @@ add_executable(${PROJECT_NAME})
 target_sources(${PROJECT_NAME} PUBLIC
     ${CMAKE_CURRENT_LIST_DIR}/dev/main.c
     ${CMAKE_CURRENT_LIST_DIR}/tests/lwmem_test.c
+
+    # win32 port
+    ${CMAKE_CURRENT_LIST_DIR}/lwmem/src/system/lwmem_sys_win32.c
     )
 
 # Add key include paths
@@ -46,7 +49,5 @@ target_compile_options(${PROJECT_NAME} PRIVATE
     )
 
 # Add subdir with lwmem and link to the project
-set(LWMEM_SYS_ADD_FILES ON)
-set(LWMEM_SYS_ARCH "win32")
 add_subdirectory("lwmem")
 target_link_libraries(${PROJECT_NAME} lwmem)
