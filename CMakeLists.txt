@@ -36,6 +36,17 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC
     LWMEM_DEV
     )
 
+# Compiler and linker options
+target_compile_options(${PROJECT_NAME} PRIVATE
+    ${CPU_PARAMETERS}
+    -Wall
+    -Wextra
+    -Wpedantic
+    -Wno-unused-parameter
+    )
+
 # Add subdir with lwmem and link to the project
+set(LWMEM_SYS_ADD_FILES ON)
+set(LWMEM_SYS_ARCH "win32")
 add_subdirectory("lwmem")
 target_link_libraries(${PROJECT_NAME} lwmem)

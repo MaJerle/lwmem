@@ -41,7 +41,6 @@ set(PROJECT_INCLUDE_DIRECTORIES
 
 # Source files
 set(CUBE_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../../lwmem/src/lwmem/lwmem.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/st/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_dma.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/st/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_exti.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/st/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_gpio.c
@@ -77,6 +76,11 @@ target_include_directories(${EXECUTABLE} PRIVATE
     ${CUBE_INCLUDE_DIRECTORIES}
     ${PROJECT_INCLUDE_DIRECTORIES}
     )
+
+# Add lwmem to the project
+set(LWMEM_SYS_ADD_FILES OFF)
+add_subdirectory("../../../lwmem" lwmem)
+target_link_libraries(${EXECUTABLE} lwmem)
 
 # Compiler and linker options
 target_compile_options(${EXECUTABLE} PRIVATE

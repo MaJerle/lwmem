@@ -94,6 +94,7 @@ target_include_directories(${EXECUTABLE} PRIVATE
     )
 
 # Add lwmem to the project
+set(LWMEM_SYS_ADD_FILES ON)
 set(LWMEM_SYS_ARCH "cmsis_os")
 add_subdirectory("../../../lwmem" lwmem)
 target_link_libraries(${EXECUTABLE} lwmem)
