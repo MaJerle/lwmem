@@ -1037,7 +1037,7 @@ print_block(size_t i, lwmem_block_t* block) {
 
     printf("| %5d | %16p | %6d | %4d | %16d |",
            (int)i,
-           block,
+           (void *)block,
            (int)is_free,
            (int)block_size,
            (int)(is_free ? (block_size - LWMEM_BLOCK_META_SIZE) : 0));
