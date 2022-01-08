@@ -3,6 +3,7 @@
 ## Develop
 
 - Split CMakeLists.txt files between library and executable
+- Add C++ wrapper functions
 
 ## v2.0.0
 

@@ -51,3 +51,4 @@ target_compile_options(${PROJECT_NAME} PRIVATE
 # Add subdir with lwmem and link to the project
 add_subdirectory("lwmem")
 target_link_libraries(${PROJECT_NAME} lwmem)
+target_link_libraries(${PROJECT_NAME} lwmem_cpp)
