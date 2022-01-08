@@ -18,7 +18,7 @@ add_executable(${PROJECT_NAME})
 
 # Add key executable block
 target_sources(${PROJECT_NAME} PUBLIC
-    ${CMAKE_CURRENT_LIST_DIR}/dev/main.c
+    ${CMAKE_CURRENT_LIST_DIR}/dev/main.cpp
     ${CMAKE_CURRENT_LIST_DIR}/tests/lwmem_test.c
 
     # win32 port
