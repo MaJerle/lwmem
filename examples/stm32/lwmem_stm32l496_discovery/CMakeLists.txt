@@ -1,85 +1,162 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.22)
 
-# ##############################################################################
-# Edit your MCU information up to the next border
-project(lwmem_l496vg)
-set(PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+message("Entering ${CMAKE_CURRENT_LIST_DIR}/CMakeLists.txt")
 
-set(MCU_FAMILY              STM32L4xx)
-set(MCU_MODEL               STM32L496xx)
+#
+# Core project settings
+#
+set(PROJ_PATH                       ${CMAKE_CURRENT_SOURCE_DIR})
+project(lwmem_stm32l496g_discovery)
+enable_language(C CXX ASM)
+message("Build type: "              ${CMAKE_BUILD_TYPE})
+
+# Setup compiler settings
+set(CMAKE_C_STANDARD                11)
+set(CMAKE_C_STANDARD_REQUIRED       ON)
+set(CMAKE_C_EXTENSIONS              ON)
+set(CMAKE_CXX_STANDARD              20)
+set(CMAKE_CXX_STANDARD_REQUIRED     ON)
+set(CMAKE_CXX_EXTENSIONS            ON)
+
+#
+# Core MCU flags, CPU, instruction set and FPU setup
+#
 set(CPU_PARAMETERS
-    -mcpu=cortex-m4
     -mthumb
+    -mcpu=cortex-m4
     -mfpu=fpv4-sp-d16
     -mfloat-abi=hard
-    )
+)
 
-# Set startup and linker script
-set(STARTUP_SCRIPT      ${CMAKE_CURRENT_SOURCE_DIR}/STM32CubeIDE/startup/startup_stm32l496xx.s)
-set(MCU_LINKER_SCRIPT   ${CMAKE_CURRENT_SOURCE_DIR}/STM32CubeIDE/Debug_STM32L496AG_FLASH.ld)
+# Set linker script
+set(linker_script_SRC               ${PROJ_PATH}/STM32CubeIDE/Debug_STM32L496AG_FLASH.ld)
+set(EXECUTABLE                      ${CMAKE_PROJECT_NAME})
 
-# ##############################################################################
-set(EXECUTABLE                  ${CMAKE_PROJECT_NAME})
-enable_language(C CXX ASM)
-set(CMAKE_C_STANDARD            11)
-set(CMAKE_C_STANDARD_REQUIRED   ON)
-set(CMAKE_C_EXTENSIONS          ON)
-set(CMAKE_CXX_STANDARD          20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS        ON)
-
-# Include headers
-set(st_cube_include_DIRS
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/st/${MCU_FAMILY}_HAL_Driver/Inc
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/st/${MCU_FAMILY}_HAL_Driver/Inc/Legacy
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/st/CMSIS/Device/ST/${MCU_FAMILY}/Include
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/st/CMSIS/include
-    )
-set(project_include_DIRS
-    ${CMAKE_CURRENT_SOURCE_DIR}/inc
-    )
-
+#
 # Source files
-set(st_cube_SRCS
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/st/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_dma.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/st/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_exti.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/st/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_gpio.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/st/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_pwr.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/st/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_rcc.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/st/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_usart.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/st/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_utils.c
-    )
-set(project_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/main.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/stm32l4xx_it.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/syscalls.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/system_stm32l4xx.c
-    )
+#
+set(linked_SRCS
+    ${PROJ_PATH}/../../../lwmem/src/lwmem/lwmem.c
+	${PROJ_PATH}/../../lib/st/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_dma.c
+	${PROJ_PATH}/../../lib/st/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_exti.c
+	${PROJ_PATH}/../../lib/st/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_gpio.c
+	${PROJ_PATH}/../../lib/st/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_pwr.c
+	${PROJ_PATH}/../../lib/st/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_rcc.c
+	${PROJ_PATH}/../../lib/st/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_usart.c
+	${PROJ_PATH}/../../lib/st/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_utils.c
+	${PROJ_PATH}/src/main.c
+	${PROJ_PATH}/src/stm32l4xx_it.c
+	${PROJ_PATH}/src/syscalls.c
+	${PROJ_PATH}/src/system_stm32l4xx.c
+)
+set(source_folder_LwMEM_SRCS 
+	)
 
-# Executable files
-add_executable(${EXECUTABLE}
-    ${st_cube_SRCS} 
-    ${project_SOURCES}
-    ${STARTUP_SCRIPT}
-    )
+set(source_folder_STM32L4xx_HAL_Drivers_SRCS 
+	)
 
-# Embedded macros(defines)
-target_compile_definitions(${EXECUTABLE} PRIVATE
+set(source_folder_User_SRCS 
+	)
+
+set(source_folder_startup_SRCS 
+	${PROJ_PATH}/STM32CubeIDE/startup/startup_stm32l496xx.s)
+
+# Source files in the same path as ".cproject/.project" but nowhere included in file descriptions
+set(all_project_dir_SRCS
+    
+)
+
+#
+# Include directories
+#
+set(include_c_DIRS
+    ${PROJ_PATH}/inc
+	${PROJ_PATH}/../../../lwmem/src/include
+	${PROJ_PATH}/../../lib/st/STM32L4xx_HAL_Driver/Inc
+	${PROJ_PATH}/../../lib/st/CMSIS/Device/ST/STM32L4xx/Include
+	${PROJ_PATH}/../../lib/st/CMSIS/Include
+)
+set(include_cxx_DIRS
+    
+)
+set(include_asm_DIRS
+    
+)
+
+#
+# Symbols definition
+#
+set(symbols_c_SYMB
     "__weak=__attribute__((weak))"
-    "__packed=__attribute__((__packed__))"
-    ${MCU_MODEL}
-    USE_FULL_LL_DRIVER
-    )
+	"__packed=__attribute__((__packed__))"
+	"USE_FULL_LL_DRIVER"
+	"STM32L496xx"
+)
+set(symbols_cxx_SYMB
+    "STM32F10X_MD"
+	"USE_STDPERIPH_DRIVER"
+)
+set(symbols_asm_SYMB
+    
+)
 
-# Add header directories (AFTER add_executable !!)
+#
+# Link directories setup
+# Must be before executable is added
+#
+set(link_DIRS
+    
+)
+link_directories(${EXECUTABLE} ${link_DIRS})
+
+#
+# Executable files
+#
+add_executable(${EXECUTABLE}
+    ${linked_SRCS}
+    ${all_project_dir_SRCS} 
+	${source_folder_LwMEM_SRCS}
+	${source_folder_STM32L4xx_HAL_Drivers_SRCS}
+	${source_folder_User_SRCS}
+	${source_folder_startup_SRCS})
+
+#
+# Add linked libraries for linker
+#
+set(link_LIBS
+    
+)
+target_link_libraries(${EXECUTABLE} ${link_LIBS})
+
+#
+# Project symbols
+#
+target_compile_definitions(${EXECUTABLE} PRIVATE
+    # Language specific only
+    $<$<COMPILE_LANGUAGE:C>: ${symbols_c_SYMB}>
+    $<$<COMPILE_LANGUAGE:CXX>: ${symbols_cxx_SYMB}>
+    $<$<COMPILE_LANGUAGE:ASM>: ${symbols_asm_SYMB}>
+
+    # Configuration specific
+    $<$<CONFIG:Debug>:
+        DEBUG
+    >
+    $<$<CONFIG:Release>: >
+)
+
+#
+# Add include paths for each of the compiler
+#
 target_include_directories(${EXECUTABLE} PRIVATE
-    ${st_cube_include_DIRS}
-    ${project_include_DIRS}
-    )
+    # Language specific only
+    $<$<COMPILE_LANGUAGE:C>: ${include_c_DIRS}>
+    $<$<COMPILE_LANGUAGE:CXX>: ${include_cxx_DIRS}>
+    $<$<COMPILE_LANGUAGE:ASM>: ${include_asm_DIRS}>
 
-# Add lwmem to the project
-add_subdirectory("../../../lwmem" lwmem)
-target_link_libraries(${EXECUTABLE} lwmem)
+    # Configuration specific
+    $<$<CONFIG:Debug>: >
+    $<$<CONFIG:Release>: >
+)
 
 # Compiler and linker options
 target_compile_options(${EXECUTABLE} PRIVATE
@@ -88,18 +165,29 @@ target_compile_options(${EXECUTABLE} PRIVATE
     -Wextra
     -Wpedantic
     -Wno-unused-parameter
+    $<$<COMPILE_LANGUAGE:C>:
+
+    >
     $<$<COMPILE_LANGUAGE:CXX>:
-        -Wno-volatile
-        -Wold-style-cast
-        -Wuseless-cast
-        -Wsuggest-override>
-    $<$<CONFIG:Debug>:-Og -g3 -ggdb>
-    $<$<CONFIG:Release>:-Og -g0>
-    )
+        #-Wno-volatile
+        #-Wold-style-cast
+        #-Wuseless-cast
+        #-Wsuggest-override
+    >
+    $<$<COMPILE_LANGUAGE:ASM>:
+
+    >
+    $<$<CONFIG:Debug>:
+        -Og -g3 -ggdb
+    >
+    $<$<CONFIG:Release>:
+        -Og -g0
+    >
+)
 
 # Setup linker parameters
 target_link_options(${EXECUTABLE} PRIVATE
-    -T${MCU_LINKER_SCRIPT}
+    -T${MCU_LINKER_SCRIPT}${linker_script_SRC}
     ${CPU_PARAMETERS}
     -Wl,-Map=${CMAKE_PROJECT_NAME}.map
     --specs=nosys.specs
@@ -109,16 +197,22 @@ target_link_options(${EXECUTABLE} PRIVATE
     -lstdc++
     -lsupc++
     -Wl,--end-group
-    -Wl,--print-memory-usage)
+    -Wl,--print-memory-usage
+)
 
 # Execute post-build to print size
 add_custom_command(TARGET ${EXECUTABLE} POST_BUILD
-    COMMAND ${CMAKE_SIZE} $<TARGET_FILE:${EXECUTABLE}>)
+    COMMAND ${CMAKE_SIZE} $<TARGET_FILE:${EXECUTABLE}>
+)
 
 # Convert output to hex and binary
 add_custom_command(TARGET ${EXECUTABLE} POST_BUILD
-    COMMAND ${CMAKE_OBJCOPY} -O ihex $<TARGET_FILE:${EXECUTABLE}> ${EXECUTABLE}.hex)
+    COMMAND ${CMAKE_OBJCOPY} -O ihex $<TARGET_FILE:${EXECUTABLE}> ${EXECUTABLE}.hex
+)
 
 # Conver to bin file -> add conditional check?
 add_custom_command(TARGET ${EXECUTABLE} POST_BUILD
-    COMMAND ${CMAKE_OBJCOPY} -O binary $<TARGET_FILE:${EXECUTABLE}> ${EXECUTABLE}.bin)
+    COMMAND ${CMAKE_OBJCOPY} -O binary $<TARGET_FILE:${EXECUTABLE}> ${EXECUTABLE}.bin
+)
+
+message("Exiting ${CMAKE_CURRENT_LIST_DIR}/CMakeLists.txt")
