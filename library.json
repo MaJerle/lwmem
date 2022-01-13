@@ -28,7 +28,8 @@
 			"docs",
 			"**/.vs",
 			"**/Debug",
-			"build"
+			"build",
+			"**/build"
 		]
 	}
 }
