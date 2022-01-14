@@ -4,6 +4,7 @@
 
 - Split CMakeLists.txt files between library and executable
 - Add C++ wrapper functions
+- Change license year to 2022
 
 ## v2.0.0
 
