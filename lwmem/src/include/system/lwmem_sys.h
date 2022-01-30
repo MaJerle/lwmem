@@ -47,7 +47,7 @@ extern "C" {
  * \brief           System functions when used with operating system
  * \{
  */
- 
+
 /**
  * \brief           Create a new mutex and assign value to handle
  * \param[out]      m: Output variable to save mutex handle

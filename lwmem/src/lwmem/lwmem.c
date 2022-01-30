@@ -686,14 +686,14 @@ lwmem_assignmem_ex(lwmem_t* const lw, const lwmem_region_t* regions) {
     if (regions == NULL
         || LWMEM_GET_LW(lw)->end_block != NULL  /* Init function may only be called once per lwmem instance */
         || (((size_t)LWMEM_CFG_ALIGN_NUM) & (((size_t)LWMEM_CFG_ALIGN_NUM) - 1)) > 0) { /* Must be power of 2 */
-        return 0;    
+        return 0;
     }
 
     /* Check values entered by application */
     mem_start_addr = (void*)0;
     mem_size = 0;
     for (size_t i = 0;; ++i) {
-        /* 
+        /*
          * Check for valid entry or end of array descriptor
          *
          * Invalid entry is considered as "end-of-region" indicator
@@ -1037,7 +1037,7 @@ print_block(size_t i, lwmem_block_t* block) {
 
     printf("| %5d | %16p | %6d | %4d | %16d |",
            (int)i,
-           (void *)block,
+           (void*)block,
            (int)is_free,
            (int)block_size,
            (int)(is_free ? (block_size - LWMEM_BLOCK_META_SIZE) : 0));
