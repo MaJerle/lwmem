@@ -10,3 +10,4 @@ When any of the settings shall be modified, it shall be done in dedicated applic
 	Check :ref:`getting_started` for guidelines on how to create and use configuration file.
 
 .. doxygengroup:: LWMEM_OPT
+	:inner:
