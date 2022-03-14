@@ -115,7 +115,7 @@ void        lwmem_free_s_ex(lwmem_t* lw, void** const ptr);
 size_t      lwmem_get_size_ex(lwmem_t* lw, void* ptr);
 #if LWMEM_CFG_ENABLE_STATS || __DOXYGEN__
 void        lwmem_get_stats_ex(lwmem_t* lw, lwmem_stats_t* stats);
-#endif
+#endif /* LWMEM_CFG_ENABLE_STATS || __DOXYGEN__ */
 
 /**
  * \note            This is a wrapper for \ref lwmem_assignmem_ex function.

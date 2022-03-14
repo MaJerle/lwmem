@@ -131,15 +131,15 @@
  * \param[in]       in_p: Previous of input block
  */
 #define LWMEM_GET_PREV_CURR_OF_BLOCK(in_lw, in_b, in_pp, in_p) do {     \
-        for ((in_pp) = NULL, (in_p) = &(in_lw->start_block);  \
+        for ((in_pp) = NULL, (in_p) = &((in_lw)->start_block);  \
              (in_p) != NULL && (in_p)->next < (in_b);                        \
              (in_pp) = (in_p), (in_p) = (in_p)->next                         \
             ) {}                                                                \
     } while (0)
 
 #if LWMEM_CFG_OS
-#define LWMEM_PROTECT(lw)         lwmem_sys_mutex_wait(&(lw->mutex))
-#define LWMEM_UNPROTECT(lw)       lwmem_sys_mutex_release(&(lw->mutex))
+#define LWMEM_PROTECT(lw)         lwmem_sys_mutex_wait(&((lw)->mutex))
+#define LWMEM_UNPROTECT(lw)       lwmem_sys_mutex_release(&((lw)->mutex))
 #else /* LWMEM_CFG_OS */
 #define LWMEM_PROTECT(lw)
 #define LWMEM_UNPROTECT(lw)
@@ -149,8 +149,8 @@
 #if LWMEM_CFG_ENABLE_STATS
 #define LWMEM_INC_STATS(field)              (++(field))
 #define LWMEM_UPDATE_MIN_FREE(lw) do {                                                  \
-        if (lw->mem_available_bytes < lw->stats.minimum_ever_mem_available_bytes) {    \
-            lw->stats.minimum_ever_mem_available_bytes = lw->mem_available_bytes;      \
+        if ((lw)->mem_available_bytes < (lw)->stats.minimum_ever_mem_available_bytes) {    \
+            (lw)->stats.minimum_ever_mem_available_bytes = (lw)->mem_available_bytes;      \
         }                                                                               \
     } while (0)
 #else
@@ -688,11 +688,11 @@ lwmem_region_t regions[] = {
  */
 size_t
 lwmem_assignmem_ex(lwmem_t* lw, const lwmem_region_t* regions) {
-    lw = LWMEM_GET_LW(lw);
     uint8_t* mem_start_addr;
     size_t mem_size, len = 0;
     lwmem_block_t* first_block, *prev_end_block;
 
+    lw = LWMEM_GET_LW(lw);
     /* Check first things first */
     if (regions == NULL
         || lw->end_block != NULL  /* Init function may only be called once per lwmem instance */
