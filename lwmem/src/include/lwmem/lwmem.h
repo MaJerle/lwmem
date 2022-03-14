@@ -70,6 +70,9 @@ typedef struct lwmem_block {
  * \brief           Statistics structure
  */
 typedef struct {
+    uint32_t mem_size_bytes;                    /*!< Total memory size of all regions combined */
+    uint32_t mem_available_bytes;               /*!< Free memory available for allocation */
+    uint32_t minimum_ever_mem_available_bytes;  /*!< Minimum amount of total free memory there has been in the heap since the system booted.  */
     uint32_t nr_alloc;                          /*!< Number of all allocated blocks in single instance  */
     uint32_t nr_free;                           /*!< Number of frees in the LwMEM instance */
 } lwmem_stats_t;
@@ -110,6 +113,9 @@ uint8_t     lwmem_realloc_s_ex(lwmem_t* lw, const lwmem_region_t* region, void**
 void        lwmem_free_ex(lwmem_t* lw, void* const ptr);
 void        lwmem_free_s_ex(lwmem_t* lw, void** const ptr);
 size_t      lwmem_get_size_ex(lwmem_t* lw, void* ptr);
+#if LWMEM_CFG_ENABLE_STATS || __DOXYGEN__
+void        lwmem_get_stats_ex(lwmem_t* lw, lwmem_stats_t* stats);
+#endif
 
 /**
  * \note            This is a wrapper for \ref lwmem_assignmem_ex function.
@@ -196,6 +202,13 @@ lwmem_region_t regions[] = {
  * \return          Block size for user in units of bytes
  */
 #define     lwmem_get_size(ptr)                     lwmem_get_size(NULL, (ptr))
+
+/**
+ * \note            This is a wrapper for \ref lwmem_get_stats_ex function.
+ *                      It operates in default LwMEM instance
+ * \param[in]       ptr: Pointer to lwmem_stats_t to store result
+ */
+#define     lwmem_get_stats(stats)                  lwmem_get_stats_ex(NULL, (stats))
 
 #if defined(LWMEM_DEV) && !__DOXYGEN__
 unsigned char lwmem_debug_create_regions(lwmem_region_t** regs_out, size_t count, size_t size);

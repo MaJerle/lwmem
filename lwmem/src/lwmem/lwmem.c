@@ -148,8 +148,14 @@
 /* Statistics part */
 #if LWMEM_CFG_ENABLE_STATS
 #define LWMEM_INC_STATS(field)              (++(field))
+#define LWMEM_UPDATE_MIN_FREE(lw) do {                                                  \
+        if (lw->mem_available_bytes < lw->stats.minimum_ever_mem_available_bytes) {    \
+            lw->stats.minimum_ever_mem_available_bytes = lw->mem_available_bytes;      \
+        }                                                                               \
+    } while (0)
 #else
 #define LWMEM_INC_STATS(field)
+#define LWMEM_UPDATE_MIN_FREE(lw, current_free)
 #endif /* LWMEM_CFG_ENABLE_STATS */
 
 /**
@@ -411,6 +417,7 @@ prv_alloc(lwmem_t* const lw, const lwmem_region_t* region, const size_t size) {
     prv_split_too_big_block(lw, curr, final_size);  /* Split block if it is too big */
     LWMEM_BLOCK_SET_ALLOC(curr);                /* Set block as allocated */
 
+    LWMEM_UPDATE_MIN_FREE(lw);
     LWMEM_INC_STATS(lw->stats.nr_alloc);
 
     return retval;
@@ -560,6 +567,7 @@ prv_realloc(lwmem_t* const lw, const lwmem_region_t* region, void* const ptr, co
              * and remove next free from list of free blocks
              */
             lw->mem_available_bytes -= prev->next->size;  /* For now decrease effective available bytes */
+            LWMEM_UPDATE_MIN_FREE(lw);
             block->size = block_size + prev->next->size;/* Increase effective size of new block */
             prev->next = prev->next->next;      /* Set next to next's next, effectively remove expanded block from free list */
 
@@ -590,6 +598,7 @@ prv_realloc(lwmem_t* const lw, const lwmem_region_t* region, void* const ptr, co
             LWMEM_MEMMOVE(new_data_ptr, old_data_ptr, block_size);
 
             lw->mem_available_bytes -= prev->size;/* For now decrease effective available bytes */
+            LWMEM_UPDATE_MIN_FREE(lw);
             prev->size += block_size;           /* Increase size of input block size */
             prevprev->next = prev->next;        /* Remove prev from free list as it is now being used for allocation together with existing block */
             block = prev;                       /* Move block pointer to previous one */
@@ -626,6 +635,7 @@ prv_realloc(lwmem_t* const lw, const lwmem_region_t* region, void* const ptr, co
             LWMEM_MEMMOVE(new_data_ptr, old_data_ptr, block_size);  /* Copy old buffer size to new location */
 
             lw->mem_available_bytes -= prev->size + prev->next->size; /* Decrease effective available bytes for free blocks before and after input block */
+            LWMEM_UPDATE_MIN_FREE(lw);
             prev->size += block_size + prev->next->size;/* Increase size of new block by size of 2 free blocks */
             prevprev->next = prev->next->next;  /* Remove free block before current one and block after current one from linked list (remove 2) */
             block = prev;                       /* Previous block is now current */
@@ -781,6 +791,10 @@ lwmem_assignmem_ex(lwmem_t* lw, const lwmem_region_t* regions) {
     /* Copy default state of start block */
     LWMEM_MEMCPY(&lwmem_default.start_block_first_use, &lwmem_default.start_block, sizeof(lwmem_default.start_block));
 #endif /* defined(LWMEM_DEV) */
+#if LWMEM_CFG_ENABLE_STATS
+    lw->stats.mem_size_bytes = lw->mem_available_bytes;
+    lw->stats.minimum_ever_mem_available_bytes = lw->mem_available_bytes;
+#endif
 
     return lw->mem_regions_count; /* Return number of regions used by manager */
 }
@@ -981,6 +995,23 @@ lwmem_get_size_ex(lwmem_t* lw, void* ptr) {
         LWMEM_UNPROTECT(lw);
     }
     return len;
+}
+
+/**
+ * \brief           Get statistics of a LwMEM instance
+ * \param[in]       lw: LwMEM instance. Set to `NULL` to use default instance.
+ *                      Instance must be the same as used during allocation procedure
+ * \param[in]       stats: Pointer to lwmem_stats_t to store result
+ */
+void
+lwmem_get_stats_ex(lwmem_t* lw, lwmem_stats_t* stats) {
+    if (stats != NULL) {
+        lw = LWMEM_GET_LW(lw);
+        LWMEM_PROTECT(lw);
+        *stats = lw->stats;
+        stats->mem_available_bytes = lw->mem_available_bytes;
+        LWMEM_UNPROTECT(lw);
+    }
 }
 
 /* Part of library used ONLY for LWMEM_DEV purposes */
