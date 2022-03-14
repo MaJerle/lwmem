@@ -102,14 +102,14 @@ typedef struct {
     size_t size;                                /*!< Size of region in units of bytes */
 } lwmem_region_t;
 
-size_t      lwmem_assignmem_ex(lwmem_t* const lw, const lwmem_region_t* regions);
-void*       lwmem_malloc_ex(lwmem_t* const lw, const lwmem_region_t* region, const size_t size);
-void*       lwmem_calloc_ex(lwmem_t* const lw, const lwmem_region_t* region, const size_t nitems, const size_t size);
-void*       lwmem_realloc_ex(lwmem_t* const lw, const lwmem_region_t* region, void* const ptr, const size_t size);
-uint8_t     lwmem_realloc_s_ex(lwmem_t* const lw, const lwmem_region_t* region, void** const ptr, const size_t size);
-void        lwmem_free_ex(lwmem_t* const lw, void* const ptr);
-void        lwmem_free_s_ex(lwmem_t* const lw, void** const ptr);
-size_t      lwmem_get_size_ex(lwmem_t* const lw, void* ptr);
+size_t      lwmem_assignmem_ex(lwmem_t* lw, const lwmem_region_t* regions);
+void*       lwmem_malloc_ex(lwmem_t* lw, const lwmem_region_t* region, const size_t size);
+void*       lwmem_calloc_ex(lwmem_t* lw, const lwmem_region_t* region, const size_t nitems, const size_t size);
+void*       lwmem_realloc_ex(lwmem_t* lw, const lwmem_region_t* region, void* const ptr, const size_t size);
+uint8_t     lwmem_realloc_s_ex(lwmem_t* lw, const lwmem_region_t* region, void** const ptr, const size_t size);
+void        lwmem_free_ex(lwmem_t* lw, void* const ptr);
+void        lwmem_free_s_ex(lwmem_t* lw, void** const ptr);
+size_t      lwmem_get_size_ex(lwmem_t* lw, void* ptr);
 
 /**
  * \note            This is a wrapper for \ref lwmem_assignmem_ex function.
