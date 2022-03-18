@@ -155,7 +155,7 @@
     } while (0)
 #else
 #define LWMEM_INC_STATS(field)
-#define LWMEM_UPDATE_MIN_FREE(lw, current_free)
+#define LWMEM_UPDATE_MIN_FREE(lw)
 #endif /* LWMEM_CFG_ENABLE_STATS */
 
 /**
