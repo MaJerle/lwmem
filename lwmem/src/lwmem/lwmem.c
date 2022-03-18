@@ -997,11 +997,13 @@ lwmem_get_size_ex(lwmem_t* lw, void* ptr) {
     return len;
 }
 
+#if LWMEM_CFG_ENABLE_STATS || __DOXYGEN__
+
 /**
  * \brief           Get statistics of a LwMEM instance
  * \param[in]       lw: LwMEM instance. Set to `NULL` to use default instance.
  *                      Instance must be the same as used during allocation procedure
- * \param[in]       stats: Pointer to lwmem_stats_t to store result
+ * \param[in]       stats: Pointer to \ref lwmem_stats_t to store result
  */
 void
 lwmem_get_stats_ex(lwmem_t* lw, lwmem_stats_t* stats) {
@@ -1013,6 +1015,8 @@ lwmem_get_stats_ex(lwmem_t* lw, lwmem_stats_t* stats) {
         LWMEM_UNPROTECT(lw);
     }
 }
+
+#endif /* LWMEM_CFG_ENABLE_STATS || __DOXYGEN__ */
 
 /* Part of library used ONLY for LWMEM_DEV purposes */
 /* To validate and test library */
