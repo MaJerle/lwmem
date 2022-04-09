@@ -201,7 +201,7 @@ lwmem_region_t regions[] = {
  * \param[in]       ptr: Pointer to allocated memory
  * \return          Block size for user in units of bytes
  */
-#define     lwmem_get_size(ptr)                     lwmem_get_size(NULL, (ptr))
+#define     lwmem_get_size(ptr)                     lwmem_get_size_ex(NULL, (ptr))
 
 /**
  * \note            This is a wrapper for \ref lwmem_get_stats_ex function.
