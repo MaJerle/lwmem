@@ -42,6 +42,8 @@
 extern "C" {
 #endif /* __cplusplus */
 
+#if LWMEM_CFG_OS || __DOXYGEN__
+
 /**
  * \defgroup        LWMEM_SYS System functions
  * \brief           System functions when used with operating system
@@ -79,6 +81,8 @@ uint8_t     lwmem_sys_mutex_release(LWMEM_CFG_OS_MUTEX_HANDLE* m);
 /**
  * \}
  */
+
+#endif /* LWMEM_CFG_OS || __DOXYGEN__ */
 
 #ifdef __cplusplus
 }
