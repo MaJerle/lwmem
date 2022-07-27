@@ -54,8 +54,8 @@ lw_c_regions[] = {
 
 void
 lwmem_test_run(void) {
-    void* ptr_1, * ptr_2, * ptr_3, * ptr_4;
-    void* ptr_c_1, * ptr_c_2, * ptr_c_3, * ptr_c_4;
+    void* ptr_1, * ptr_2, * ptr_3;
+    void* ptr_c_1, * ptr_c_2, * ptr_c_3;
 
     /* Initialize default lwmem instance */
     /* Use one of 2 possible function calls: */

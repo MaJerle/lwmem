@@ -23,13 +23,13 @@ target_sources(${PROJECT_NAME} PUBLIC
 
     # win32 port
     ${CMAKE_CURRENT_LIST_DIR}/lwmem/src/system/lwmem_sys_win32.c
-    )
+)
 
 # Add key include paths
 target_include_directories(${PROJECT_NAME} PUBLIC
     ${CMAKE_CURRENT_LIST_DIR}
     ${CMAKE_CURRENT_LIST_DIR}/dev
-    )
+)
 
 # Compilation definition information
 target_compile_definitions(${PROJECT_NAME} PUBLIC
@@ -37,16 +37,14 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC
     _DEBUG
     CONSOLE
     LWMEM_DEV
-    )
+)
 
-# Compiler and linker options
+# Compiler options
 target_compile_options(${PROJECT_NAME} PRIVATE
-    ${CPU_PARAMETERS}
     -Wall
     -Wextra
     -Wpedantic
-    -Wno-unused-parameter
-    )
+)
 
 # Add subdir with lwmem and link to the project
 add_subdirectory("lwmem")

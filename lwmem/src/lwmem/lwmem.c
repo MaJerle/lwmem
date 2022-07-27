@@ -245,7 +245,12 @@ prv_insert_free_block(lwmem_t* const lw, lwmem_block_t* nb) {
      * By doing this, we protect data left by app
      * and we make sure new allocations cannot see old information
      */
-    LWMEM_MEMSET(LWMEM_GET_PTR_FROM_BLOCK(nb), 0x00, nb->size - LWMEM_BLOCK_META_SIZE);
+    if (nb != NULL) {
+        void* p = LWMEM_GET_PTR_FROM_BLOCK(nb);
+        if (p != NULL) {
+            LWMEM_MEMSET(p, 0x00, nb->size - LWMEM_BLOCK_META_SIZE);
+        }
+    }
 #endif /* LWMEM_CFG_RESET_MEMORY */
 
     /*
@@ -1101,6 +1106,9 @@ void
 lwmem_debug_print(uint8_t print_alloc, uint8_t print_free) {
     size_t block_size;
     lwmem_block_t* block;
+
+    (void)print_alloc;
+    (void)print_free;
 
     printf("|-------|------------------|--------|------|------------------|-----------------|\r\n");
     printf("| Block |          Address | IsFree | Size | MaxUserAllocSize | Meta            |\r\n");
