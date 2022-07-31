@@ -1,20 +1,20 @@
 cmake_minimum_required(VERSION 3.22)
 
 # Setup project
-project(lwmem_multi_region)
+project(${PROJECT_NAME})
 add_executable(${PROJECT_NAME})
 
-# Add key executable block
+# Add source files
 target_sources(${PROJECT_NAME} PUBLIC
-    ${CMAKE_CURRENT_LIST_DIR}/main.c
+    ${CMAKE_CURRENT_LIST_DIR}/${PROJECT_NAME}/main.c
 )
 
-# Add key include paths
+# Add include paths
 target_include_directories(${PROJECT_NAME} PUBLIC
-    ${CMAKE_CURRENT_LIST_DIR}/
+    ${CMAKE_CURRENT_LIST_DIR}/${PROJECT_NAME}/
 
     # Snippets
-    ${CMAKE_CURRENT_LIST_DIR}/../../../snippets/include
+    ${CMAKE_CURRENT_LIST_DIR}/../../snippets/include
 )
 
 # Compilation definition information
@@ -33,5 +33,5 @@ target_compile_options(${PROJECT_NAME} PRIVATE
 
 # Add subdir with lwmem and link to the project
 set(LWMEM_SYS_PORT              "win32")
-add_subdirectory("../../../lwmem" lwmem)
+add_subdirectory("../../lwmem" lwmem)
 target_link_libraries(${PROJECT_NAME} lwmem)
