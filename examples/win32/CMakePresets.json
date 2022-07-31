@@ -40,5 +40,23 @@
                 "PROJECT_NAME": "lwmem_os"
             }
         }
+    ],
+    "buildPresets": [
+        {
+            "name": "lwmem_basic",
+            "configurePreset": "lwmem_basic"
+        },
+        {
+            "name": "lwmem_multi_region",
+            "configurePreset": "lwmem_multi_region"
+        },
+        {
+            "name": "lwmem_multi_ins_multi_region",
+            "configurePreset": "lwmem_multi_ins_multi_region"
+        },
+        {
+            "name": "lwmem_os",
+            "configurePreset": "lwmem_os"
+        }
     ]
 }
