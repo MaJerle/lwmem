@@ -6,6 +6,7 @@
 - Add C++ wrapper functions
 - Change license year to 2022
 - Update code style with astyle
+- Add `.clang-format` draft
 
 ## v2.0.0
 
