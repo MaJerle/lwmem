@@ -58,7 +58,7 @@ extern "C" {
  * \note            When `LWMEM_CFG_OS` is enabled, user must implement functions in \ref LWMEM_SYS group.
  */
 #ifndef LWMEM_CFG_OS
-#define LWMEM_CFG_OS                            0
+#define LWMEM_CFG_OS 0
 #endif
 
 /**
@@ -69,7 +69,7 @@ extern "C" {
  *                  definition before you define handle type
  */
 #ifndef LWMEM_CFG_OS_MUTEX_HANDLE
-#define LWMEM_CFG_OS_MUTEX_HANDLE               void *
+#define LWMEM_CFG_OS_MUTEX_HANDLE void*
 #endif
 
 /**
@@ -82,7 +82,7 @@ extern "C" {
  *                  Usually alignment of `4` bytes fits to all processors.
  */
 #ifndef LWMEM_CFG_ALIGN_NUM
-#define LWMEM_CFG_ALIGN_NUM                     ((size_t)4)
+#define LWMEM_CFG_ALIGN_NUM ((size_t)4)
 #endif
 
 /**
@@ -92,7 +92,7 @@ extern "C" {
  * It is disabled by default since it has performance penalties.
  */
 #ifndef LWMEM_CFG_CLEAN_MEMORY
-#define LWMEM_CFG_CLEAN_MEMORY                  0
+#define LWMEM_CFG_CLEAN_MEMORY 0
 #endif
 
 /**
@@ -100,7 +100,7 @@ extern "C" {
  *
  */
 #ifndef LWMEM_CFG_ENABLE_STATS
-#define LWMEM_CFG_ENABLE_STATS                  0
+#define LWMEM_CFG_ENABLE_STATS 0
 #endif
 
 /**

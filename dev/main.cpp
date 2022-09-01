@@ -1,8 +1,8 @@
 #include "lwmem/lwmem.h"
 #include "lwmem/lwmem.hpp"
-#include <string.h>
-#include <stdint.h>
 #include <iostream>
+#include <stdint.h>
+#include <string.h>
 
 extern "C" void lwmem_test_run(void);
 extern "C" void lwmem_test_memory_structure(void);

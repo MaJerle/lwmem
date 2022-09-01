@@ -34,8 +34,8 @@
 #ifndef LWMEM_HDR_SYS_H
 #define LWMEM_HDR_SYS_H
 
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 #include "lwmem/lwmem.h"
 
 #ifdef __cplusplus
@@ -55,28 +55,28 @@ extern "C" {
  * \param[out]      m: Output variable to save mutex handle
  * \return          `1` on success, `0` otherwise
  */
-uint8_t     lwmem_sys_mutex_create(LWMEM_CFG_OS_MUTEX_HANDLE* m);
+uint8_t lwmem_sys_mutex_create(LWMEM_CFG_OS_MUTEX_HANDLE* m);
 
 /**
  * \brief           Check if mutex handle is valid
  * \param[in]       m: Mutex handle to check if valid
  * \return          `1` on success, `0` otherwise
  */
-uint8_t     lwmem_sys_mutex_isvalid(LWMEM_CFG_OS_MUTEX_HANDLE* m);
+uint8_t lwmem_sys_mutex_isvalid(LWMEM_CFG_OS_MUTEX_HANDLE* m);
 
 /**
  * \brief           Wait for a mutex until ready (unlimited time)
  * \param[in]       m: Mutex handle to wait for
  * \return          `1` on success, `0` otherwise
  */
-uint8_t     lwmem_sys_mutex_wait(LWMEM_CFG_OS_MUTEX_HANDLE* m);
+uint8_t lwmem_sys_mutex_wait(LWMEM_CFG_OS_MUTEX_HANDLE* m);
 
 /**
  * \brief           Release already locked mutex
  * \param[in]       m: Mutex handle to release
  * \return          `1` on success, `0` otherwise
  */
-uint8_t     lwmem_sys_mutex_release(LWMEM_CFG_OS_MUTEX_HANDLE* m);
+uint8_t lwmem_sys_mutex_release(LWMEM_CFG_OS_MUTEX_HANDLE* m);
 
 /**
  * \}

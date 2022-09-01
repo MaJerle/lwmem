@@ -43,7 +43,6 @@
  * \{
  */
 
-
 namespace Lwmem {
 
 /**
@@ -62,15 +61,12 @@ void* ptr = mngr.malloc(...);
 mngr.free(ptr);
 \endcode
  */
-template<size_t LEN>
+template <size_t LEN>
 class LwmemLight {
-public:
+  public:
     LwmemLight() {
         /* Simple region descriptor with one region */
-        const lwmem_region_t regions[] = {
-            {m_reg_data, sizeof(m_reg_data)},
-            {NULL, 0}
-        };
+        const lwmem_region_t regions[] = {{m_reg_data, sizeof(m_reg_data)}, {NULL, 0}};
         lwmem_assignmem_ex(&m_lw, regions);
     }
 
@@ -84,7 +80,7 @@ public:
     malloc(size_t size) {
         return lwmem_malloc_ex(&m_lw, nullptr, size);
     }
-    
+
     /**
      * \brief           Allocate block of memory with selected size and cleaned to all zeros
      * \param[in]       nitems: Number of items to allocate
@@ -119,7 +115,7 @@ public:
         lwmem_free_ex(&m_lw, ptr);
     }
 
-private:
+  private:
     /* Delete unused constructors */
     LwmemLight(const LwmemLight& other) = delete;
     /* Delete copy assignment operators */
@@ -130,7 +126,7 @@ private:
     uint8_t m_reg_data[LEN];
 };
 
-};
+}; // namespace Lwmem
 
 /**
  * \}
