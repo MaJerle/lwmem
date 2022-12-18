@@ -31,8 +31,8 @@
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
  * Version:         v2.0.0
  */
-#ifndef LWMEM_HDR_OPTS_H
-#define LWMEM_HDR_OPTS_H
+#ifndef LWMEM_OPTS_HDR_H
+#define LWMEM_OPTS_HDR_H
 
 /* Rename this file to "lwmem_opts.h" for your application */
 
@@ -41,4 +41,4 @@
  * copy & replace here settings you want to change values
  */
 
-#endif /* LWMEM_HDR_OPTS_H */
+#endif /* LWMEM_OPTS_HDR_H */

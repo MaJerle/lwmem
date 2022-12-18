@@ -31,8 +31,8 @@
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
  * Version:         v2.0.0
  */
-#ifndef LWMEM_HDR_SYS_H
-#define LWMEM_HDR_SYS_H
+#ifndef LWMEM_SYS_HDR_H
+#define LWMEM_SYS_HDR_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -88,4 +88,4 @@ uint8_t lwmem_sys_mutex_release(LWMEM_CFG_OS_MUTEX_HANDLE* m);
 }
 #endif /* __cplusplus */
 
-#endif /* LWMEM_HDR_SYS_H */
+#endif /* LWMEM_SYS_HDR_H */

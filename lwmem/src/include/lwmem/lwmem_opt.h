@@ -31,8 +31,8 @@
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
  * Version:         v2.0.0
  */
-#ifndef LWMEM_HDR_OPT_H
-#define LWMEM_HDR_OPT_H
+#ifndef LWMEM_OPT_HDR_H
+#define LWMEM_OPT_HDR_H
 
 /* Uncomment to ignore user options (or set macro in compiler flags) */
 /* #define LWMEM_IGNORE_USER_OPTS */
@@ -111,4 +111,4 @@ extern "C" {
 }
 #endif /* __cplusplus */
 
-#endif /* LWMEM_HDR_OPT_H */
+#endif /* LWMEM_OPT_HDR_H */
