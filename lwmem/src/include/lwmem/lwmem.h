@@ -106,16 +106,16 @@ typedef struct {
     size_t size;      /*!< Size of region in units of bytes */
 } lwmem_region_t;
 
-size_t lwmem_assignmem_ex(lwmem_t* lw, const lwmem_region_t* regions);
-void* lwmem_malloc_ex(lwmem_t* lw, const lwmem_region_t* region, const size_t size);
-void* lwmem_calloc_ex(lwmem_t* lw, const lwmem_region_t* region, const size_t nitems, const size_t size);
-void* lwmem_realloc_ex(lwmem_t* lw, const lwmem_region_t* region, void* const ptr, const size_t size);
-uint8_t lwmem_realloc_s_ex(lwmem_t* lw, const lwmem_region_t* region, void** const ptr, const size_t size);
-void lwmem_free_ex(lwmem_t* lw, void* const ptr);
-void lwmem_free_s_ex(lwmem_t* lw, void** const ptr);
-size_t lwmem_get_size_ex(lwmem_t* lw, void* ptr);
+size_t lwmem_assignmem_ex(lwmem_t* lwobj, const lwmem_region_t* regions);
+void* lwmem_malloc_ex(lwmem_t* lwobj, const lwmem_region_t* region, const size_t size);
+void* lwmem_calloc_ex(lwmem_t* lwobj, const lwmem_region_t* region, const size_t nitems, const size_t size);
+void* lwmem_realloc_ex(lwmem_t* lwobj, const lwmem_region_t* region, void* const ptr, const size_t size);
+uint8_t lwmem_realloc_s_ex(lwmem_t* lwobj, const lwmem_region_t* region, void** const ptr, const size_t size);
+void lwmem_free_ex(lwmem_t* lwobj, void* const ptr);
+void lwmem_free_s_ex(lwmem_t* lwobj, void** const ptr);
+size_t lwmem_get_size_ex(lwmem_t* lwobj, void* ptr);
 #if LWMEM_CFG_ENABLE_STATS || __DOXYGEN__
-void lwmem_get_stats_ex(lwmem_t* lw, lwmem_stats_t* stats);
+void lwmem_get_stats_ex(lwmem_t* lwobj, lwmem_stats_t* stats);
 #endif /* LWMEM_CFG_ENABLE_STATS || __DOXYGEN__ */
 
 /**
