@@ -1,5 +1,5 @@
 /* --------------------------------------------------------------------------
- * Portions Copyright © 2017 STMicroelectronics International N.V. All rights reserved.
+ * Portions Copyright ï¿½ 2017 STMicroelectronics International N.V. All rights reserved.
  * Portions Copyright (c) 2013-2017 ARM Limited. All rights reserved.
  * --------------------------------------------------------------------------
  *
@@ -37,7 +37,7 @@
  *    Control functions for short timeouts in microsecond resolution:
  *    Added: osKernelSysTick, osKernelSysTickFrequency, osKernelSysTickMicroSec
  *    Removed: osSignalGet
- * Version 2.0.0
+ * Version 2.1.0
  *    OS objects creation without macros (dynamic creation and resource allocation):
  *     - added: osXxxxNew functions which replace osXxxxCreate
  *     - added: osXxxxAttr_t structures
