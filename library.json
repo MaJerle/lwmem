@@ -1,34 +1,33 @@
 {
-	"name": "LwMEM",
-	"version": "2.0.0",
-	"description": "Lightweight dynamic memory manager optimized for embedded systems",
-	"keywords": "lwmem, memory, dynamic, heap, malloc, calloc, realloc, free, lightweight, manager, embedded, stm32, win32",
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/MaJerle/lwmem.git"
-	},
-	"authors": [
-		{
-			"name": "Tilen Majerle",
-			"email": "tilen@majerle.eu",
-			"url": "https://majerle.eu"
-		}
-	],
-	"license": "MIT",
-	"homepage": "https://github.com/MaJerle/lwmem",
-	"dependencies": {
-
-	},
-	"frameworks": "*",
-	"platforms": "*",
-	"export": {
-		"exclude": [
-			".github",
-			"dev"
-			"docs",
-			"**/.vs",
-			"**/Debug",
-			"build",
-		]
-	}
+    "name": "LwMEM",
+    "version": "2.1.0",
+    "description": "Lightweight dynamic memory manager optimized for embedded systems",
+    "keywords": "lwmem, memory, dynamic, heap, malloc, calloc, realloc, free, lightweight, manager, embedded, stm32, win32",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/MaJerle/lwmem.git"
+    },
+    "authors": [
+        {
+            "name": "Tilen Majerle",
+            "email": "tilen@majerle.eu",
+            "url": "https://majerle.eu"
+        }
+    ],
+    "license": "MIT",
+    "homepage": "https://github.com/MaJerle/lwmem",
+    "dependencies": {},
+    "frameworks": "*",
+    "platforms": "*",
+    "export": {
+        "exclude": [
+            ".github",
+            "dev",
+            "docs",
+            "**/.vs",
+            "**/Debug",
+            "build",
+            "**/build"
+        ]
+    }
 }

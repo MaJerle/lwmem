@@ -45,17 +45,17 @@ static int
 thread_func(void* arg) {
     void* ptr, * ptr2;
 
+    (void)arg;
+
     /* Allocate memory */
-    ptr = lwmem_malloc(24);
-    if (ptr == NULL) {
+    if ((ptr = lwmem_malloc(24)) == NULL) {
         printf("Could not allocate memory!\r\n");
         return -1;
     }
     printf("Memory allocated at address 0x%p!\r\n", ptr);
 
     /* Increase its size */
-    ptr2 = lwmem_realloc(ptr, 48);
-    if (ptr2 == NULL) {
+    if ((ptr2 = lwmem_realloc(ptr, 48)) == NULL) {
         printf("Could not reallocate existing ptr\r\n");
     } else {
         printf("Memory reallocated at address 0x%p!\r\n", ptr2);

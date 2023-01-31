@@ -75,6 +75,9 @@ main(void) {
     lw1_ptr1 = lwmem_malloc_ex(&lw1, NULL, 24); /* Allocate memory from custom LwMEM instance, any region */
     lw1_ptr2 = lwmem_malloc_ex(&lw1, &lw1_regions[1], 24);  /* Allocate memory from default LwMEM instance, force second region */
 
+    (void)lw1_ptr1;
+    (void)lw1_ptr2;
+
     /* Free memory after use */
     lwmem_free_ex(&lw1, lw0_ptr1);
     lwmem_free_ex(&lw1, lw0_ptr2);

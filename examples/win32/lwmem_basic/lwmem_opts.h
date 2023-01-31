@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (c) 2020 Tilen MAJERLE
+ * Copyright (c) 2023 Tilen MAJERLE
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -26,7 +26,7 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  * OTHER DEALINGS IN THE SOFTWARE.
  *
- * This file is part of Lightweight dynamic memory manager library.
+ * This file is part of LwMEM - Lightweight dynamic memory manager library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
  */
@@ -35,15 +35,9 @@
 
 /* Rename this file to "lwmem_opts.h" for your application */
 
-#include "windows.h"
-
 /*
  * Open "include/lwmem/lwmem_opt.h" and
  * copy & replace here settings you want to change values
  */
-#define LWMEM_CFG_OS                            1
-#define LWMEM_CFG_OS_MUTEX_HANDLE               HANDLE
-#define LWMEM_CFG_ENABLE_STATS                  0
-#define LWMEM_CFG_CLEAN_MEMORY                  1
 
 #endif /* LWMEM_HDR_OPTS_H */

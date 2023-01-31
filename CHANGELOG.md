@@ -2,6 +2,15 @@
 
 ## Develop
 
+## v2.1.0
+
+- Split CMakeLists.txt files between library and executable
+- Add C++ wrapper functions
+- Change license year to 2022
+- Update code style with astyle
+- Fix wrong length function usage
+- Add `.clang-format` draft
+
 ## v2.0.0
 
 - Remove `len` parameter for regions definition. Affected functions: `lwmem_assignmem` and `lwmem_assignmem_ex`

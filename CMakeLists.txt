@@ -1,28 +1,46 @@
-cmake_minimum_required(VERSION 3.0.0)
-project(LwLibPROJECT VERSION 0.1.0)
+cmake_minimum_required(VERSION 3.22)
 
-include(CTest)
-enable_testing()
+# Setup project
+project(LwLibPROJECT)
 
-add_executable(${PROJECT_NAME}
-    lwmem/src/lwmem/lwmem.c
-    lwmem/src/system/lwmem_sys_win32.c
-    tests/lwmem_test.c
-    dev/VisualStudio/main.c
+if(NOT PROJECT_IS_TOP_LEVEL)
+    add_subdirectory(lwmem)
+else()
+    # Set as executable
+    add_executable(${PROJECT_NAME})
+
+    # Add key executable block
+    target_sources(${PROJECT_NAME} PUBLIC
+        ${CMAKE_CURRENT_LIST_DIR}/dev/main.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/tests/lwmem_test.c
+
+        # win32 port
+        ${CMAKE_CURRENT_LIST_DIR}/lwmem/src/system/lwmem_sys_win32.c
     )
 
-target_include_directories(${PROJECT_NAME} PRIVATE
-    dev/VisualStudio
-    lwmem/src/include
+    # Add key include paths
+    target_include_directories(${PROJECT_NAME} PUBLIC
+        ${CMAKE_CURRENT_LIST_DIR}
+        ${CMAKE_CURRENT_LIST_DIR}/dev
     )
 
-target_compile_definitions(${PROJECT_NAME} PRIVATE
-    WIN32
-    _DEBUG
-    CONSOLE
-    LWMEM_DEV
+    # Compilation definition information
+    target_compile_definitions(${PROJECT_NAME} PUBLIC
+        WIN32
+        _DEBUG
+        CONSOLE
+        LWMEM_DEV
     )
 
-set(CPACK_PROJECT_NAME ${PROJECT_NAME})
-set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
-include(CPack)
+    # Compiler options
+    target_compile_options(${PROJECT_NAME} PRIVATE
+        -Wall
+        -Wextra
+        -Wpedantic
+    )
+
+    # Add subdir with lwmem and link to the project
+    add_subdirectory(lwmem)
+    target_link_libraries(${PROJECT_NAME} lwmem)
+    target_link_libraries(${PROJECT_NAME} lwmem_cpp)
+endif()

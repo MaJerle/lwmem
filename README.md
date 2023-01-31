@@ -14,6 +14,7 @@
 * Supports automotive applications
 * Supports advanced free/realloc algorithms to optimize memory usage
 * Operating system ready, thread-safe API
+* C++ wrapper functions
 * User friendly MIT license
 
 ## Contribute

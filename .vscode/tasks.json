@@ -1,19 +1,11 @@
 {
-	"version": "2.0.0",
-    
-    /* For this builds, you need
-     *
-     * - Ninja build system
-     * - MSYS2 compiler with ninja support
-     * - C/C++ extension for VSCode
-     * - CMake-Tools extension for VSCode
-     */
+	"version": "2.1.0",
 	"tasks": [
         {
             "type": "cppbuild",
             "label": "Build project",
             "command": "cmake",
-            "args": ["--build", "\"build\""],
+            "args": ["--build", "${command:cmake.buildDirectory}", "-j", "8"],
             "options": {
                 "cwd": "${workspaceFolder}"
             },
@@ -27,7 +19,7 @@
             "type": "shell",
             "label": "Re-build project",
             "command": "cmake",
-            "args": ["--build", "\"build\"", "--clean-first", "-v"],
+            "args": ["--build", "${command:cmake.buildDirectory}", "--clean-first", "-v", "-j", "8"],
             "options": {
                 "cwd": "${workspaceFolder}"
             },
@@ -37,7 +29,7 @@
             "type": "shell",
             "label": "Clean project",
             "command": "cmake",
-            "args": ["--build", "\"build\"", "--target", "clean"],
+            "args": ["--build", "${command:cmake.buildDirectory}", "--target", "clean"],
             "options": {
                 "cwd": "${workspaceFolder}"
             },
@@ -46,9 +38,48 @@
         {
             "type": "shell",
             "label": "Run application",
-            "command": "${workspaceFolder}\\build\\LwLibPROJECT.exe",
+            "command": "${command:cmake.launchTargetPath}",
             "args": [],
             "problemMatcher": [],
         },
+        {
+            "label": "Docs: Install python plugins from requirements.txt file",
+            "type": "shell",
+            "command": "python -m pip install -r requirements.txt",
+            "options": {
+                "cwd": "${workspaceFolder}/docs"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Docs: Generate html",
+            "type": "shell",
+            "command": ".\\make html",
+            "options": {
+                "cwd": "${workspaceFolder}/docs"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Docs: Clean build directory",
+            "type": "shell",
+            "command": ".\\make clean",
+            "options": {
+                "cwd": "${workspaceFolder}/docs"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Build all WIN32 examples",
+            "type": "shell",
+            "command": "python",
+            "args": [
+                "build_all_examples.py"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/examples/win32"
+            },
+            "problemMatcher": []
+        }
     ]
 }

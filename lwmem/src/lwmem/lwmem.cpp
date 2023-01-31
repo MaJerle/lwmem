@@ -1,6 +1,6 @@
 /**
- * \file            lwmem_opts.h
- * \brief           LwMEM application options
+ * \file            lwmem.cpp
+ * \brief           Lightweight dynamic memory manager - C++ wrapper
  */
 
 /*
@@ -29,15 +29,5 @@
  * This file is part of LwMEM - Lightweight dynamic memory manager library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
+ * Version:         v2.1.0
  */
-#ifndef LWMEM_HDR_OPTS_H
-#define LWMEM_HDR_OPTS_H
-
-/* Rename this file to "lwmem_opts.h" for your application */
-
-/*
- * Open "include/lwmem/lwmem_opt.h" and
- * copy & replace here settings you want to change values
- */
-
-#endif /* LWMEM_HDR_OPTS_H */

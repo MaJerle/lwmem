@@ -1,0 +1,62 @@
+{
+    "version": 3,
+    "configurePresets": [
+        {
+            "name": "default",
+            "hidden": true,
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "toolchainFile": "${sourceDir}/../../cmake/i686-w64-mingw32-gcc.cmake",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+            }
+        },
+        {
+            "name": "lwmem_basic",
+            "inherits": "default",
+            "cacheVariables": {
+                "PROJECT_NAME": "lwmem_basic"
+            }
+        },
+        {
+            "name": "lwmem_multi_region",
+            "inherits": "default",
+            "cacheVariables": {
+                "PROJECT_NAME": "lwmem_multi_region"
+            }
+        },
+        {
+            "name": "lwmem_multi_ins_multi_region",
+            "inherits": "default",
+            "cacheVariables": {
+                "PROJECT_NAME": "lwmem_multi_ins_multi_region"
+            }
+        },
+        {
+            "name": "lwmem_os",
+            "inherits": "default",
+            "cacheVariables": {
+                "PROJECT_NAME": "lwmem_os"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "lwmem_basic",
+            "configurePreset": "lwmem_basic"
+        },
+        {
+            "name": "lwmem_multi_region",
+            "configurePreset": "lwmem_multi_region"
+        },
+        {
+            "name": "lwmem_multi_ins_multi_region",
+            "configurePreset": "lwmem_multi_ins_multi_region"
+        },
+        {
+            "name": "lwmem_os",
+            "configurePreset": "lwmem_os"
+        }
+    ]
+}
