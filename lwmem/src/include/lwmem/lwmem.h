@@ -36,6 +36,7 @@
 
 #include <limits.h>
 #include <stdint.h>
+#include <stddef.h>
 #include "lwmem/lwmem_opt.h"
 
 #ifdef __cplusplus
