@@ -35,8 +35,8 @@
 #define LWMEM_HDR_H
 
 #include <limits.h>
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 #include "lwmem/lwmem_opt.h"
 
 #ifdef __cplusplus
