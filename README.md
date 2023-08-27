@@ -19,7 +19,7 @@
 
 ## Contribute
 
-Fresh contributions are always welcome. Simple instructions to proceed::
+Fresh contributions are always welcome. Simple instructions to proceed:
 
 1. Fork Github repository
 2. Follow [C style & coding rules](https://github.com/MaJerle/c-code-style) already used in the project
