@@ -865,7 +865,8 @@ lwmem_calloc_ex(lwmem_t* lwobj, const lwmem_region_t* region, const size_t nitem
 
     lwobj = LWMEM_GET_LWOBJ(lwobj);
     LWMEM_PROTECT(lwobj);
-    if ((ptr = prv_alloc(lwobj, region, s)) != NULL) {
+    ptr = prv_alloc(lwobj, region, s);
+    if (ptr != NULL) {
         LWMEM_MEMSET(ptr, 0x00, s);
     }
     LWMEM_UNPROTECT(lwobj);
@@ -1066,14 +1067,16 @@ create_regions(size_t count, size_t size) {
      *
      * Length 1 entry more, to set default values for NULL entry
      */
-    if ((regions = calloc(count + 1, sizeof(*regions))) == NULL) {
+    regions = calloc(count + 1, sizeof(*regions));
+    if (regions == NULL) {
         return NULL;
     }
 
     /* Allocate memory for regions */
     for (size_t i = 0; i < count; ++i) {
         regions[i].size = size;
-        if ((regions[i].start_addr = malloc(regions[i].size)) == NULL) {
+        regions[i].start_addr = malloc(regions[i].size);
+        if (regions[i].start_addr == NULL) {
             return NULL;
         }
     }
