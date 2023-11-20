@@ -10,8 +10,8 @@
         "lwmem_opt.h": "c",
         "array": "c",
         "string_view": "c",
-        "initializer_list": "c"
+        "initializer_list": "c",
+        "limits.h": "c"
     },
-    "esbonio.sphinx.confDir": "",
-    "C_Cpp.codeAnalysis.clangTidy.useBuildPath": true
+    "esbonio.sphinx.confDir": ""
 }

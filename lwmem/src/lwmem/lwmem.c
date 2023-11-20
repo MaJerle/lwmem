@@ -33,6 +33,7 @@
  */
 #include "lwmem/lwmem.h"
 #include <limits.h>
+#include <stdint.h>
 #include <string.h>
 
 #if LWMEM_CFG_OS
