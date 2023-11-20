@@ -104,6 +104,33 @@ extern "C" {
 #endif
 
 /**
+ * \brief           Memory set function
+ * 
+ * \note            Function footprint is the same as \ref memset
+ */
+#ifndef LWMEM_MEMSET
+#define LWMEM_MEMSET(dst, val, len) memset((dst), (val), (len))
+#endif
+
+/**
+ * \brief           Memory copy function
+ * 
+ * \note            Function footprint is the same as \ref memcpy
+ */
+#ifndef LWMEM_MEMCPY
+#define LWMEM_MEMCPY(dst, src, len) memcpy((dst), (src), (len))
+#endif
+
+/**
+ * \brief           Memory move function
+ * 
+ * \note            Function footprint is the same as \ref memmove
+ */
+#ifndef LWMEM_MEMMOVE
+#define LWMEM_MEMMOVE(dst, src, len) memmove((dst), (src), (len))
+#endif
+
+/**
  * \}
  */
 

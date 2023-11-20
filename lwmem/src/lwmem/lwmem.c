@@ -39,10 +39,6 @@
 #include "system/lwmem_sys.h"
 #endif /* LWMEM_CFG_OS */
 
-#define LWMEM_MEMSET           memset
-#define LWMEM_MEMCPY           memcpy
-#define LWMEM_MEMMOVE          memmove
-
 /**
  * \brief           Transform alignment number (power of `2`) to bits
  */
@@ -176,19 +172,19 @@ static lwmem_t lwmem_default;
  * \brief           Get region aligned start address and aligned size
  * \param[in]       region: Region to check for size and address
  * \param[out]      msa: Memory start address output variable
- * \param[out]      ms: Memory size output variable
+ * \param[out]      msz: Memory size output variable
  * \return          `1` if region valid, `0` otherwise
  */
 static uint8_t
-prv_get_region_addr_size(const lwmem_region_t* region, uint8_t** msa, size_t* ms) {
+prv_get_region_addr_size(const lwmem_region_t* region, uint8_t** msa, size_t* msz) {
     size_t mem_size;
     uint8_t* mem_start_addr;
 
-    if (region == NULL || msa == NULL || ms == NULL) {
+    if (region == NULL || msa == NULL || msz == NULL) {
         return 0;
     }
     *msa = NULL;
-    *ms = 0;
+    *msz = 0;
 
     /* Check region size and align it to config bits */
     mem_size = region->size & ~LWMEM_ALIGN_BITS; /* Size does not include lower bits */
@@ -209,7 +205,7 @@ prv_get_region_addr_size(const lwmem_region_t* region, uint8_t** msa, size_t* ms
     /* Check final memory size */
     if (mem_size >= (2 * LWMEM_BLOCK_MIN_SIZE)) {
         *msa = mem_start_addr;
-        *ms = mem_size;
+        *msz = mem_size;
 
         return 1;
     }
@@ -219,14 +215,14 @@ prv_get_region_addr_size(const lwmem_region_t* region, uint8_t** msa, size_t* ms
 /**
  * \brief           Insert free block to linked list of free blocks
  * \param[in]       lwobj: LwMEM instance. Set to `NULL` to use default instance
- * \param[in]       nb: New free block to insert into linked list
+ * \param[in]       nblk: New free block to insert into linked list
  */
 static void
-prv_insert_free_block(lwmem_t* const lwobj, lwmem_block_t* nb) {
+prv_insert_free_block(lwmem_t* const lwobj, lwmem_block_t* nblk) {
     lwmem_block_t* prev;
 
     /* Check valid inputs */
-    if (nb == NULL) {
+    if (nblk == NULL) {
         return;
     }
 
@@ -234,7 +230,7 @@ prv_insert_free_block(lwmem_t* const lwobj, lwmem_block_t* nb) {
      * Try to find position to put new block in-between
      * Search until all free block addresses are lower than entry block
      */
-    for (prev = &(lwobj->start_block); prev != NULL && prev->next < nb; prev = prev->next) {}
+    for (prev = &(lwobj->start_block); prev != NULL && prev->next < nblk; prev = prev->next) {}
 
     /* This is hard error with wrong memory usage */
     if (prev == NULL) {
@@ -254,10 +250,10 @@ prv_insert_free_block(lwmem_t* const lwobj, lwmem_block_t* nb) {
      * By doing this, we protect data left by app
      * and we make sure new allocations cannot see old information
      */
-    if (nb != NULL) {
-        void* p = LWMEM_GET_PTR_FROM_BLOCK(nb);
-        if (p != NULL) {
-            LWMEM_MEMSET(p, 0x00, nb->size - LWMEM_BLOCK_META_SIZE);
+    if (nblk != NULL) {
+        void* ptr = LWMEM_GET_PTR_FROM_BLOCK(nblk);
+        if (ptr != NULL) {
+            LWMEM_MEMSET(ptr, 0x00, nblk->size - LWMEM_BLOCK_META_SIZE);
         }
     }
 #endif /* LWMEM_CFG_RESET_MEMORY */
@@ -266,10 +262,10 @@ prv_insert_free_block(lwmem_t* const lwobj, lwmem_block_t* nb) {
      * Check if previous block and input block together create one big contiguous block
      * If this is the case, merge blocks together and increase previous block by input block size
      */
-    if ((LWMEM_TO_BYTE_PTR(prev) + prev->size) == LWMEM_TO_BYTE_PTR(nb)) {
-        prev->size += nb->size; /* Increase current block by size of new block */
-        nb = prev;              /* New block and current are now the same thing */
-                                /*
+    if ((LWMEM_TO_BYTE_PTR(prev) + prev->size) == LWMEM_TO_BYTE_PTR(nblk)) {
+        prev->size += nblk->size; /* Increase current block by size of new block */
+        nblk = prev;              /* New block and current are now the same thing */
+        /*
          * It is important to set new block as current one
          * as this allows merging previous and next blocks together with new block
          * at the same time; follow next steps
@@ -281,25 +277,24 @@ prv_insert_free_block(lwmem_t* const lwobj, lwmem_block_t* nb) {
      * Do not merge with "end of region" indication (commented part of if statement)
      */
     if (prev->next != NULL && prev->next->size > 0 /* Do not remove "end of region" indicator in each region */
-        && (LWMEM_TO_BYTE_PTR(nb) + nb->size) == LWMEM_TO_BYTE_PTR(prev->next)) {
+        && (LWMEM_TO_BYTE_PTR(nblk) + nblk->size) == LWMEM_TO_BYTE_PTR(prev->next)) {
         if (prev->next == lwobj->end_block) { /* Does it points to the end? */
-            nb->next = lwobj->end_block;      /* Set end block pointer */
+            nblk->next = lwobj->end_block;    /* Set end block pointer */
         } else {
-            nb->size +=
-                prev->next
-                    ->size; /* Expand of current block for size of next free block which is right behind new block */
-            nb->next = prev->next->next; /* Next free is pointed to the next one of previous next */
+            /* Expand of current block for size of next free block which is right behind new block */
+            nblk->size += prev->next->size;
+            nblk->next = prev->next->next; /* Next free is pointed to the next one of previous next */
         }
     } else {
-        nb->next = prev->next; /* Set next of input block as next of current one */
+        nblk->next = prev->next; /* Set next of input block as next of current one */
     }
 
     /*
      * If new block has not been set as current (and expanded),
      * then link them together, otherwise ignore as it would point to itself
      */
-    if (prev != nb) {
-        prev->next = nb;
+    if (prev != nblk) {
+        prev->next = nblk;
     }
 }
 
