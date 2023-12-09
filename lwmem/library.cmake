@@ -1,3 +1,15 @@
+# 
+# This file provides set of variables for end user
+# and also generates one (or more) libraries, that can be added to the project using target_link_libraries(...)
+#
+# Before this file is included to the root CMakeLists file (using include() function), user can set some variables:
+#
+# LWMEM_SYS_PORT: If defined, it will include port source file from the library.
+# LWMEM_OPTS_DIR: If defined, it should set the folder path where options file shall be generated.
+# LWMEM_COMPILE_OPTIONS: If defined, it provide compiler options for generated library.
+# LWMEM_COMPILE_DEFINITIONS: If defined, it provides "-D" definitions to the library build
+#
+
 # Library core sources
 set(lwmem_core_SRCS 
     ${CMAKE_CURRENT_LIST_DIR}/src/lwmem/lwmem.c
