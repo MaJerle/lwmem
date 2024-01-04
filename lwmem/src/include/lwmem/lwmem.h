@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (c) 2023 Tilen MAJERLE
+ * Copyright (c) 2024 Tilen MAJERLE
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -60,23 +60,23 @@ extern "C" {
  * \brief           Memory block structure
  */
 typedef struct lwmem_block {
-    struct lwmem_block*
-        next; /*!< Next free memory block on linked list. Set to \ref LWMEM_BLOCK_ALLOC_MARK when block is allocated and in use */
-    size_t size; /*!< Size of block, including metadata part.
-                                                        MSB bit is set to `1` when block is allocated and in use,
-                                                        or `0` when block is considered free */
+    struct lwmem_block* next; /*!< Next free memory block on linked list.
+                                    Set to \ref LWMEM_BLOCK_ALLOC_MARK when block is allocated and in use */
+    size_t size;              /*!< Size of block, including metadata part.
+                                    MSB bit is set to `1` when block is allocated and in use,
+                                    or `0` when block is considered free */
 } lwmem_block_t;
 
 /**
  * \brief           Statistics structure
  */
 typedef struct {
-    uint32_t mem_size_bytes;      /*!< Total memory size of all regions combined */
-    uint32_t mem_available_bytes; /*!< Free memory available for allocation */
-    uint32_t
-        minimum_ever_mem_available_bytes; /*!< Minimum amount of total free memory there has been in the heap since the system booted.  */
-    uint32_t nr_alloc;                    /*!< Number of all allocated blocks in single instance  */
-    uint32_t nr_free;                     /*!< Number of frees in the LwMEM instance */
+    uint32_t mem_size_bytes;                   /*!< Total memory size of all regions combined */
+    uint32_t mem_available_bytes;              /*!< Free memory available for allocation */
+    uint32_t minimum_ever_mem_available_bytes; /*!< Minimum amount of total free memory there has been
+                                                        in the heap since the system booted. */
+    uint32_t nr_alloc;                         /*!< Number of all allocated blocks in single instance  */
+    uint32_t nr_free;                          /*!< Number of frees in the LwMEM instance */
 } lwmem_stats_t;
 
 /**
@@ -95,7 +95,7 @@ typedef struct lwmem {
 #endif                   /* LWMEM_CFG_ENABLE_STATS || __DOXYGEN__ */
 #if defined(LWMEM_DEV) && !__DOXYGEN__
     lwmem_block_t start_block_first_use; /*!< Value of start block for very first time.
-                                                    This is used only during validation process and is removed in final use */
+                                            This is used only during validation process and is removed in final use */
 #endif                                   /* defined(LWMEM_DEV) && !__DOXYGEN__ */
 } lwmem_t;
 
