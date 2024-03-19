@@ -40,7 +40,7 @@ else()
     )
 
     # Add subdir with lwmem and link to the project
-    set(LWMEM_OPTS_DIR ${CMAKE_CURRENT_LIST_DIR}/dev)
+    set(LWMEM_OPTS_FILE ${CMAKE_CURRENT_LIST_DIR}/dev/lwmem_opts.h)
     add_subdirectory(lwmem)
     target_link_libraries(${PROJECT_NAME} lwmem)
     target_link_libraries(${PROJECT_NAME} lwmem_cpp)
