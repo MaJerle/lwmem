@@ -136,7 +136,7 @@ lwmem_region_t regions[] = {
 \endcode
  * \return          `0` on failure, number of final regions used for memory manager on success
  */
-#define lwmem_assignmem(regions)      lwmem_assignmem_ex(NULL, (regions))
+#define lwmem_assignmem(regions)       lwmem_assignmem_ex(NULL, (regions))
 
 /**
  * \note            This is a wrapper for \ref lwmem_malloc_ex function.
@@ -145,7 +145,7 @@ lwmem_region_t regions[] = {
  * \return          Pointer to allocated memory on success, `NULL` otherwise
  * \note            This function is thread safe when \ref LWMEM_CFG_OS is enabled
  */
-#define lwmem_malloc(size)            lwmem_malloc_ex(NULL, NULL, (size))
+#define lwmem_malloc(size)             lwmem_malloc_ex(NULL, NULL, (size))
 
 /**
  * \note            This is a wrapper for \ref lwmem_calloc_ex function.
@@ -155,7 +155,7 @@ lwmem_region_t regions[] = {
  * \return          Pointer to allocated memory on success, `NULL` otherwise
  * \note            This function is thread safe when \ref LWMEM_CFG_OS is enabled
  */
-#define lwmem_calloc(nitems, size)    lwmem_calloc_ex(NULL, NULL, (nitems), (size))
+#define lwmem_calloc(nitems, size)     lwmem_calloc_ex(NULL, NULL, (nitems), (size))
 
 /**
  * \note            This is a wrapper for \ref lwmem_realloc_ex function.
@@ -166,19 +166,19 @@ lwmem_region_t regions[] = {
  * \return          Pointer to allocated memory on success, `NULL` otherwise
  * \note            This function is thread safe when \ref LWMEM_CFG_OS is enabled
  */
-#define lwmem_realloc(ptr, size)      lwmem_realloc_ex(NULL, NULL, (ptr), (size))
+#define lwmem_realloc(ptr, size)       lwmem_realloc_ex(NULL, NULL, (ptr), (size))
 
 /**
  * \note            This is a wrapper for \ref lwmem_realloc_s_ex function.
  *                      It operates in default LwMEM instance and uses first available region for memory operations
- * \param[in]       ptrptr: Pointer to pointer to allocated memory. Must not be set to `NULL`.
+ * \param[in]       ptr2ptr: Pointer to pointer to allocated memory. Must not be set to `NULL`.
  *                      If reallocation is successful, it modifies pointer's pointing address,
  *                      or sets it to `NULL` in case of `free` operation
  * \param[in]       size: New requested size in bytes
  * \return          `1` if successfully reallocated, `0` otherwise
  * \note            This function is thread safe when \ref LWMEM_CFG_OS is enabled
  */
-#define lwmem_realloc_s(ptrptr, size) lwmem_realloc_s_ex(NULL, NULL, (ptrptr), (size))
+#define lwmem_realloc_s(ptr2ptr, size) lwmem_realloc_s_ex(NULL, NULL, (ptr2ptr), (size))
 
 /**
  * \note            This is a wrapper for \ref lwmem_free_ex function.
@@ -186,16 +186,16 @@ lwmem_region_t regions[] = {
  * \param[in]       ptr: Memory to free. `NULL` pointer is valid input
  * \note            This function is thread safe when \ref LWMEM_CFG_OS is enabled
  */
-#define lwmem_free(ptr)               lwmem_free_ex(NULL, (ptr))
+#define lwmem_free(ptr)                lwmem_free_ex(NULL, (ptr))
 
 /**
  * \note            This is a wrapper for \ref lwmem_free_s_ex function.
  *                      It operates in default LwMEM instance and uses first available region for memory operations
- * \param[in]       ptrptr: Pointer to pointer to allocated memory.
+ * \param[in]       ptr2ptr: Pointer to pointer to allocated memory.
  *                      When set to non `NULL`, pointer is freed and set to `NULL`
  * \note            This function is thread safe when \ref LWMEM_CFG_OS is enabled
  */
-#define lwmem_free_s(ptrptr)          lwmem_free_s_ex(NULL, (ptrptr))
+#define lwmem_free_s(ptr2ptr)          lwmem_free_s_ex(NULL, (ptr2ptr))
 
 /**
  * \note            This is a wrapper for \ref lwmem_get_size_ex function.
@@ -203,14 +203,14 @@ lwmem_region_t regions[] = {
  * \param[in]       ptr: Pointer to allocated memory
  * \return          Block size for user in units of bytes
  */
-#define lwmem_get_size(ptr)           lwmem_get_size_ex(NULL, (ptr))
+#define lwmem_get_size(ptr)            lwmem_get_size_ex(NULL, (ptr))
 
 /**
  * \note            This is a wrapper for \ref lwmem_get_stats_ex function.
  *                      It operates in default LwMEM instance
  * \param[in]       ptr: Pointer to lwmem_stats_t to store result
  */
-#define lwmem_get_stats(stats)        lwmem_get_stats_ex(NULL, (stats))
+#define lwmem_get_stats(stats)         lwmem_get_stats_ex(NULL, (stats))
 
 #if defined(LWMEM_DEV) && !__DOXYGEN__
 unsigned char lwmem_debug_create_regions(lwmem_region_t** regs_out, size_t count, size_t size);
