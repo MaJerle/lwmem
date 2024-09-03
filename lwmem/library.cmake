@@ -39,16 +39,16 @@ set(lwmem_core_SRCS ${lwmem_core_SRCS}
 endif()
 
 # Register core library
-add_library(lwmem INTERFACE)
-target_sources(lwmem PUBLIC ${lwmem_core_SRCS})
-target_include_directories(lwmem INTERFACE ${lwmem_include_DIRS})
+add_library(lwmem)
+target_sources(lwmem PRIVATE ${lwmem_core_SRCS})
+target_include_directories(lwmem PUBLIC ${lwmem_include_DIRS})
 target_compile_options(lwmem PRIVATE ${LWMEM_COMPILE_OPTIONS})
 target_compile_definitions(lwmem PRIVATE ${LWMEM_COMPILE_DEFINITIONS})
 
 # Register core library with C++ extensions
-add_library(lwmem_cpp INTERFACE)
-target_sources(lwmem_cpp PUBLIC ${lwmem_core_SRCS})
-target_include_directories(lwmem_cpp INTERFACE ${lwmem_include_DIRS})
+add_library(lwmem_cpp)
+target_sources(lwmem_cpp PRIVATE ${lwmem_core_SRCS})
+target_include_directories(lwmem_cpp PUBLIC ${lwmem_include_DIRS})
 target_compile_options(lwmem_cpp PRIVATE ${LWMEM_COMPILE_OPTIONS})
 target_compile_definitions(lwmem_cpp PRIVATE ${LWMEM_COMPILE_DEFINITIONS})
 

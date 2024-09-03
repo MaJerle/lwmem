@@ -2,6 +2,8 @@
 
 ## Develop
 
+- Rework library CMake with removed INTERFACE type
+
 ## v2.1.0
 
 - Split CMakeLists.txt files between library and executable
