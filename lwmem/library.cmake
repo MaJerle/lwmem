@@ -1,4 +1,4 @@
-# 
+#
 # LIB_PREFIX: LWMEM
 #
 # This file provides set of variables for end user
@@ -16,12 +16,12 @@
 set(LWMEM_CUSTOM_INC_DIR ${CMAKE_CURRENT_BINARY_DIR}/lib_inc)
 
 # Library core sources
-set(lwmem_core_SRCS 
+set(lwmem_core_SRCS
     ${CMAKE_CURRENT_LIST_DIR}/src/lwmem/lwmem.c
 )
 
 # C++ extension
-set(lwmem_core_cpp_SRCS 
+set(lwmem_core_cpp_SRCS
     ${CMAKE_CURRENT_LIST_DIR}/src/lwmem/lwmem.cpp
 )
 
@@ -33,9 +33,9 @@ set(lwmem_include_DIRS
 
 # Add system port
 if(DEFINED LWMEM_SYS_PORT)
-set(lwmem_core_SRCS ${lwmem_core_SRCS}
-    ${CMAKE_CURRENT_LIST_DIR}/src/system/lwmem_sys_${LWMEM_SYS_PORT}.c
-)
+    set(lwmem_core_SRCS ${lwmem_core_SRCS}
+        ${CMAKE_CURRENT_LIST_DIR}/src/system/lwmem_sys_${LWMEM_SYS_PORT}.c
+    )
 endif()
 
 # Register core library
@@ -51,6 +51,7 @@ target_sources(lwmem_cpp PRIVATE ${lwmem_core_SRCS})
 target_include_directories(lwmem_cpp PUBLIC ${lwmem_include_DIRS})
 target_compile_options(lwmem_cpp PRIVATE ${LWMEM_COMPILE_OPTIONS})
 target_compile_definitions(lwmem_cpp PRIVATE ${LWMEM_COMPILE_DEFINITIONS})
+target_link_libraries(lwmem_cpp PUBLIC lwmem)
 
 # Create config file if user didn't provide one info himself
 if(NOT LWMEM_OPTS_FILE)
@@ -59,5 +60,5 @@ if(NOT LWMEM_OPTS_FILE)
 else()
     message(STATUS "Using custom lwmem_opts.h file from ${LWMEM_OPTS_FILE}")
 endif()
-configure_file(${LWMEM_OPTS_FILE} ${LWMEM_CUSTOM_INC_DIR}/lwmem_opts.h COPYONLY)
 
+configure_file(${LWMEM_OPTS_FILE} ${LWMEM_CUSTOM_INC_DIR}/lwmem_opts.h COPYONLY)
