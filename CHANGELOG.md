@@ -3,6 +3,7 @@
 ## Develop
 
 - Rework library CMake with removed INTERFACE type
+- Add `LWMEM_CFG_SUPPORT_REALLOC_AND_FREE` to disable realloc and free functions
 
 ## v2.1.0
 

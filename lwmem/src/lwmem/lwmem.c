@@ -435,6 +435,8 @@ prv_alloc(lwmem_t* const lwobj, const lwmem_region_t* region, const size_t size)
     return retval;
 }
 
+#if LWMEM_CFG_SUPPORT_REALLOC_AND_FREE
+
 /**
  * \brief           Free input pointer
  * \param[in]       lwobj: LwMEM instance. Set to `NULL` to use default instance
@@ -653,15 +655,12 @@ prv_realloc(lwmem_t* const lwobj, const lwmem_region_t* region, void* const ptr,
              */
             LWMEM_MEMMOVE(new_data_ptr, old_data_ptr, block_size); /* Copy old buffer size to new location */
 
-            lwobj->mem_available_bytes -=
-                prev->size
-                + prev->next
-                      ->size; /* Decrease effective available bytes for free blocks before and after input block */
+            /* Decrease effective available bytes for free blocks before and after input block */
+            lwobj->mem_available_bytes -= prev->size + prev->next->size;
             LWMEM_UPDATE_MIN_FREE(lwobj);
             prev->size += block_size + prev->next->size; /* Increase size of new block by size of 2 free blocks */
-            prevprev->next =
-                prev->next
-                    ->next; /* Remove free block before current one and block after current one from linked list (remove 2) */
+            /* Remove free block before current one and block after current one from linked list (remove 2) */
+            prevprev->next = prev->next->next;
             block = prev; /* Previous block is now current */
 
             prv_split_too_big_block(lwobj, block, final_size); /* Split block if it is too big */
@@ -684,13 +683,15 @@ prv_realloc(lwmem_t* const lwobj, const lwmem_region_t* region, void* const ptr,
      */
     retval = prv_alloc(lwobj, region, size); /* Try to allocate new block */
     if (retval != NULL) {
-        block_size =
-            (block->size & ~LWMEM_ALLOC_BIT) - LWMEM_BLOCK_META_SIZE;     /* Get application size from input pointer */
-        LWMEM_MEMCPY(retval, ptr, size > block_size ? block_size : size); /* Copy content to new allocated block */
-        prv_free(lwobj, ptr);                                             /* Free input pointer */
+        /* Get application size from input pointer, then copy content to new block */
+        block_size = (block->size & ~LWMEM_ALLOC_BIT) - LWMEM_BLOCK_META_SIZE;
+        LWMEM_MEMCPY(retval, ptr, size > block_size ? block_size : size);
+        prv_free(lwobj, ptr); /* Free old block */
     }
     return retval;
 }
+
+#endif /* LWMEM_CFG_SUPPORT_REALLOC_AND_FREE */
 
 /**
  * \brief           Initializes and assigns user regions for memory used by allocator algorithm
@@ -873,6 +874,8 @@ lwmem_calloc_ex(lwmem_t* lwobj, const lwmem_region_t* region, const size_t nitem
     return ptr;
 }
 
+#if LWMEM_CFG_SUPPORT_REALLOC_AND_FREE || __DOXYGEN__
+
 /**
  * \brief           Reallocates already allocated memory with new size in specific lwmem instance and region.
  *
@@ -1021,6 +1024,8 @@ lwmem_get_size_ex(lwmem_t* lwobj, void* ptr) {
     }
     return len;
 }
+
+#endif /* LWMEM_CFG_SUPPORT_REALLOC_AND_FREE || __DOXYGEN__ */
 
 #if LWMEM_CFG_ENABLE_STATS || __DOXYGEN__
 

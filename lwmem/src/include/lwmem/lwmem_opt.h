@@ -86,6 +86,21 @@ extern "C" {
 #endif
 
 /**
+ * \brief           Enables `1` or disables `0` full memory management support.
+ * 
+ * When enabled, library supports allocation, reallocation and freeing of the memory.
+ * When disabled, library only supports allocation, which is useful for
+ * power up memory initialization only.
+ * 
+ * \note            When disabled, \ref lwmem_get_size_ex is also not available,
+ *                  as it is assumed that user won't frequently ask for size of
+ *                  previously allocated block if realloc isn't being used
+ */
+#ifndef LWMEM_CFG_SUPPORT_REALLOC_AND_FREE
+#define LWMEM_CFG_SUPPORT_REALLOC_AND_FREE 1
+#endif
+
+/**
  * \brief           Enables `1` or disables `0` memory cleanup on free operation (or realloc).
  *
  * It resets unused memory to `0x00` and prevents other applications seeing old data.

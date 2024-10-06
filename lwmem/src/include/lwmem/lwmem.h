@@ -110,11 +110,13 @@ typedef struct {
 size_t lwmem_assignmem_ex(lwmem_t* lwobj, const lwmem_region_t* regions);
 void* lwmem_malloc_ex(lwmem_t* lwobj, const lwmem_region_t* region, const size_t size);
 void* lwmem_calloc_ex(lwmem_t* lwobj, const lwmem_region_t* region, const size_t nitems, const size_t size);
+#if LWMEM_CFG_SUPPORT_REALLOC_AND_FREE || __DOXYGEN__
 void* lwmem_realloc_ex(lwmem_t* lwobj, const lwmem_region_t* region, void* const ptr, const size_t size);
 uint8_t lwmem_realloc_s_ex(lwmem_t* lwobj, const lwmem_region_t* region, void** const ptr, const size_t size);
 void lwmem_free_ex(lwmem_t* lwobj, void* const ptr);
 void lwmem_free_s_ex(lwmem_t* lwobj, void** const ptr);
 size_t lwmem_get_size_ex(lwmem_t* lwobj, void* ptr);
+#endif /* LWMEM_CFG_SUPPORT_REALLOC_AND_FREE || __DOXYGEN__ */
 #if LWMEM_CFG_ENABLE_STATS || __DOXYGEN__
 void lwmem_get_stats_ex(lwmem_t* lwobj, lwmem_stats_t* stats);
 #endif /* LWMEM_CFG_ENABLE_STATS || __DOXYGEN__ */
@@ -136,7 +138,7 @@ lwmem_region_t regions[] = {
 \endcode
  * \return          `0` on failure, number of final regions used for memory manager on success
  */
-#define lwmem_assignmem(regions)       lwmem_assignmem_ex(NULL, (regions))
+#define lwmem_assignmem(regions)   lwmem_assignmem_ex(NULL, (regions))
 
 /**
  * \note            This is a wrapper for \ref lwmem_malloc_ex function.
@@ -145,7 +147,7 @@ lwmem_region_t regions[] = {
  * \return          Pointer to allocated memory on success, `NULL` otherwise
  * \note            This function is thread safe when \ref LWMEM_CFG_OS is enabled
  */
-#define lwmem_malloc(size)             lwmem_malloc_ex(NULL, NULL, (size))
+#define lwmem_malloc(size)         lwmem_malloc_ex(NULL, NULL, (size))
 
 /**
  * \note            This is a wrapper for \ref lwmem_calloc_ex function.
@@ -155,7 +157,9 @@ lwmem_region_t regions[] = {
  * \return          Pointer to allocated memory on success, `NULL` otherwise
  * \note            This function is thread safe when \ref LWMEM_CFG_OS is enabled
  */
-#define lwmem_calloc(nitems, size)     lwmem_calloc_ex(NULL, NULL, (nitems), (size))
+#define lwmem_calloc(nitems, size) lwmem_calloc_ex(NULL, NULL, (nitems), (size))
+
+#if LWMEM_CFG_SUPPORT_REALLOC_AND_FREE || __DOXYGEN__
 
 /**
  * \note            This is a wrapper for \ref lwmem_realloc_ex function.
@@ -205,12 +209,18 @@ lwmem_region_t regions[] = {
  */
 #define lwmem_get_size(ptr)            lwmem_get_size_ex(NULL, (ptr))
 
+#endif /* LWMEM_CFG_SUPPORT_REALLOC_AND_FREE || __DOXYGEN__ */
+
+#if LWMEM_CFG_ENABLE_STATS || __DOXYGEN__
+
 /**
  * \note            This is a wrapper for \ref lwmem_get_stats_ex function.
  *                      It operates in default LwMEM instance
  * \param[in]       ptr: Pointer to lwmem_stats_t to store result
  */
-#define lwmem_get_stats(stats)         lwmem_get_stats_ex(NULL, (stats))
+#define lwmem_get_stats(stats) lwmem_get_stats_ex(NULL, (stats))
+
+#endif /* LWMEM_CFG_ENABLE_STATS || __DOXYGEN__ */
 
 #if defined(LWMEM_DEV) && !__DOXYGEN__
 unsigned char lwmem_debug_create_regions(lwmem_region_t** regs_out, size_t count, size_t size);
