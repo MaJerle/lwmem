@@ -203,6 +203,12 @@ prv_get_region_addr_size(const lwmem_region_t* region, uint8_t** msa, size_t* ms
         mem_size -= (size_t)(mem_start_addr - LWMEM_TO_BYTE_PTR(region->start_addr));
     }
 
+    /* Check region size and align it to config bits */
+    mem_size = region->size & ~LWMEM_ALIGN_BITS; /* Size does not include lower bits */
+    if (mem_size < (2 * LWMEM_BLOCK_MIN_SIZE)) {
+        return 0;
+    }
+
     /* Check final memory size */
     if (mem_size >= (2 * LWMEM_BLOCK_MIN_SIZE)) {
         *msa = mem_start_addr;
