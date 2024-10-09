@@ -83,10 +83,16 @@ typedef struct {
  * \brief           LwMEM main structure
  */
 typedef struct lwmem {
-    lwmem_block_t start_block;  /*!< Holds beginning of memory allocation regions */
-    lwmem_block_t* end_block;   /*!< Pointer to the last memory location in regions linked list */
     size_t mem_available_bytes; /*!< Memory size available for allocation */
-    size_t mem_regions_count;   /*!< Number of regions used for allocation */
+#if LWMEM_CFG_SUPPORT_REALLOC_AND_FREE
+    lwmem_block_t start_block; /*!< Holds beginning of memory allocation regions */
+    lwmem_block_t* end_block;  /*!< Pointer to the last memory location in regions linked list */
+    size_t mem_regions_count;  /*!< Number of regions used for allocation */
+#else
+    uint8_t* mem_next_available_ptr; /*!< Pointer for next allocation */
+    uint8_t is_initialized;          /*!< Set to `1` when initialized */
+#endif
+
 #if LWMEM_CFG_OS || __DOXYGEN__
     LWMEM_CFG_OS_MUTEX_HANDLE mutex; /*!< System mutex for OS */
 #endif                               /* LWMEM_CFG_OS || __DOXYGEN__ */
@@ -112,7 +118,7 @@ void* lwmem_malloc_ex(lwmem_t* lwobj, const lwmem_region_t* region, const size_t
 void* lwmem_calloc_ex(lwmem_t* lwobj, const lwmem_region_t* region, const size_t nitems, const size_t size);
 #if LWMEM_CFG_SUPPORT_REALLOC_AND_FREE || __DOXYGEN__
 void* lwmem_realloc_ex(lwmem_t* lwobj, const lwmem_region_t* region, void* const ptr, const size_t size);
-uint8_t lwmem_realloc_s_ex(lwmem_t* lwobj, const lwmem_region_t* region, void** const ptr, const size_t size);
+int lwmem_realloc_s_ex(lwmem_t* lwobj, const lwmem_region_t* region, void** const ptr, const size_t size);
 void lwmem_free_ex(lwmem_t* lwobj, void* const ptr);
 void lwmem_free_s_ex(lwmem_t* lwobj, void** const ptr);
 size_t lwmem_get_size_ex(lwmem_t* lwobj, void* ptr);

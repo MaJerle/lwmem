@@ -169,6 +169,8 @@
  */
 static lwmem_t lwmem_default;
 
+#if LWMEM_CFG_SUPPORT_REALLOC_AND_FREE
+
 /**
  * \brief           Get region aligned start address and aligned size
  * \param[in]       region: Region to check for size and address
@@ -186,12 +188,6 @@ prv_get_region_addr_size(const lwmem_region_t* region, uint8_t** msa, size_t* ms
     }
     *msa = NULL;
     *msz = 0;
-
-    /* Check region size and align it to config bits */
-    mem_size = region->size & ~LWMEM_ALIGN_BITS; /* Size does not include lower bits */
-    if (mem_size < (2 * LWMEM_BLOCK_MIN_SIZE)) {
-        return 0;
-    }
 
     /*
      * Start address must be aligned to configuration
@@ -442,8 +438,6 @@ prv_alloc(lwmem_t* const lwobj, const lwmem_region_t* region, const size_t size)
     return retval;
 }
 
-#if LWMEM_CFG_SUPPORT_REALLOC_AND_FREE
-
 /**
  * \brief           Free input pointer
  * \param[in]       lwobj: LwMEM instance. Set to `NULL` to use default instance
@@ -582,8 +576,7 @@ prv_realloc(lwmem_t* const lwobj, const lwmem_region_t* region, void* const ptr,
         /* Input block points to address somewhere between "prev" and "prev->next" pointers                   */
 
         /* Check if "block" and next free "prev->next" create contiguous memory with size of at least new requested size */
-        if ((LWMEM_TO_BYTE_PTR(block) + block_size)
-                == LWMEM_TO_BYTE_PTR(prev->next)                /* Blocks create contiguous block */
+        if ((LWMEM_TO_BYTE_PTR(block) + block_size) == LWMEM_TO_BYTE_PTR(prev->next)
             && (block_size + prev->next->size) >= final_size) { /* Size is greater or equal to requested */
 
             /*
@@ -593,8 +586,8 @@ prv_realloc(lwmem_t* const lwobj, const lwmem_region_t* region, void* const ptr,
             lwobj->mem_available_bytes -= prev->next->size; /* For now decrease effective available bytes */
             LWMEM_UPDATE_MIN_FREE(lwobj);
             block->size = block_size + prev->next->size; /* Increase effective size of new block */
-            prev->next =
-                prev->next->next; /* Set next to next's next, effectively remove expanded block from free list */
+            prev->next = prev->next->next;               /* Set next to next's next,
+                                                            effectively remove expanded block from free list */
 
             prv_split_too_big_block(lwobj, block, final_size); /* Split block if it is too big */
             LWMEM_BLOCK_SET_ALLOC(block);                      /* Set block as allocated */
@@ -624,10 +617,10 @@ prv_realloc(lwmem_t* const lwobj, const lwmem_region_t* region, void* const ptr,
 
             lwobj->mem_available_bytes -= prev->size; /* For now decrease effective available bytes */
             LWMEM_UPDATE_MIN_FREE(lwobj);
-            prev->size += block_size; /* Increase size of input block size */
-            prevprev->next =
-                prev->next; /* Remove prev from free list as it is now being used for allocation together with existing block */
-            block = prev; /* Move block pointer to previous one */
+            prev->size += block_size;    /* Increase size of input block size */
+            prevprev->next = prev->next; /* Remove prev from free list as it is now being used
+                                                for allocation together with existing block */
+            block = prev;                /* Move block pointer to previous one */
 
             prv_split_too_big_block(lwobj, block, final_size); /* Split block if it is too big */
             LWMEM_BLOCK_SET_ALLOC(block);                      /* Set block as allocated */
@@ -698,79 +691,21 @@ prv_realloc(lwmem_t* const lwobj, const lwmem_region_t* region, void* const ptr,
     return retval;
 }
 
-#endif /* LWMEM_CFG_SUPPORT_REALLOC_AND_FREE */
-
 /**
- * \brief           Initializes and assigns user regions for memory used by allocator algorithm
- * \param[in]       lwobj: LwMEM instance. Set to `NULL` to use default instance
- * \param[in]       regions: Pointer to array of regions with address and respective size.
- *                      Regions must be in increasing order (start address) and must not overlap in-between.
- *                      Last region entry must have address `NULL` and size set to `0`
- * \code{.c}
-//Example definition
-lwmem_region_t regions[] = {
-    { (void *)0x10000000, 0x1000 }, //Region starts at address 0x10000000 and is 0x1000 bytes long
-    { (void *)0x20000000, 0x2000 }, //Region starts at address 0x20000000 and is 0x2000 bytes long
-    { (void *)0x30000000, 0x3000 }, //Region starts at address 0x30000000 and is 0x3000 bytes long
-    { NULL, 0 }                     //Array termination indicator
-}
-\endcode
- * \return          `0` on failure, number of final regions used for memory manager on success
- * \note            This function is not thread safe when used with operating system.
- *                      It must be called only once to setup memory regions
+ * \brief           Assign the memory structure for advanced memory allocation system
+ * 
+ * \param           lwobj 
+ * \param           regions 
+ * \return          size_t 
  */
-size_t
-lwmem_assignmem_ex(lwmem_t* lwobj, const lwmem_region_t* regions) {
-    uint8_t* mem_start_addr;
-    size_t mem_size, len = 0;
-    lwmem_block_t *first_block, *prev_end_block;
+static size_t
+prv_assignmem(lwmem_t* lwobj, const lwmem_region_t* regions) {
+    uint8_t* mem_start_addr = NULL;
+    size_t mem_size = 0;
+    lwmem_block_t *first_block = NULL, *prev_end_block = NULL;
 
-    lwobj = LWMEM_GET_LWOBJ(lwobj);
-    /* Check first things first */
-    if (regions == NULL || lwobj->end_block != NULL /* Init function may only be called once per lwmem instance */
-        || (((size_t)LWMEM_CFG_ALIGN_NUM) & (((size_t)LWMEM_CFG_ALIGN_NUM) - 1)) > 0) { /* Must be power of 2 */
-        return 0;
-    }
-
-    /* Check values entered by application */
-    mem_start_addr = (void*)0;
-    mem_size = 0;
-    for (size_t i = 0;; ++i) {
-        /*
-         * Check for valid entry or end of array descriptor
-         *
-         * Invalid entry is considered as "end-of-region" indicator
-         */
-        if (regions[i].size == 0 && regions[i].start_addr == NULL) {
-            len = i;
-            if (len == 0) {
-                return 0;
-            }
-            break;
-        }
-
-        /* New region(s) must be higher (in address space) than previous one */
-        if ((mem_start_addr + mem_size) > LWMEM_TO_BYTE_PTR(regions[i].start_addr)) {
-            return 0;
-        }
-
-        /* Save new values for next round */
-        mem_start_addr = regions[i].start_addr;
-        mem_size = regions[i].size;
-    }
-
-    /* Process further checks of valid inputs */
-    if (regions == NULL || len == 0
-#if LWMEM_CFG_OS
-        || lwmem_sys_mutex_isvalid(&(lwobj->mutex)) /* Check if mutex valid already = must not be */
-        || !lwmem_sys_mutex_create(&(lwobj->mutex)) /* Final step = try to create mutex for new instance */
-#endif                                              /* LWMEM_CFG_OS */
-    ) {
-        return 0;
-    }
-
-    for (size_t i = 0; i < len; ++i, ++regions) {
-        /* Get region start address and size */
+    for (size_t idx = 0; regions->size > 0 && regions->start_addr != NULL; ++idx, ++regions) {
+        /* Get region start address and size, stop on failure */
         if (!prv_get_region_addr_size(regions, &mem_start_addr, &mem_size)) {
             continue;
         }
@@ -831,6 +766,161 @@ lwmem_assignmem_ex(lwmem_t* lwobj, const lwmem_region_t* regions) {
     return lwobj->mem_regions_count; /* Return number of regions used by manager */
 }
 
+#else /* LWMEM_CFG_SUPPORT_REALLOC_AND_FREE */
+
+/**
+ * \brief           Assign the regions for simple algorithm
+ * 
+ *                  At this point, regions check has been performed, so we assume
+ *                  everything is ready to proceed
+ * 
+ * \param           lwobj: LwMEM object
+ * \param           regions: List of regions to assign
+ * \return          Number of regions used
+ */
+static size_t
+prv_assignmem_simple(lwmem_t* const lwobj, const lwmem_region_t* regions) {
+    uint8_t* mem_start_addr = regions[0].start_addr;
+    size_t mem_size = regions[0].size;
+
+    /* Adjust alignment data */
+    if (((size_t)mem_start_addr) & LWMEM_ALIGN_BITS) {
+        mem_start_addr += ((size_t)LWMEM_CFG_ALIGN_NUM) - ((size_t)mem_start_addr & LWMEM_ALIGN_BITS);
+        mem_size -= (size_t)(mem_start_addr - LWMEM_TO_BYTE_PTR(regions[0].start_addr));
+    }
+
+    /* Align mem to alignment*/
+    mem_size = mem_size & ~LWMEM_ALIGN_BITS;
+
+    /* Store the available information */
+    lwobj->mem_available_bytes = mem_size;
+    lwobj->mem_next_available_ptr = mem_start_addr;
+    lwobj->is_initialized = 1;
+    return 1; /* One region is being used only for now */
+}
+
+/**
+ * \brief           Simple allocation algorithm, that can only allocate memory,
+ *                  but it does not support free.
+ * 
+ *                  It uses simple first-in-first-serve concept,
+ *                  where memory grows upward gradually, up until it reaches the end
+ *                  of memory area
+ * 
+ * \param           lwobj: LwMEM object
+ * \param           region: Selected region. Not used in the current revision,
+ *                      but footprint remains the same if one day library will support it
+ * \param           size: Requested allocation size
+ * \return          `NULL` on failure, or pointer to allocated memory
+ */
+static void*
+prv_alloc_simple(lwmem_t* const lwobj, const lwmem_region_t* region, const size_t size) {
+    void* retval = NULL;
+    const size_t alloc_size = LWMEM_ALIGN(size);
+
+    if (alloc_size <= lwobj->mem_available_bytes) {
+        retval = lwobj->mem_next_available_ptr;
+
+        /* Get ready for next iteration */
+        lwobj->mem_next_available_ptr += alloc_size;
+        lwobj->mem_available_bytes -= alloc_size;
+    }
+    (void)region;
+    return retval;
+}
+
+#endif /* LWMEM_CFG_SUPPORT_REALLOC_AND_FREE */
+
+/**
+ * \brief           Initializes and assigns user regions for memory used by allocator algorithm
+ * \param[in]       lwobj: LwMEM instance. Set to `NULL` to use default instance
+ * \param[in]       regions: Pointer to array of regions with address and respective size.
+ *                      Regions must be in increasing order (start address) and must not overlap in-between.
+ *                      Last region entry must have address `NULL` and size set to `0`
+ * \code{.c}
+//Example definition
+lwmem_region_t regions[] = {
+    { (void *)0x10000000, 0x1000 }, //Region starts at address 0x10000000 and is 0x1000 bytes long
+    { (void *)0x20000000, 0x2000 }, //Region starts at address 0x20000000 and is 0x2000 bytes long
+    { (void *)0x30000000, 0x3000 }, //Region starts at address 0x30000000 and is 0x3000 bytes long
+    { NULL, 0 }                     //Array termination indicator
+}
+\endcode
+ * \return          `0` on failure, number of final regions used for memory manager on success
+ * \note            This function is not thread safe when used with operating system.
+ *                      It must be called only once to setup memory regions
+ */
+size_t
+lwmem_assignmem_ex(lwmem_t* lwobj, const lwmem_region_t* regions) {
+    uint8_t* mem_start_addr = NULL;
+    size_t mem_size = 0, len = 0;
+
+    lwobj = LWMEM_GET_LWOBJ(lwobj);
+
+    /* Check first things first */
+    if (regions == NULL || (((size_t)LWMEM_CFG_ALIGN_NUM) & (((size_t)LWMEM_CFG_ALIGN_NUM) - 1)) > 0
+#if LWMEM_CFG_SUPPORT_REALLOC_AND_FREE
+        || lwobj->end_block != NULL /* Init function may only be called once per lwmem instance */
+#else
+        || lwobj->is_initialized /* Already initialized? */
+#endif /* LWMEM_CFG_SUPPORT_REALLOC_AND_FREE */
+    ) {
+        return 0;
+    }
+
+    /* Check values entered by application */
+    mem_start_addr = (void*)0;
+    mem_size = 0;
+    for (size_t idx = 0;; ++idx) {
+        /*
+         * Check for valid entry or end of array descriptor
+         * Invalid entry is considered as "end-of-region" indicator
+         */
+        if (regions[idx].size == 0 && regions[idx].start_addr == NULL) {
+            len = idx;
+            if (len == 0) {
+                return 0;
+            }
+            break;
+        }
+
+#if !LWMEM_CFG_SUPPORT_REALLOC_AND_FREE
+        /*
+         * In case of simple allocation algorithm, we (for now!) only allow one region.
+         * Return zero value if user passed more than one region in a sequence.
+         */
+        else if (idx > 0) {
+            return 0;
+        }
+#endif /* LWMEM_CFG_SUPPORT_REALLOC_AND_FREE */
+
+        /* New region(s) must be higher (in address space) than previous one */
+        if ((mem_start_addr + mem_size) > LWMEM_TO_BYTE_PTR(regions[idx].start_addr)) {
+            return 0;
+        }
+
+        /* Save new values for next round */
+        mem_start_addr = regions[idx].start_addr;
+        mem_size = regions[idx].size;
+    }
+
+    /* Final init and check before initializing the regions */
+    if (len == 0
+#if LWMEM_CFG_OS
+        || lwmem_sys_mutex_isvalid(&(lwobj->mutex)) /* Check if mutex valid already = must not be */
+        || !lwmem_sys_mutex_create(&(lwobj->mutex)) /* Final step = try to create mutex for new instance */
+#endif                                              /* LWMEM_CFG_OS */
+    ) {
+        return 0;
+    }
+
+#if LWMEM_CFG_SUPPORT_REALLOC_AND_FREE
+    return prv_assignmem(lwobj, regions);
+#else  /* LWMEM_CFG_SUPPORT_REALLOC_AND_FREE */
+    return prv_assignmem_simple(lwobj, regions);
+#endif /* LWMEM_CFG_SUPPORT_REALLOC_AND_FREE */
+}
+
 /**
  * \brief           Allocate memory of requested size in specific lwmem instance and optional region.
  * \note            This is an extended malloc version function declaration to support advanced features
@@ -843,10 +933,16 @@ lwmem_assignmem_ex(lwmem_t* lwobj, const lwmem_region_t* regions) {
  */
 void*
 lwmem_malloc_ex(lwmem_t* lwobj, const lwmem_region_t* region, const size_t size) {
-    void* ptr;
+    void* ptr = NULL;
+
     lwobj = LWMEM_GET_LWOBJ(lwobj);
+
     LWMEM_PROTECT(lwobj);
+#if LWMEM_CFG_SUPPORT_REALLOC_AND_FREE
     ptr = prv_alloc(lwobj, region, size);
+#else  /* LWMEM_CFG_SUPPORT_REALLOC_AND_FREE */
+    ptr = prv_alloc_simple(lwobj, region, size);
+#endif /* LWMEM_CFG_SUPPORT_REALLOC_AND_FREE */
     LWMEM_UNPROTECT(lwobj);
     return ptr;
 }
@@ -856,7 +952,7 @@ lwmem_malloc_ex(lwmem_t* lwobj, const lwmem_region_t* region, const size_t size)
  *                  in specific lwmem instance and region.
  *
  * It resets allocated block of memory to zero if allocation is successful
-
+ *
  * \note            This is an extended calloc version function declaration to support advanced features
  * \param[in]       lwobj: LwMEM instance. Set to `NULL` to use default instance
  * \param[in]       region: Optional region instance within LwMEM instance to force allocation from.
@@ -868,16 +964,22 @@ lwmem_malloc_ex(lwmem_t* lwobj, const lwmem_region_t* region, const size_t size)
  */
 void*
 lwmem_calloc_ex(lwmem_t* lwobj, const lwmem_region_t* region, const size_t nitems, const size_t size) {
-    void* ptr;
-    const size_t s = size * nitems;
+    void* ptr = NULL;
+    const size_t alloc_size = size * nitems;
 
     lwobj = LWMEM_GET_LWOBJ(lwobj);
+
     LWMEM_PROTECT(lwobj);
-    ptr = prv_alloc(lwobj, region, s);
-    if (ptr != NULL) {
-        LWMEM_MEMSET(ptr, 0x00, s);
-    }
+#if LWMEM_CFG_SUPPORT_REALLOC_AND_FREE
+    ptr = prv_alloc(lwobj, region, alloc_size);
+#else  /* LWMEM_CFG_SUPPORT_REALLOC_AND_FREE */
+    ptr = prv_alloc_simple(lwobj, region, alloc_size);
+#endif /* LWMEM_CFG_SUPPORT_REALLOC_AND_FREE */
     LWMEM_UNPROTECT(lwobj);
+
+    if (ptr != NULL) {
+        LWMEM_MEMSET(ptr, 0x00, alloc_size);
+    }
     return ptr;
 }
 
@@ -943,7 +1045,7 @@ lwmem_realloc_ex(lwmem_t* lwobj, const lwmem_region_t* region, void* const ptr, 
  * \return          `1` if successfully reallocated, `0` otherwise
  * \note            This function is thread safe when \ref LWMEM_CFG_OS is enabled
  */
-uint8_t
+int
 lwmem_realloc_s_ex(lwmem_t* lwobj, const lwmem_region_t* region, void** const ptr, const size_t size) {
     void* new_ptr;
 
