@@ -198,6 +198,7 @@ prv_get_region_addr_size(const lwmem_region_t* region, uint8_t** msa, size_t* ms
      * Increase start address and decrease effective region size
      */
     mem_start_addr = region->start_addr;
+    mem_size = region->size;
     if (((size_t)mem_start_addr) & LWMEM_ALIGN_BITS) { /* Check alignment boundary */
         mem_start_addr += ((size_t)LWMEM_CFG_ALIGN_NUM) - ((size_t)mem_start_addr & LWMEM_ALIGN_BITS);
         mem_size -= (size_t)(mem_start_addr - LWMEM_TO_BYTE_PTR(region->start_addr));
