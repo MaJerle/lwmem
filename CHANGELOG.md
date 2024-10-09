@@ -4,6 +4,7 @@
 
 - Rework library CMake with removed INTERFACE type
 - Add `LWMEM_CFG_SUPPORT_REALLOC_AND_FREE` to disable realloc and free functions
+- Implement support for simple (no realloc, no free, grow-only malloc) allocation mechanism
 
 ## v2.1.0
 
