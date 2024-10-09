@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "lwmem/lwmem.h"
 
-#if !LWMEM_CFG_SUPPORT_REALLOC_AND_FREE
+#if !LWMEM_CFG_FULL
 
 /* Assert check */
 #define ASSERT(x)                                                                                                      \
@@ -65,4 +65,4 @@ lwmem_test_simple_run(void) {
     ASSERT(ptr == NULL);
 }
 
-#endif /* !LWMEM_CFG_SUPPORT_REALLOC_AND_FREE */
+#endif /* !LWMEM_CFG_FULL */

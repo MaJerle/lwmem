@@ -93,7 +93,7 @@ class LwmemLight {
         return lwmem_calloc_ex(&m_lw, nullptr, nitems, size);
     }
 
-#if LWMEM_CFG_SUPPORT_REALLOC_AND_FREE || __DOXYGEN__
+#if LWMEM_CFG_FULL || __DOXYGEN__
     /**
      * \brief           Reallocate block of memory
      * \param           ptr: Pointer to previously allocated memory block
@@ -115,7 +115,7 @@ class LwmemLight {
     free(void* ptr) {
         lwmem_free_ex(&m_lw, ptr);
     }
-#endif /* LWMEM_CFG_SUPPORT_REALLOC_AND_FREE || __DOXYGEN__ */
+#endif /* LWMEM_CFG_FULL || __DOXYGEN__ */
 
   private:
     /* Delete unused constructors */

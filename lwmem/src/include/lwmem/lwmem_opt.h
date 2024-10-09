@@ -88,16 +88,21 @@ extern "C" {
 /**
  * \brief           Enables `1` or disables `0` full memory management support.
  * 
- * When enabled, library supports allocation, reallocation and freeing of the memory.
- * When disabled, library only supports allocation, which is useful for
- * power up memory initialization only.
+ * When enabled (default config), library supports allocation, reallocation and freeing of the memory.
+ *  - Memory allocation and [c]allocation
+ *  - Memory reallocation
+ *  - Memory allocation in user defined memory regions
+ *  - Memory freeing
  * 
- * \note            When disabled, \ref lwmem_get_size_ex is also not available,
- *                  as it is assumed that user won't frequently ask for size of
- *                  previously allocated block if realloc isn't being used
+ * When disabled, library only supports allocation and does not provide any other service.
+ *  - Its purpose is for memory allocation at the start of firmware initialization only
+ * 
+ * \note            When disabled, statistics functionaltiy is not available
+ *                  and only one region is supported (for now, may be updated later).
+ *                  API to allocate memory remains the same as for full configuration.
  */
-#ifndef LWMEM_CFG_SUPPORT_REALLOC_AND_FREE
-#define LWMEM_CFG_SUPPORT_REALLOC_AND_FREE 1
+#ifndef LWMEM_CFG_FULL
+#define LWMEM_CFG_FULL 1
 #endif
 
 /**

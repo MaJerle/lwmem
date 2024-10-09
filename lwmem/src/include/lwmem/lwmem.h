@@ -84,7 +84,7 @@ typedef struct {
  */
 typedef struct lwmem {
     size_t mem_available_bytes; /*!< Memory size available for allocation */
-#if LWMEM_CFG_SUPPORT_REALLOC_AND_FREE
+#if LWMEM_CFG_FULL
     lwmem_block_t start_block; /*!< Holds beginning of memory allocation regions */
     lwmem_block_t* end_block;  /*!< Pointer to the last memory location in regions linked list */
     size_t mem_regions_count;  /*!< Number of regions used for allocation */
@@ -116,13 +116,13 @@ typedef struct {
 size_t lwmem_assignmem_ex(lwmem_t* lwobj, const lwmem_region_t* regions);
 void* lwmem_malloc_ex(lwmem_t* lwobj, const lwmem_region_t* region, const size_t size);
 void* lwmem_calloc_ex(lwmem_t* lwobj, const lwmem_region_t* region, const size_t nitems, const size_t size);
-#if LWMEM_CFG_SUPPORT_REALLOC_AND_FREE || __DOXYGEN__
+#if LWMEM_CFG_FULL || __DOXYGEN__
 void* lwmem_realloc_ex(lwmem_t* lwobj, const lwmem_region_t* region, void* const ptr, const size_t size);
 int lwmem_realloc_s_ex(lwmem_t* lwobj, const lwmem_region_t* region, void** const ptr, const size_t size);
 void lwmem_free_ex(lwmem_t* lwobj, void* const ptr);
 void lwmem_free_s_ex(lwmem_t* lwobj, void** const ptr);
 size_t lwmem_get_size_ex(lwmem_t* lwobj, void* ptr);
-#endif /* LWMEM_CFG_SUPPORT_REALLOC_AND_FREE || __DOXYGEN__ */
+#endif /* LWMEM_CFG_FULL || __DOXYGEN__ */
 #if LWMEM_CFG_ENABLE_STATS || __DOXYGEN__
 void lwmem_get_stats_ex(lwmem_t* lwobj, lwmem_stats_t* stats);
 #endif /* LWMEM_CFG_ENABLE_STATS || __DOXYGEN__ */
@@ -131,14 +131,14 @@ size_t lwmem_assignmem(const lwmem_region_t* regions);
 void* lwmem_malloc(size_t size);
 void* lwmem_calloc(size_t nitems, size_t size);
 
-#if LWMEM_CFG_SUPPORT_REALLOC_AND_FREE || __DOXYGEN__
+#if LWMEM_CFG_FULL || __DOXYGEN__
 void* lwmem_realloc(void* ptr, size_t size);
 int lwmem_realloc_s(void** ptr2ptr, size_t size);
 void lwmem_free(void* ptr);
 void lwmem_free_s(void** ptr2ptr);
 size_t lwmem_get_size(void* ptr);
 
-#endif /* LWMEM_CFG_SUPPORT_REALLOC_AND_FREE || __DOXYGEN__ */
+#endif /* LWMEM_CFG_FULL || __DOXYGEN__ */
 
 #if LWMEM_CFG_ENABLE_STATS || __DOXYGEN__
 

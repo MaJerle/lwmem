@@ -40,10 +40,43 @@
 #include "system/lwmem_sys.h"
 #endif /* LWMEM_CFG_OS */
 
+#if LWMEM_CFG_OS
+#define LWMEM_PROTECT(lwobj)   lwmem_sys_mutex_wait(&((lwobj)->mutex))
+#define LWMEM_UNPROTECT(lwobj) lwmem_sys_mutex_release(&((lwobj)->mutex))
+#else /* LWMEM_CFG_OS */
+#define LWMEM_PROTECT(lwobj)
+#define LWMEM_UNPROTECT(lwobj)
+#endif /* !LWMEM_CFG_OS */
+
+/* Statistics part */
+#if LWMEM_CFG_ENABLE_STATS
+#define LWMEM_INC_STATS(field) (++(field))
+#define LWMEM_UPDATE_MIN_FREE(lwobj)                                                                                   \
+    do {                                                                                                               \
+        if ((lwobj)->mem_available_bytes < (lwobj)->stats.minimum_ever_mem_available_bytes) {                          \
+            (lwobj)->stats.minimum_ever_mem_available_bytes = (lwobj)->mem_available_bytes;                            \
+        }                                                                                                              \
+    } while (0)
+#else
+#define LWMEM_INC_STATS(field)
+#define LWMEM_UPDATE_MIN_FREE(lwobj)
+#endif /* LWMEM_CFG_ENABLE_STATS */
+
+/**
+ * \brief           LwMEM default structure used by application
+ */
+static lwmem_t lwmem_default;
+
+/**
+ * \brief           Get LwMEM instance based on user input
+ * \param[in]       in_lwobj: LwMEM instance. Set to `NULL` for default instance
+ */
+#define LWMEM_GET_LWOBJ(in_lwobj) ((in_lwobj) != NULL ? (in_lwobj) : (&lwmem_default))
+
 /**
  * \brief           Transform alignment number (power of `2`) to bits
  */
-#define LWMEM_ALIGN_BITS       ((size_t)(((size_t)LWMEM_CFG_ALIGN_NUM) - 1))
+#define LWMEM_ALIGN_BITS          ((size_t)(((size_t)LWMEM_CFG_ALIGN_NUM) - 1))
 
 /**
  * \brief           Aligns input value to next alignment bits
@@ -60,18 +93,20 @@
  *  - Input: `7`; Output: `8`
  *  - Input: `8`; Output: `8`
  */
-#define LWMEM_ALIGN(x)         (((x) + (LWMEM_ALIGN_BITS)) & ~(LWMEM_ALIGN_BITS))
-
-/**
- * \brief           Size of metadata header for block information
- */
-#define LWMEM_BLOCK_META_SIZE  LWMEM_ALIGN(sizeof(lwmem_block_t))
+#define LWMEM_ALIGN(x)            (((x) + (LWMEM_ALIGN_BITS)) & ~(LWMEM_ALIGN_BITS))
 
 /**
  * \brief           Cast input pointer to byte
  * \param[in]       p: Input pointer to cast to byte pointer
  */
-#define LWMEM_TO_BYTE_PTR(p)   ((uint8_t*)(p))
+#define LWMEM_TO_BYTE_PTR(p)      ((uint8_t*)(p))
+
+#if LWMEM_CFG_FULL
+
+/**
+ * \brief           Size of metadata header for block information
+ */
+#define LWMEM_BLOCK_META_SIZE  LWMEM_ALIGN(sizeof(lwmem_block_t))
 
 /**
  * \brief           Bit indicating memory block is allocated
@@ -121,13 +156,7 @@
  *
  * Default size is size of meta block
  */
-#define LWMEM_BLOCK_MIN_SIZE      (LWMEM_BLOCK_META_SIZE)
-
-/**
- * \brief           Get LwMEM instance based on user input
- * \param[in]       in_lwobj: LwMEM instance. Set to `NULL` for default instance
- */
-#define LWMEM_GET_LWOBJ(in_lwobj) ((in_lwobj) != NULL ? (in_lwobj) : (&lwmem_default))
+#define LWMEM_BLOCK_MIN_SIZE (LWMEM_BLOCK_META_SIZE)
 
 /**
  * \brief           Gets block before input block (marked as prev) and its previous free block
@@ -141,35 +170,6 @@
         for ((in_pp) = NULL, (in_p) = &((in_lwobj)->start_block); (in_p) != NULL && (in_p)->next < (in_b);             \
              (in_pp) = (in_p), (in_p) = (in_p)->next) {}                                                               \
     } while (0)
-
-#if LWMEM_CFG_OS
-#define LWMEM_PROTECT(lwobj)   lwmem_sys_mutex_wait(&((lwobj)->mutex))
-#define LWMEM_UNPROTECT(lwobj) lwmem_sys_mutex_release(&((lwobj)->mutex))
-#else /* LWMEM_CFG_OS */
-#define LWMEM_PROTECT(lwobj)
-#define LWMEM_UNPROTECT(lwobj)
-#endif /* !LWMEM_CFG_OS */
-
-/* Statistics part */
-#if LWMEM_CFG_ENABLE_STATS
-#define LWMEM_INC_STATS(field) (++(field))
-#define LWMEM_UPDATE_MIN_FREE(lwobj)                                                                                   \
-    do {                                                                                                               \
-        if ((lwobj)->mem_available_bytes < (lwobj)->stats.minimum_ever_mem_available_bytes) {                          \
-            (lwobj)->stats.minimum_ever_mem_available_bytes = (lwobj)->mem_available_bytes;                            \
-        }                                                                                                              \
-    } while (0)
-#else
-#define LWMEM_INC_STATS(field)
-#define LWMEM_UPDATE_MIN_FREE(lwobj)
-#endif /* LWMEM_CFG_ENABLE_STATS */
-
-/**
- * \brief           LwMEM default structure used by application
- */
-static lwmem_t lwmem_default;
-
-#if LWMEM_CFG_SUPPORT_REALLOC_AND_FREE
 
 /**
  * \brief           Get region aligned start address and aligned size
@@ -765,7 +765,7 @@ prv_assignmem(lwmem_t* lwobj, const lwmem_region_t* regions) {
     return lwobj->mem_regions_count; /* Return number of regions used by manager */
 }
 
-#else /* LWMEM_CFG_SUPPORT_REALLOC_AND_FREE */
+#else /* LWMEM_CFG_FULL */
 
 /**
  * \brief           Assign the regions for simple algorithm
@@ -828,7 +828,7 @@ prv_alloc_simple(lwmem_t* const lwobj, const lwmem_region_t* region, const size_
     return retval;
 }
 
-#endif /* LWMEM_CFG_SUPPORT_REALLOC_AND_FREE */
+#endif /* LWMEM_CFG_FULL */
 
 /**
  * \brief           Initializes and assigns user regions for memory used by allocator algorithm
@@ -858,11 +858,11 @@ lwmem_assignmem_ex(lwmem_t* lwobj, const lwmem_region_t* regions) {
 
     /* Check first things first */
     if (regions == NULL || (((size_t)LWMEM_CFG_ALIGN_NUM) & (((size_t)LWMEM_CFG_ALIGN_NUM) - 1)) > 0
-#if LWMEM_CFG_SUPPORT_REALLOC_AND_FREE
+#if LWMEM_CFG_FULL
         || lwobj->end_block != NULL /* Init function may only be called once per lwmem instance */
 #else
         || lwobj->is_initialized /* Already initialized? */
-#endif /* LWMEM_CFG_SUPPORT_REALLOC_AND_FREE */
+#endif /* LWMEM_CFG_FULL */
     ) {
         return 0;
     }
@@ -883,7 +883,7 @@ lwmem_assignmem_ex(lwmem_t* lwobj, const lwmem_region_t* regions) {
             break;
         }
 
-#if !LWMEM_CFG_SUPPORT_REALLOC_AND_FREE
+#if !LWMEM_CFG_FULL
         /*
          * In case of simple allocation algorithm, we (for now!) only allow one region.
          * Return zero value if user passed more than one region in a sequence.
@@ -891,7 +891,7 @@ lwmem_assignmem_ex(lwmem_t* lwobj, const lwmem_region_t* regions) {
         else if (idx > 0) {
             return 0;
         }
-#endif /* LWMEM_CFG_SUPPORT_REALLOC_AND_FREE */
+#endif /* LWMEM_CFG_FULL */
 
         /* New region(s) must be higher (in address space) than previous one */
         if ((mem_start_addr + mem_size) > LWMEM_TO_BYTE_PTR(regions[idx].start_addr)) {
@@ -913,11 +913,11 @@ lwmem_assignmem_ex(lwmem_t* lwobj, const lwmem_region_t* regions) {
         return 0;
     }
 
-#if LWMEM_CFG_SUPPORT_REALLOC_AND_FREE
+#if LWMEM_CFG_FULL
     return prv_assignmem(lwobj, regions);
-#else  /* LWMEM_CFG_SUPPORT_REALLOC_AND_FREE */
+#else  /* LWMEM_CFG_FULL */
     return prv_assignmem_simple(lwobj, regions);
-#endif /* LWMEM_CFG_SUPPORT_REALLOC_AND_FREE */
+#endif /* LWMEM_CFG_FULL */
 }
 
 /**
@@ -937,11 +937,11 @@ lwmem_malloc_ex(lwmem_t* lwobj, const lwmem_region_t* region, const size_t size)
     lwobj = LWMEM_GET_LWOBJ(lwobj);
 
     LWMEM_PROTECT(lwobj);
-#if LWMEM_CFG_SUPPORT_REALLOC_AND_FREE
+#if LWMEM_CFG_FULL
     ptr = prv_alloc(lwobj, region, size);
-#else  /* LWMEM_CFG_SUPPORT_REALLOC_AND_FREE */
+#else  /* LWMEM_CFG_FULL */
     ptr = prv_alloc_simple(lwobj, region, size);
-#endif /* LWMEM_CFG_SUPPORT_REALLOC_AND_FREE */
+#endif /* LWMEM_CFG_FULL */
     LWMEM_UNPROTECT(lwobj);
     return ptr;
 }
@@ -969,11 +969,11 @@ lwmem_calloc_ex(lwmem_t* lwobj, const lwmem_region_t* region, const size_t nitem
     lwobj = LWMEM_GET_LWOBJ(lwobj);
 
     LWMEM_PROTECT(lwobj);
-#if LWMEM_CFG_SUPPORT_REALLOC_AND_FREE
+#if LWMEM_CFG_FULL
     ptr = prv_alloc(lwobj, region, alloc_size);
-#else  /* LWMEM_CFG_SUPPORT_REALLOC_AND_FREE */
+#else  /* LWMEM_CFG_FULL */
     ptr = prv_alloc_simple(lwobj, region, alloc_size);
-#endif /* LWMEM_CFG_SUPPORT_REALLOC_AND_FREE */
+#endif /* LWMEM_CFG_FULL */
     LWMEM_UNPROTECT(lwobj);
 
     if (ptr != NULL) {
@@ -982,7 +982,7 @@ lwmem_calloc_ex(lwmem_t* lwobj, const lwmem_region_t* region, const size_t nitem
     return ptr;
 }
 
-#if LWMEM_CFG_SUPPORT_REALLOC_AND_FREE || __DOXYGEN__
+#if LWMEM_CFG_FULL || __DOXYGEN__
 
 /**
  * \brief           Reallocates already allocated memory with new size in specific lwmem instance and region.
@@ -1133,7 +1133,7 @@ lwmem_get_size_ex(lwmem_t* lwobj, void* ptr) {
     return len;
 }
 
-#endif /* LWMEM_CFG_SUPPORT_REALLOC_AND_FREE || __DOXYGEN__ */
+#endif /* LWMEM_CFG_FULL || __DOXYGEN__ */
 
 #if LWMEM_CFG_ENABLE_STATS || __DOXYGEN__
 
@@ -1203,7 +1203,7 @@ lwmem_calloc(size_t nitems, size_t size) {
     return lwmem_calloc_ex(NULL, NULL, nitems, size);
 }
 
-#if LWMEM_CFG_SUPPORT_REALLOC_AND_FREE || __DOXYGEN__
+#if LWMEM_CFG_FULL || __DOXYGEN__
 
 /**
  * \note            This is a wrapper for \ref lwmem_realloc_ex function.
@@ -1268,12 +1268,12 @@ lwmem_get_size(void* ptr) {
     return lwmem_get_size_ex(NULL, ptr);
 }
 
-#endif /* LWMEM_CFG_SUPPORT_REALLOC_AND_FREE || __DOXYGEN__ */
+#endif /* LWMEM_CFG_FULL || __DOXYGEN__ */
 
 /* Part of library used ONLY for LWMEM_DEV purposes */
 /* To validate and test library */
 
-#if defined(LWMEM_DEV) && !__DOXYGEN__
+#if defined(LWMEM_DEV) && LWMEM_CFG_FULL && !__DOXYGEN__
 
 #include <stdio.h>
 #include <stdlib.h>
