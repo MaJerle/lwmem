@@ -29,7 +29,7 @@
  * This file is part of LwMEM - Lightweight dynamic memory manager library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         v2.1.0
+ * Version:         v2.2.0
  */
 #ifndef LWMEM_HDR_H
 #define LWMEM_HDR_H
@@ -125,6 +125,7 @@ size_t lwmem_get_size_ex(lwmem_t* lwobj, void* ptr);
 #endif /* LWMEM_CFG_FULL || __DOXYGEN__ */
 #if LWMEM_CFG_ENABLE_STATS || __DOXYGEN__
 void lwmem_get_stats_ex(lwmem_t* lwobj, lwmem_stats_t* stats);
+void lwmem_get_size(lwmem_stats_t* stats);
 #endif /* LWMEM_CFG_ENABLE_STATS || __DOXYGEN__ */
 
 size_t lwmem_assignmem(const lwmem_region_t* regions);
@@ -137,19 +138,7 @@ int lwmem_realloc_s(void** ptr2ptr, size_t size);
 void lwmem_free(void* ptr);
 void lwmem_free_s(void** ptr2ptr);
 size_t lwmem_get_size(void* ptr);
-
 #endif /* LWMEM_CFG_FULL || __DOXYGEN__ */
-
-#if LWMEM_CFG_ENABLE_STATS || __DOXYGEN__
-
-/**
- * \note            This is a wrapper for \ref lwmem_get_stats_ex function.
- *                      It operates in default LwMEM instance
- * \param[in]       ptr: Pointer to lwmem_stats_t to store result
- */
-#define lwmem_get_stats(stats) lwmem_get_stats_ex(NULL, (stats))
-
-#endif /* LWMEM_CFG_ENABLE_STATS || __DOXYGEN__ */
 
 #if defined(LWMEM_DEV) && !__DOXYGEN__
 unsigned char lwmem_debug_create_regions(lwmem_region_t** regs_out, size_t count, size_t size);

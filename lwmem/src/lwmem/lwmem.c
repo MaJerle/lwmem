@@ -29,7 +29,7 @@
  * This file is part of LwMEM - Lightweight dynamic memory manager library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         v2.1.0
+ * Version:         v2.2.0
  */
 #include "lwmem/lwmem.h"
 #include <limits.h>
@@ -1146,7 +1146,7 @@ lwmem_get_size_ex(lwmem_t* lwobj, void* ptr) {
  * \brief           Get statistics of a LwMEM instance
  * \param[in]       lwobj: LwMEM instance. Set to `NULL` to use default instance.
  *                      Instance must be the same as used during allocation procedure
- * \param[in]       stats: Pointer to \ref lwmem_stats_t to store result
+ * \param[in,out]   stats: Pointer to \ref lwmem_stats_t to store result
  */
 void
 lwmem_get_stats_ex(lwmem_t* lwobj, lwmem_stats_t* stats) {
@@ -1157,6 +1157,15 @@ lwmem_get_stats_ex(lwmem_t* lwobj, lwmem_stats_t* stats) {
         stats->mem_available_bytes = lwobj->mem_available_bytes;
         LWMEM_UNPROTECT(lwobj);
     }
+}
+
+/**
+ * \brief           Get statistics of a default LwMEM instance
+ * \param[in,out]   stats: Pointer to \ref lwmem_stats_t to store result
+ */
+size_t
+lwmem_get_size(lwmem_stats_t* stats) {
+    lwmem_get_stats_ex(NULL, stats);
 }
 
 #endif /* LWMEM_CFG_ENABLE_STATS || __DOXYGEN__ */

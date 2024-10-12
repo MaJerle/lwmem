@@ -29,7 +29,7 @@
  * This file is part of LwMEM - Lightweight dynamic memory manager library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         v2.1.0
+ * Version:         v2.2.0
  */
 #ifndef LWMEM_OPT_HDR_H
 #define LWMEM_OPT_HDR_H
@@ -89,7 +89,7 @@ extern "C" {
  * \brief           Enables `1` or disables `0` full memory management support.
  * 
  * When enabled (default config), library supports allocation, reallocation and freeing of the memory.
- *  - Memory allocation and [c]allocation
+ *  - Memory [c]allocation
  *  - Memory reallocation
  *  - Memory allocation in user defined memory regions
  *  - Memory freeing

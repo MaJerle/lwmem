@@ -13,6 +13,7 @@
 * Supports embedded applications with fragmented memories
 * Supports automotive applications
 * Supports advanced free/realloc algorithms to optimize memory usage
+* **Since v2.2.0** Supports light implementation with allocation only
 * Operating system ready, thread-safe API
 * C++ wrapper functions
 * User friendly MIT license

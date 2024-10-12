@@ -29,13 +29,13 @@
  * This file is part of LwMEM - Lightweight dynamic memory manager library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         v2.1.0
+ * Version:         v2.2.0
  */
 #include "system/lwmem_sys.h"
 
 #if LWMEM_CFG_OS && !__DOXYGEN__
 
-#include "Windows.h"
+#include "windows.h"
 
 uint8_t
 lwmem_sys_mutex_create(LWMEM_CFG_OS_MUTEX_HANDLE* m) {
@@ -50,12 +50,7 @@ lwmem_sys_mutex_isvalid(LWMEM_CFG_OS_MUTEX_HANDLE* m) {
 
 uint8_t
 lwmem_sys_mutex_wait(LWMEM_CFG_OS_MUTEX_HANDLE* m) {
-    DWORD ret;
-    ret = WaitForSingleObject(*m, INFINITE);
-    if (ret != WAIT_OBJECT_0) {
-        return 0;
-    }
-    return 1;
+    return WaitForSingleObject(*m, INFINITE) == WAIT_OBJECT_0;
 }
 
 uint8_t

@@ -9,4 +9,5 @@ User manual
     how-it-works
     instances
     realloc-algorithm
+    light-version
     thread-safety
