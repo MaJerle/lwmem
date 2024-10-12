@@ -62,6 +62,11 @@
 #define LWMEM_UPDATE_MIN_FREE(lwobj)
 #endif /* LWMEM_CFG_ENABLE_STATS */
 
+/* Verify alignment */
+#if (LWMEM_CFG_ALIGN_NUM & (LWMEM_CFG_ALIGN_NUM - 1) > 0)
+#error "LWMEM_ALIGN_BITS must be power of 2"
+#endif
+
 /**
  * \brief           LwMEM default structure used by application
  */
@@ -857,7 +862,7 @@ lwmem_assignmem_ex(lwmem_t* lwobj, const lwmem_region_t* regions) {
     lwobj = LWMEM_GET_LWOBJ(lwobj);
 
     /* Check first things first */
-    if (regions == NULL || (((size_t)LWMEM_CFG_ALIGN_NUM) & (((size_t)LWMEM_CFG_ALIGN_NUM) - 1)) > 0
+    if (regions == NULL
 #if LWMEM_CFG_FULL
         || lwobj->end_block != NULL /* Init function may only be called once per lwmem instance */
 #else

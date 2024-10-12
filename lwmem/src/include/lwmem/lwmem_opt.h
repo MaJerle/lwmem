@@ -82,7 +82,7 @@ extern "C" {
  *                  Usually alignment of `4` bytes fits to all processors.
  */
 #ifndef LWMEM_CFG_ALIGN_NUM
-#define LWMEM_CFG_ALIGN_NUM ((size_t)4)
+#define LWMEM_CFG_ALIGN_NUM 4
 #endif
 
 /**
