@@ -16,7 +16,7 @@ LwMEM is lightweight dynamic memory manager optimized for embedded systems.
 Features
 ^^^^^^^^
 
-* Written in ANSI C99, compatible with ``size_t`` for size data types
+* Written in C (C11), compatible with ``size_t`` for size data types
 * Implements standard C library functions for memory allocation, malloc, calloc, realloc and free
 * Uses *first-fit* algorithm to search for free block
 * Supports multiple allocation instances to split between memories and/or CPU cores
@@ -25,6 +25,7 @@ Features
 * Supports embedded applications with fragmented memories
 * Supports automotive applications
 * Supports advanced free/realloc algorithms to optimize memory usage
+* **Since v2.2.0** Supports light implementation with allocation only
 * Operating system ready, thread-safe API
 * C++ wrapper functions
 * User friendly MIT license
@@ -67,6 +68,7 @@ Table of contents
     api-reference/index
     examples/index
     changelog/index
+    authors/index
 
 .. toctree::
     :maxdepth: 2
@@ -78,7 +80,7 @@ Table of contents
     LwESP - ESP-AT library <https://github.com/MaJerle/lwesp>
     LwEVT - Event manager <https://github.com/MaJerle/lwevt>
     LwGPS - GPS NMEA parser <https://github.com/MaJerle/lwgps>
-    LwGSM - GSM-AT library <https://github.com/MaJerle/lwgsm>
+    LwCELL - Cellular modem host AT library <https://github.com/MaJerle/lwcell>
     LwJSON - JSON parser <https://github.com/MaJerle/lwjson>
     LwMEM - Memory manager <https://github.com/MaJerle/lwmem>
     LwOW - OneWire with UART <https://github.com/MaJerle/lwow>
@@ -87,3 +89,4 @@ Table of contents
     LwRB - Ring buffer <https://github.com/MaJerle/lwrb>
     LwSHELL - Shell <https://github.com/MaJerle/lwshell>
     LwUTIL - Utility functions <https://github.com/MaJerle/lwutil>
+    LwWDG - RTOS task watchdog <https://github.com/MaJerle/lwwdg>

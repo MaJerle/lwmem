@@ -2,6 +2,12 @@
 
 ## Develop
 
+## v2.2.0
+
+- Rework library CMake with removed INTERFACE type
+- Add `LWMEM_CFG_FULL` to allow control build configuration of the library
+- Implement support for simple (no realloc, no free, grow-only malloc) allocation mechanism
+
 ## v2.1.0
 
 - Split CMakeLists.txt files between library and executable

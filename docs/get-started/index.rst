@@ -57,8 +57,18 @@ Update cloned to latest version
 Add library to project
 ^^^^^^^^^^^^^^^^^^^^^^
 
-At this point it is assumed that you have successfully download library, either cloned it or from releases page.
-Next step is to add the library to the project, by means of source files to compiler inputs and header files in search path
+At this point it is assumed that you have successfully download library, either with ``git clone`` command or with manual download from the library releases page.
+Next step is to add the library to the project, by means of source files to compiler inputs and header files in search path.
+
+*CMake* is the main supported build system. Package comes with the ``CMakeLists.txt`` and ``library.cmake`` files, both located in the ``lwmem`` directory:
+
+* ``library.cmake``: It is a fully configured set of variables and with library definition. User can include this file to the project file with ``include(path/to/library.cmake)`` and then manually use the variables provided by the file, such as list of source files, include paths or necessary compiler definitions. It is up to the user to properly use the this file on its own.
+* ``CMakeLists.txt``: It is a wrapper-only file and includes ``library.cmake`` file. It is used for when user wants to include the library to the main project by simply calling *CMake* ``add_subdirectory`` command, followed by ``target_link_libraries`` to link external library to the final project.
+
+.. tip::
+    Open ``library.cmake`` and analyze the provided information. Among variables, you can also find list of all possible exposed libraries for the user.
+
+If you do not use the *CMake*, you can do the following:
 
 * Copy ``lwmem`` folder to your project, it contains library files
 * Add ``lwmem/src/include`` folder to `include path` of your toolchain. This is where `C/C++` compiler can find the files during compilation process. Usually using ``-I`` flag
@@ -70,7 +80,7 @@ Configuration file
 ^^^^^^^^^^^^^^^^^^
 
 Configuration file is used to overwrite default settings defined for the essential use case.
-Library comes with template config file, which can be modified according to needs.
+Library comes with template config file, which can be modified according to the application needs.
 and it should be copied (or simply renamed in-place) and named ``lwmem_opts.h``
 
 .. note::
@@ -78,7 +88,11 @@ and it should be copied (or simply renamed in-place) and named ``lwmem_opts.h``
     File must be renamed to ``lwmem_opts.h`` first and then copied to the project directory where compiler
     include paths have access to it by using ``#include "lwmem_opts.h"``.
 
-List of configuration options are available in the :ref:`api_lwmem_opt` section.
+.. tip::
+    If you are using *CMake* build system, define the variable ``LWMEM_OPTS_FILE`` before adding library's directory to the *CMake* project.
+    Variable must contain the path to the user options file. If not provided and to avoid build error, one will be generated in the build directory.
+
+Configuration options list is available available in the :ref:`api_lwmem_opt` section.
 If any option is about to be modified, it should be done in configuration file
 
 .. literalinclude:: ../../lwmem/src/include/lwmem/lwmem_opts_template.h

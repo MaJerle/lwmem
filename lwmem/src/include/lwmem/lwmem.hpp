@@ -29,7 +29,7 @@
  * This file is part of LwMEM - Lightweight dynamic memory manager library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         v2.1.0
+ * Version:         v2.2.0
  */
 #ifndef LWMEM_HDR_HPP
 #define LWMEM_HDR_HPP
@@ -93,6 +93,7 @@ class LwmemLight {
         return lwmem_calloc_ex(&m_lw, nullptr, nitems, size);
     }
 
+#if LWMEM_CFG_FULL || __DOXYGEN__
     /**
      * \brief           Reallocate block of memory
      * \param           ptr: Pointer to previously allocated memory block
@@ -114,6 +115,7 @@ class LwmemLight {
     free(void* ptr) {
         lwmem_free_ex(&m_lw, ptr);
     }
+#endif /* LWMEM_CFG_FULL || __DOXYGEN__ */
 
   private:
     /* Delete unused constructors */

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (c) 2023 Tilen MAJERLE
+ * Copyright (c) 2024 Tilen MAJERLE
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -29,7 +29,7 @@
  * This file is part of LwMEM - Lightweight dynamic memory manager library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         v2.1.0
+ * Version:         v2.2.0
  */
 #ifndef LWMEM_SYS_HDR_H
 #define LWMEM_SYS_HDR_H

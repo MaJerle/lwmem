@@ -4,7 +4,14 @@
         "lwevt_type.h": "c",
         "lwevt.h": "c",
         "string.h": "c",
-        "lwevt_opt.h": "c"
+        "lwevt_opt.h": "c",
+        "streambuf": "c",
+        "lwmem.h": "c",
+        "lwmem_opt.h": "c",
+        "array": "c",
+        "string_view": "c",
+        "initializer_list": "c",
+        "limits.h": "c"
     },
     "esbonio.sphinx.confDir": ""
 }

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (c) 2023 Tilen MAJERLE
+ * Copyright (c) 2024 Tilen MAJERLE
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -29,24 +29,59 @@
  * This file is part of LwMEM - Lightweight dynamic memory manager library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         v2.1.0
+ * Version:         v2.2.0
  */
 #include "lwmem/lwmem.h"
 #include <limits.h>
+#include <stdint.h>
 #include <string.h>
 
 #if LWMEM_CFG_OS
 #include "system/lwmem_sys.h"
 #endif /* LWMEM_CFG_OS */
 
-#define LWMEM_MEMSET           memset
-#define LWMEM_MEMCPY           memcpy
-#define LWMEM_MEMMOVE          memmove
+#if LWMEM_CFG_OS
+#define LWMEM_PROTECT(lwobj)   lwmem_sys_mutex_wait(&((lwobj)->mutex))
+#define LWMEM_UNPROTECT(lwobj) lwmem_sys_mutex_release(&((lwobj)->mutex))
+#else /* LWMEM_CFG_OS */
+#define LWMEM_PROTECT(lwobj)
+#define LWMEM_UNPROTECT(lwobj)
+#endif /* !LWMEM_CFG_OS */
+
+/* Statistics part */
+#if LWMEM_CFG_ENABLE_STATS
+#define LWMEM_INC_STATS(field) (++(field))
+#define LWMEM_UPDATE_MIN_FREE(lwobj)                                                                                   \
+    do {                                                                                                               \
+        if ((lwobj)->mem_available_bytes < (lwobj)->stats.minimum_ever_mem_available_bytes) {                          \
+            (lwobj)->stats.minimum_ever_mem_available_bytes = (lwobj)->mem_available_bytes;                            \
+        }                                                                                                              \
+    } while (0)
+#else
+#define LWMEM_INC_STATS(field)
+#define LWMEM_UPDATE_MIN_FREE(lwobj)
+#endif /* LWMEM_CFG_ENABLE_STATS */
+
+/* Verify alignment */
+#if (LWMEM_CFG_ALIGN_NUM & (LWMEM_CFG_ALIGN_NUM - 1) > 0)
+#error "LWMEM_ALIGN_BITS must be power of 2"
+#endif
+
+/**
+ * \brief           LwMEM default structure used by application
+ */
+static lwmem_t lwmem_default;
+
+/**
+ * \brief           Get LwMEM instance based on user input
+ * \param[in]       in_lwobj: LwMEM instance. Set to `NULL` for default instance
+ */
+#define LWMEM_GET_LWOBJ(in_lwobj) ((in_lwobj) != NULL ? (in_lwobj) : (&lwmem_default))
 
 /**
  * \brief           Transform alignment number (power of `2`) to bits
  */
-#define LWMEM_ALIGN_BITS       ((size_t)(((size_t)LWMEM_CFG_ALIGN_NUM) - 1))
+#define LWMEM_ALIGN_BITS          ((size_t)(((size_t)LWMEM_CFG_ALIGN_NUM) - 1))
 
 /**
  * \brief           Aligns input value to next alignment bits
@@ -63,18 +98,20 @@
  *  - Input: `7`; Output: `8`
  *  - Input: `8`; Output: `8`
  */
-#define LWMEM_ALIGN(x)         (((x) + (LWMEM_ALIGN_BITS)) & ~(LWMEM_ALIGN_BITS))
-
-/**
- * \brief           Size of metadata header for block information
- */
-#define LWMEM_BLOCK_META_SIZE  LWMEM_ALIGN(sizeof(lwmem_block_t))
+#define LWMEM_ALIGN(x)            (((x) + (LWMEM_ALIGN_BITS)) & ~(LWMEM_ALIGN_BITS))
 
 /**
  * \brief           Cast input pointer to byte
  * \param[in]       p: Input pointer to cast to byte pointer
  */
-#define LWMEM_TO_BYTE_PTR(p)   ((uint8_t*)(p))
+#define LWMEM_TO_BYTE_PTR(p)      ((uint8_t*)(p))
+
+#if LWMEM_CFG_FULL
+
+/**
+ * \brief           Size of metadata header for block information
+ */
+#define LWMEM_BLOCK_META_SIZE  LWMEM_ALIGN(sizeof(lwmem_block_t))
 
 /**
  * \brief           Bit indicating memory block is allocated
@@ -85,18 +122,6 @@
  * \brief           Mark written in `next` field when block is allocated
  */
 #define LWMEM_BLOCK_ALLOC_MARK (0xDEADBEEF)
-
-/**
- * \brief           Set block as allocated
- * \param[in]       block: Block to set as allocated
- */
-#define LWMEM_BLOCK_SET_ALLOC(block)                                                                                   \
-    do {                                                                                                               \
-        if ((block) != NULL) {                                                                                         \
-            (block)->size |= LWMEM_ALLOC_BIT;                                                                          \
-            (block)->next = (void*)(LWMEM_TO_BYTE_PTR(0) + LWMEM_BLOCK_ALLOC_MARK);                                    \
-        }                                                                                                              \
-    } while (0)
 
 /**
  * \brief           Check if input block is properly allocated and valid
@@ -127,68 +152,58 @@
 #define LWMEM_BLOCK_MIN_SIZE (LWMEM_BLOCK_META_SIZE)
 
 /**
- * \brief           Get LwMEM instance based on user input
- * \param[in]       in_lwobj: LwMEM instance. Set to `NULL` for default instance
- */
-#define LWMEM_GET_LWOBJ(in_lwobj)  ((in_lwobj) != NULL ? (in_lwobj) : (&lwmem_default))
-
-/**
  * \brief           Gets block before input block (marked as prev) and its previous free block
  * \param[in]       in_lwobj: LwMEM instance. Set to `NULL` to use default instance
  * \param[in]       in_b: Input block to find previous and its previous
- * \param[in]       in_pp: Previous previous of input block
- * \param[in]       in_p: Previous of input block
+ * \param[in]       in_pp: Previous previous of input block. Finding will be stored here
+ * \param[in]       in_p: Previous of input block. Finding will be stored here
  */
-#define LWMEM_GET_PREV_CURR_OF_BLOCK(in_lwobj, in_b, in_pp, in_p)                                                         \
-    do {                                                                                                               \
-        for ((in_pp) = NULL, (in_p) = &((in_lwobj)->start_block); (in_p) != NULL && (in_p)->next < (in_b);                \
-             (in_pp) = (in_p), (in_p) = (in_p)->next) {}                                                               \
-    } while (0)
-
-#if LWMEM_CFG_OS
-#define LWMEM_PROTECT(lwobj)   lwmem_sys_mutex_wait(&((lwobj)->mutex))
-#define LWMEM_UNPROTECT(lwobj) lwmem_sys_mutex_release(&((lwobj)->mutex))
-#else /* LWMEM_CFG_OS */
-#define LWMEM_PROTECT(lwobj)
-#define LWMEM_UNPROTECT(lwobj)
-#endif /* !LWMEM_CFG_OS */
-
-/* Statistics part */
-#if LWMEM_CFG_ENABLE_STATS
-#define LWMEM_INC_STATS(field) (++(field))
-#define LWMEM_UPDATE_MIN_FREE(lwobj)                                                                                      \
-    do {                                                                                                               \
-        if ((lwobj)->mem_available_bytes < (lwobj)->stats.minimum_ever_mem_available_bytes) {                                \
-            (lwobj)->stats.minimum_ever_mem_available_bytes = (lwobj)->mem_available_bytes;                                  \
-        }                                                                                                              \
-    } while (0)
-#else
-#define LWMEM_INC_STATS(field)
-#define LWMEM_UPDATE_MIN_FREE(lwobj)
-#endif /* LWMEM_CFG_ENABLE_STATS */
+static void
+prv_get_prev_curr_of_block(lwmem_t* in_lwobj, const lwmem_block_t* in_b, lwmem_block_t** in_pp, lwmem_block_t** in_p) {
+    for (*in_pp = NULL, *in_p = &((in_lwobj)->start_block); *in_p != NULL && (*in_p)->next < in_b;
+         *in_pp = (*in_p), *in_p = (*in_p)->next) {}
+}
 
 /**
- * \brief           LwMEM default structure used by application
+ * \brief           Set block as allocated
+ * \param[in]       block: Block to set as allocated
  */
-static lwmem_t lwmem_default;
+static void
+prv_block_set_alloc(lwmem_block_t* block) {
+    if (block != NULL) {
+        block->size |= LWMEM_ALLOC_BIT;
+        block->next = (void*)(LWMEM_TO_BYTE_PTR(0) + LWMEM_BLOCK_ALLOC_MARK);
+    }
+}
 
 /**
  * \brief           Get region aligned start address and aligned size
  * \param[in]       region: Region to check for size and address
  * \param[out]      msa: Memory start address output variable
- * \param[out]      ms: Memory size output variable
+ * \param[out]      msz: Memory size output variable
  * \return          `1` if region valid, `0` otherwise
  */
 static uint8_t
-prv_get_region_addr_size(const lwmem_region_t* region, uint8_t** msa, size_t* ms) {
-    size_t mem_size;
-    uint8_t* mem_start_addr;
+prv_get_region_addr_size(const lwmem_region_t* region, uint8_t** msa, size_t* msz) {
+    size_t mem_size = 0;
+    uint8_t* mem_start_addr = NULL;
 
-    if (region == NULL || msa == NULL || ms == NULL) {
+    if (region == NULL || msa == NULL || msz == NULL) {
         return 0;
     }
     *msa = NULL;
-    *ms = 0;
+    *msz = 0;
+
+    /*
+     * Start address must be aligned to configuration
+     * Increase start address and decrease effective region size
+     */
+    mem_start_addr = region->start_addr;
+    mem_size = region->size;
+    if (((size_t)mem_start_addr) & LWMEM_ALIGN_BITS) { /* Check alignment boundary */
+        mem_start_addr += ((size_t)LWMEM_CFG_ALIGN_NUM) - ((size_t)mem_start_addr & LWMEM_ALIGN_BITS);
+        mem_size -= (size_t)(mem_start_addr - LWMEM_TO_BYTE_PTR(region->start_addr));
+    }
 
     /* Check region size and align it to config bits */
     mem_size = region->size & ~LWMEM_ALIGN_BITS; /* Size does not include lower bits */
@@ -196,20 +211,10 @@ prv_get_region_addr_size(const lwmem_region_t* region, uint8_t** msa, size_t* ms
         return 0;
     }
 
-    /*
-     * Start address must be aligned to configuration
-     * Increase start address and decrease effective region size
-     */
-    mem_start_addr = region->start_addr;
-    if (((size_t)mem_start_addr) & LWMEM_ALIGN_BITS) { /* Check alignment boundary */
-        mem_start_addr += ((size_t)LWMEM_CFG_ALIGN_NUM) - ((size_t)mem_start_addr & LWMEM_ALIGN_BITS);
-        mem_size -= (size_t)(mem_start_addr - LWMEM_TO_BYTE_PTR(region->start_addr));
-    }
-
     /* Check final memory size */
     if (mem_size >= (2 * LWMEM_BLOCK_MIN_SIZE)) {
         *msa = mem_start_addr;
-        *ms = mem_size;
+        *msz = mem_size;
 
         return 1;
     }
@@ -219,14 +224,14 @@ prv_get_region_addr_size(const lwmem_region_t* region, uint8_t** msa, size_t* ms
 /**
  * \brief           Insert free block to linked list of free blocks
  * \param[in]       lwobj: LwMEM instance. Set to `NULL` to use default instance
- * \param[in]       nb: New free block to insert into linked list
+ * \param[in]       nblk: New free block to insert into linked list
  */
 static void
-prv_insert_free_block(lwmem_t* const lwobj, lwmem_block_t* nb) {
+prv_insert_free_block(lwmem_t* const lwobj, lwmem_block_t* nblk) {
     lwmem_block_t* prev;
 
     /* Check valid inputs */
-    if (nb == NULL) {
+    if (nblk == NULL) {
         return;
     }
 
@@ -234,7 +239,7 @@ prv_insert_free_block(lwmem_t* const lwobj, lwmem_block_t* nb) {
      * Try to find position to put new block in-between
      * Search until all free block addresses are lower than entry block
      */
-    for (prev = &(lwobj->start_block); prev != NULL && prev->next < nb; prev = prev->next) {}
+    for (prev = &(lwobj->start_block); prev != NULL && prev->next < nblk; prev = prev->next) {}
 
     /* This is hard error with wrong memory usage */
     if (prev == NULL) {
@@ -254,10 +259,10 @@ prv_insert_free_block(lwmem_t* const lwobj, lwmem_block_t* nb) {
      * By doing this, we protect data left by app
      * and we make sure new allocations cannot see old information
      */
-    if (nb != NULL) {
-        void* p = LWMEM_GET_PTR_FROM_BLOCK(nb);
-        if (p != NULL) {
-            LWMEM_MEMSET(p, 0x00, nb->size - LWMEM_BLOCK_META_SIZE);
+    if (nblk != NULL) {
+        void* ptr = LWMEM_GET_PTR_FROM_BLOCK(nblk);
+        if (ptr != NULL) {
+            LWMEM_MEMSET(ptr, 0x00, nblk->size - LWMEM_BLOCK_META_SIZE);
         }
     }
 #endif /* LWMEM_CFG_RESET_MEMORY */
@@ -266,10 +271,10 @@ prv_insert_free_block(lwmem_t* const lwobj, lwmem_block_t* nb) {
      * Check if previous block and input block together create one big contiguous block
      * If this is the case, merge blocks together and increase previous block by input block size
      */
-    if ((LWMEM_TO_BYTE_PTR(prev) + prev->size) == LWMEM_TO_BYTE_PTR(nb)) {
-        prev->size += nb->size; /* Increase current block by size of new block */
-        nb = prev;              /* New block and current are now the same thing */
-                                /*
+    if ((LWMEM_TO_BYTE_PTR(prev) + prev->size) == LWMEM_TO_BYTE_PTR(nblk)) {
+        prev->size += nblk->size; /* Increase current block by size of new block */
+        nblk = prev;              /* New block and current are now the same thing */
+        /*
          * It is important to set new block as current one
          * as this allows merging previous and next blocks together with new block
          * at the same time; follow next steps
@@ -281,25 +286,24 @@ prv_insert_free_block(lwmem_t* const lwobj, lwmem_block_t* nb) {
      * Do not merge with "end of region" indication (commented part of if statement)
      */
     if (prev->next != NULL && prev->next->size > 0 /* Do not remove "end of region" indicator in each region */
-        && (LWMEM_TO_BYTE_PTR(nb) + nb->size) == LWMEM_TO_BYTE_PTR(prev->next)) {
+        && (LWMEM_TO_BYTE_PTR(nblk) + nblk->size) == LWMEM_TO_BYTE_PTR(prev->next)) {
         if (prev->next == lwobj->end_block) { /* Does it points to the end? */
-            nb->next = lwobj->end_block;      /* Set end block pointer */
+            nblk->next = lwobj->end_block;    /* Set end block pointer */
         } else {
-            nb->size +=
-                prev->next
-                    ->size; /* Expand of current block for size of next free block which is right behind new block */
-            nb->next = prev->next->next; /* Next free is pointed to the next one of previous next */
+            /* Expand of current block for size of next free block which is right behind new block */
+            nblk->size += prev->next->size;
+            nblk->next = prev->next->next; /* Next free is pointed to the next one of previous next */
         }
     } else {
-        nb->next = prev->next; /* Set next of input block as next of current one */
+        nblk->next = prev->next; /* Set next of input block as next of current one */
     }
 
     /*
      * If new block has not been set as current (and expanded),
      * then link them together, otherwise ignore as it would point to itself
      */
-    if (prev != nb) {
-        prev->next = nb;
+    if (prev != nblk) {
+        prev->next = nblk;
     }
 }
 
@@ -341,7 +345,7 @@ prv_split_too_big_block(lwmem_t* const lwobj, lwmem_block_t* block, size_t new_b
 
     /* If allocation bit was set before, set it now again */
     if (is_alloc_bit) {
-        LWMEM_BLOCK_SET_ALLOC(block);
+        prv_block_set_alloc(block);
     }
     return success;
 }
@@ -369,7 +373,7 @@ prv_alloc(lwmem_t* const lwobj, const lwmem_region_t* region, const size_t size)
 
     /* Set default values */
     prev = &(lwobj->start_block); /* Use pointer from custom lwmem block */
-    curr = prev->next;         /* Curr represents first actual free block */
+    curr = prev->next;            /* Curr represents first actual free block */
 
     /*
      * If region is not set to NULL,
@@ -431,7 +435,7 @@ prv_alloc(lwmem_t* const lwobj, const lwmem_region_t* region, const size_t size)
 
     lwobj->mem_available_bytes -= curr->size;         /* Decrease available bytes by allocated block size */
     prv_split_too_big_block(lwobj, curr, final_size); /* Split block if it is too big */
-    LWMEM_BLOCK_SET_ALLOC(curr);                   /* Set block as allocated */
+    prv_block_set_alloc(curr);                        /* Set block as allocated */
 
     LWMEM_UPDATE_MIN_FREE(lwobj);
     LWMEM_INC_STATS(lwobj->stats.nr_alloc);
@@ -477,7 +481,7 @@ prv_free(lwmem_t* const lwobj, void* const ptr) {
  */
 static void*
 prv_realloc(lwmem_t* const lwobj, const lwmem_region_t* region, void* const ptr, const size_t size) {
-    lwmem_block_t *block, *prevprev, *prev;
+    lwmem_block_t *block = NULL, *prevprev = NULL, *prev = NULL;
     size_t block_size; /* Holds size of input block (ptr), including metadata size */
     const size_t final_size =
         LWMEM_ALIGN(size) + LWMEM_BLOCK_META_SIZE; /* Holds size of new requested block size, including metadata size */
@@ -501,180 +505,175 @@ prv_realloc(lwmem_t* const lwobj, const lwmem_region_t* region, void* const ptr,
 
     /* Process existing block */
     block = LWMEM_GET_BLOCK_FROM_PTR(ptr);
-    if (LWMEM_BLOCK_IS_ALLOC(block)) {
-        block_size = block->size & ~LWMEM_ALLOC_BIT; /* Get actual block size, without memory allocation bit */
+    if (!LWMEM_BLOCK_IS_ALLOC(block)) {
 
-        /* Check current block size is the same as new requested size */
-        if (block_size == final_size) {
-            return ptr; /* Just return pointer, nothing to do */
-        }
-
-        /*
-         * Abbreviations
-         *
-         * - "Current block" or "Input block" is allocated block from input variable "ptr"
-         * - "Next free block" is next free block, on address space after input block
-         * - "Prev free block" is last free block, on address space before input block
-         * - "PrevPrev free block" is previous free block of "Prev free block"
-         */
-
-        /*
-         * When new requested size is smaller than existing one,
-         * it is enough to modify size of current block only.
-         *
-         * If new requested size is much smaller than existing one,
-         * check if it is possible to create new empty block and add it to list of empty blocks
-         *
-         * Application returns same pointer
-         */
-        if (final_size < block_size) {
-            if ((block_size - final_size) >= LWMEM_BLOCK_MIN_SIZE) {
-                prv_split_too_big_block(lwobj, block, final_size); /* Split block if it is too big */
-            } else {
-                /*
-                 * It is not possible to create new empty block at the end of input block
-                 *
-                 * But if next free block is just after input block,
-                 * it is possible to find this block and increase it by "block_size - final_size" bytes
-                 */
-
-                /* Find free blocks before input block */
-                LWMEM_GET_PREV_CURR_OF_BLOCK(lwobj, block, prevprev, prev);
-
-                /* Check if current block and next free are connected */
-                if ((LWMEM_TO_BYTE_PTR(block) + block_size) == LWMEM_TO_BYTE_PTR(prev->next)
-                    && prev->next->size > 0) { /* Must not be end of region indicator */
-                    /* Make temporary variables as prev->next will point to different location */
-                    const size_t tmp_size = prev->next->size;
-                    void* const tmp_next = prev->next->next;
-
-                    /* Shift block up, effectively increase its size */
-                    prev->next = (void*)(LWMEM_TO_BYTE_PTR(prev->next) - (block_size - final_size));
-                    prev->next->size = tmp_size + (block_size - final_size);
-                    prev->next->next = tmp_next;
-                    lwobj->mem_available_bytes +=
-                        block_size - final_size; /* Increase available bytes by increase of free block */
-
-                    block->size = final_size; /* Block size is requested size */
-                }
-            }
-            LWMEM_BLOCK_SET_ALLOC(block); /* Set block as allocated */
-            return ptr;                   /* Return existing pointer */
-        }
-
-        /* New requested size is bigger than current block size is */
-
-        /* Find last free (and its previous) block, located just before input block */
-        LWMEM_GET_PREV_CURR_OF_BLOCK(lwobj, block, prevprev, prev);
-
-        /* If entry could not be found, there is a hard error */
-        if (prev == NULL) {
-            return NULL;
-        }
-
-        /* Order of variables is: | prevprev ---> prev --->--->--->--->--->--->--->--->--->---> prev->next  | */
-        /*                        |                      (input_block, which is not on a list)              | */
-        /* Input block points to address somewhere between "prev" and "prev->next" pointers                   */
-
-        /* Check if "block" and next free "prev->next" create contiguous memory with size of at least new requested size */
-        if ((LWMEM_TO_BYTE_PTR(block) + block_size)
-                == LWMEM_TO_BYTE_PTR(prev->next)                /* Blocks create contiguous block */
-            && (block_size + prev->next->size) >= final_size) { /* Size is greater or equal to requested */
-
-            /*
-             * Merge blocks together by increasing current block with size of next free one
-             * and remove next free from list of free blocks
-             */
-            lwobj->mem_available_bytes -= prev->next->size; /* For now decrease effective available bytes */
-            LWMEM_UPDATE_MIN_FREE(lwobj);
-            block->size = block_size + prev->next->size; /* Increase effective size of new block */
-            prev->next =
-                prev->next->next; /* Set next to next's next, effectively remove expanded block from free list */
-
-            prv_split_too_big_block(lwobj, block, final_size); /* Split block if it is too big */
-            LWMEM_BLOCK_SET_ALLOC(block);                   /* Set block as allocated */
-            return ptr;                                     /* Return existing pointer */
-        }
-
-        /*
-         * Check if "block" and last free before "prev" create contiguous memory with size of at least new requested size.
-         *
-         * It is necessary to make a memory move and shift content up as new return pointer is now upper on address space
-         */
-        if ((LWMEM_TO_BYTE_PTR(prev) + prev->size) == LWMEM_TO_BYTE_PTR(block) /* Blocks create contiguous block */
-            && (prev->size + block_size) >= final_size) { /* Size is greater or equal to requested */
-            /* Move memory from block to block previous to current */
-            void* const old_data_ptr = LWMEM_GET_PTR_FROM_BLOCK(block);
-            void* const new_data_ptr = LWMEM_GET_PTR_FROM_BLOCK(prev);
-
-            /*
-             * If memmove overwrites metadata of current block (when shifting content up),
-             * it is not an issue as we know its size (block_size) and next is already NULL.
-             *
-             * Memmove must be used to guarantee move of data as addresses + their sizes may overlap
-             *
-             * Metadata of "prev" are not modified during memmove
-             */
-            LWMEM_MEMMOVE(new_data_ptr, old_data_ptr, block_size);
-
-            lwobj->mem_available_bytes -= prev->size; /* For now decrease effective available bytes */
-            LWMEM_UPDATE_MIN_FREE(lwobj);
-            prev->size += block_size; /* Increase size of input block size */
-            prevprev->next =
-                prev->next; /* Remove prev from free list as it is now being used for allocation together with existing block */
-            block = prev; /* Move block pointer to previous one */
-
-            prv_split_too_big_block(lwobj, block, final_size); /* Split block if it is too big */
-            LWMEM_BLOCK_SET_ALLOC(block);                   /* Set block as allocated */
-            return new_data_ptr;                            /* Return new data ptr */
-        }
-
-        /*
-         * At this point, it was not possible to expand existing block with free before or free after due to:
-         * - Input block & next free block do not create contiguous block or its new size is too small
-         * - Previous free block & input block do not create contiguous block or its new size is too small
-         *
-         * Last option is to check if previous free block "prev", input block "block" and next free block "prev->next" create contiguous block
-         * and size of new block (from 3 contiguous blocks) together is big enough
-         */
-        if ((LWMEM_TO_BYTE_PTR(prev) + prev->size)
-                == LWMEM_TO_BYTE_PTR(block) /* Input block and free block before create contiguous block */
-            && (LWMEM_TO_BYTE_PTR(block) + block_size)
-                   == LWMEM_TO_BYTE_PTR(prev->next) /* Input block and free block after create contiguous block */
-            && (prev->size + block_size + prev->next->size) >= final_size) { /* Size is greater or equal to requested */
-
-            /* Move memory from block to block previous to current */
-            void* const old_data_ptr = LWMEM_GET_PTR_FROM_BLOCK(block);
-            void* const new_data_ptr = LWMEM_GET_PTR_FROM_BLOCK(prev);
-
-            /*
-             * If memmove overwrites metadata of current block (when shifting content up),
-             * it is not an issue as we know its size (block_size) and next is already NULL.
-             *
-             * Memmove must be used to guarantee move of data as addresses and their sizes may overlap
-             *
-             * Metadata of "prev" are not modified during memmove
-             */
-            LWMEM_MEMMOVE(new_data_ptr, old_data_ptr, block_size); /* Copy old buffer size to new location */
-
-            lwobj->mem_available_bytes -=
-                prev->size
-                + prev->next
-                      ->size; /* Decrease effective available bytes for free blocks before and after input block */
-            LWMEM_UPDATE_MIN_FREE(lwobj);
-            prev->size += block_size + prev->next->size; /* Increase size of new block by size of 2 free blocks */
-            prevprev->next =
-                prev->next
-                    ->next; /* Remove free block before current one and block after current one from linked list (remove 2) */
-            block = prev; /* Previous block is now current */
-
-            prv_split_too_big_block(lwobj, block, final_size); /* Split block if it is too big */
-            LWMEM_BLOCK_SET_ALLOC(block);                   /* Set block as allocated */
-            return new_data_ptr;                            /* Return new data ptr */
-        }
-    } else {
         /* Hard error. Input pointer is not NULL and block is not considered allocated */
         return NULL;
+    }
+    block_size = block->size & ~LWMEM_ALLOC_BIT; /* Get actual block size, without memory allocation bit */
+
+    /* Check current block size is the same as new requested size */
+    if (block_size == final_size) {
+        return ptr; /* Just return pointer, nothing to do */
+    }
+
+    /*
+     * Abbreviations
+     *
+     * - "Current block" or "Input block" is allocated block from input variable "ptr"
+     * - "Next free block" is next free block, on address space after input block
+     * - "Prev free block" is last free block, on address space before input block
+     * - "PrevPrev free block" is previous free block of "Prev free block"
+     */
+
+    /*
+     * When new requested size is smaller than existing one,
+     * it is enough to modify size of current block only.
+     *
+     * If new requested size is much smaller than existing one,
+     * check if it is possible to create new empty block and add it to list of empty blocks
+     *
+     * Application returns same pointer
+     */
+    if (final_size < block_size) {
+        if ((block_size - final_size) >= LWMEM_BLOCK_MIN_SIZE) {
+            prv_split_too_big_block(lwobj, block, final_size); /* Split block if it is too big */
+        } else {
+            /*
+             * It is not possible to create new empty block at the end of input block
+             *
+             * But if next free block is just after input block,
+             * it is possible to find this block and increase it by "block_size - final_size" bytes
+             */
+
+            /* Find free blocks before input block */
+            prv_get_prev_curr_of_block(lwobj, block, &prevprev, &prev);
+
+            /* Check if current block and next free are connected */
+            if ((LWMEM_TO_BYTE_PTR(block) + block_size) == LWMEM_TO_BYTE_PTR(prev->next)
+                && prev->next->size > 0) { /* Must not be end of region indicator */
+                /* Make temporary variables as prev->next will point to different location */
+                const size_t tmp_size = prev->next->size;
+                void* const tmp_next = prev->next->next;
+
+                /* Shift block up, effectively increase its size */
+                prev->next = (void*)(LWMEM_TO_BYTE_PTR(prev->next) - (block_size - final_size));
+                prev->next->size = tmp_size + (block_size - final_size);
+                prev->next->next = tmp_next;
+
+                /* Increase available bytes by increase of free block */
+                lwobj->mem_available_bytes += block_size - final_size;
+
+                block->size = final_size; /* Block size is requested size */
+            }
+        }
+        prv_block_set_alloc(block); /* Set block as allocated */
+        return ptr;                 /* Return existing pointer */
+    }
+
+    /* New requested size is bigger than current block size is */
+
+    /* Find last free (and its previous) block, located just before input block */
+    prv_get_prev_curr_of_block(lwobj, block, &prevprev, &prev);
+
+    /* If entry could not be found, there is a hard error */
+    if (prev == NULL) {
+        return NULL;
+    }
+
+    /* Order of variables is: | prevprev ---> prev --->--->--->--->--->--->--->--->--->---> prev->next  | */
+    /*                        |                      (input_block, which is not on a list)              | */
+    /* Input block points to address somewhere between "prev" and "prev->next" pointers                   */
+
+    /* Check if "block" and next free "prev->next" create contiguous memory with size of at least new requested size */
+    if ((LWMEM_TO_BYTE_PTR(block) + block_size) == LWMEM_TO_BYTE_PTR(prev->next)
+        && (block_size + prev->next->size) >= final_size) {
+
+        /*
+         * Merge blocks together by increasing current block with size of next free one
+         * and remove next free from list of free blocks
+         */
+        lwobj->mem_available_bytes -= prev->next->size; /* For now decrease effective available bytes */
+        LWMEM_UPDATE_MIN_FREE(lwobj);
+        block->size = block_size + prev->next->size; /* Increase effective size of new block */
+        prev->next = prev->next->next;               /* Set next to next's next,
+                                                            effectively remove expanded block from free list */
+
+        prv_split_too_big_block(lwobj, block, final_size); /* Split block if it is too big */
+        prv_block_set_alloc(block);                        /* Set block as allocated */
+        return ptr;                                        /* Return existing pointer */
+    }
+
+    /*
+     * Check if "block" and last free before "prev" create contiguous memory with size of at least new requested size.
+     *
+     * It is necessary to make a memory move and shift content up as new return pointer is now upper on address space
+     */
+    if ((LWMEM_TO_BYTE_PTR(prev) + prev->size) == LWMEM_TO_BYTE_PTR(block) && (prev->size + block_size) >= final_size) {
+        /* Move memory from block to block previous to current */
+        void* const old_data_ptr = LWMEM_GET_PTR_FROM_BLOCK(block);
+        void* const new_data_ptr = LWMEM_GET_PTR_FROM_BLOCK(prev);
+
+        /*
+         * If memmove overwrites metadata of current block (when shifting content up),
+         * it is not an issue as we know its size (block_size) and next is already NULL.
+         *
+         * Memmove must be used to guarantee move of data as addresses + their sizes may overlap
+         *
+         * Metadata of "prev" are not modified during memmove
+         */
+        LWMEM_MEMMOVE(new_data_ptr, old_data_ptr, block_size);
+
+        lwobj->mem_available_bytes -= prev->size; /* For now decrease effective available bytes */
+        LWMEM_UPDATE_MIN_FREE(lwobj);
+        prev->size += block_size;    /* Increase size of input block size */
+        prevprev->next = prev->next; /* Remove prev from free list as it is now being used
+                                                for allocation together with existing block */
+        block = prev;                /* Move block pointer to previous one */
+
+        prv_split_too_big_block(lwobj, block, final_size); /* Split block if it is too big */
+        prv_block_set_alloc(block);                        /* Set block as allocated */
+        return new_data_ptr;                               /* Return new data ptr */
+    }
+
+    /*
+     * At this point, it was not possible to expand existing block with free before or free after due to:
+     * - Input block & next free block do not create contiguous block or its new size is too small
+     * - Previous free block & input block do not create contiguous block or its new size is too small
+     *
+     * Last option is to check if previous free block "prev", input block "block" and next free block "prev->next" create contiguous block
+     * and size of new block (from 3 contiguous blocks) together is big enough
+     */
+    if ((LWMEM_TO_BYTE_PTR(prev) + prev->size) == LWMEM_TO_BYTE_PTR(block)
+        && (LWMEM_TO_BYTE_PTR(block) + block_size) == LWMEM_TO_BYTE_PTR(prev->next)
+        && (prev->size + block_size + prev->next->size) >= final_size) {
+
+        /* Move memory from block to block previous to current */
+        void* const old_data_ptr = LWMEM_GET_PTR_FROM_BLOCK(block);
+        void* const new_data_ptr = LWMEM_GET_PTR_FROM_BLOCK(prev);
+
+        /*
+         * If memmove overwrites metadata of current block (when shifting content up),
+         * it is not an issue as we know its size (block_size) and next is already NULL.
+         *
+         * Memmove must be used to guarantee move of data as addresses and their sizes may overlap
+         *
+         * Metadata of "prev" are not modified during memmove
+         */
+        LWMEM_MEMMOVE(new_data_ptr, old_data_ptr, block_size);
+
+        /* Decrease effective available bytes for free blocks before and after input block */
+        lwobj->mem_available_bytes -= prev->size + prev->next->size;
+        LWMEM_UPDATE_MIN_FREE(lwobj);
+        prev->size += block_size + prev->next->size; /* Increase size of new block by size of 2 free blocks */
+
+        /* Remove free block before current one and block after current one from linked list (remove 2) */
+        prevprev->next = prev->next->next;
+        block = prev; /* Previous block is now current */
+
+        prv_split_too_big_block(lwobj, block, final_size); /* Split block if it is too big */
+        prv_block_set_alloc(block);                        /* Set block as allocated */
+        return new_data_ptr;                               /* Return new data ptr */
     }
 
     /*
@@ -688,85 +687,29 @@ prv_realloc(lwmem_t* const lwobj, const lwmem_region_t* region, void* const ptr,
      */
     retval = prv_alloc(lwobj, region, size); /* Try to allocate new block */
     if (retval != NULL) {
-        block_size =
-            (block->size & ~LWMEM_ALLOC_BIT) - LWMEM_BLOCK_META_SIZE;     /* Get application size from input pointer */
-        LWMEM_MEMCPY(retval, ptr, size > block_size ? block_size : size); /* Copy content to new allocated block */
-        prv_free(lwobj, ptr);                                                /* Free input pointer */
+        /* Get application size from input pointer, then copy content to new block */
+        block_size = (block->size & ~LWMEM_ALLOC_BIT) - LWMEM_BLOCK_META_SIZE;
+        LWMEM_MEMCPY(retval, ptr, size > block_size ? block_size : size);
+        prv_free(lwobj, ptr); /* Free old block */
     }
     return retval;
 }
 
 /**
- * \brief           Initializes and assigns user regions for memory used by allocator algorithm
- * \param[in]       lwobj: LwMEM instance. Set to `NULL` to use default instance
- * \param[in]       regions: Pointer to array of regions with address and respective size.
- *                      Regions must be in increasing order (start address) and must not overlap in-between.
- *                      Last region entry must have address `NULL` and size set to `0`
- * \code{.c}
-//Example definition
-lwmem_region_t regions[] = {
-    { (void *)0x10000000, 0x1000 }, //Region starts at address 0x10000000 and is 0x1000 bytes long
-    { (void *)0x20000000, 0x2000 }, //Region starts at address 0x20000000 and is 0x2000 bytes long
-    { (void *)0x30000000, 0x3000 }, //Region starts at address 0x30000000 and is 0x3000 bytes long
-    { NULL, 0 }                     //Array termination indicator
-}
-\endcode
- * \return          `0` on failure, number of final regions used for memory manager on success
- * \note            This function is not thread safe when used with operating system.
- *                      It must be called only once to setup memory regions
+ * \brief           Assign the memory structure for advanced memory allocation system
+ * 
+ * \param           lwobj 
+ * \param           regions 
+ * \return          size_t 
  */
-size_t
-lwmem_assignmem_ex(lwmem_t* lwobj, const lwmem_region_t* regions) {
-    uint8_t* mem_start_addr;
-    size_t mem_size, len = 0;
-    lwmem_block_t *first_block, *prev_end_block;
+static size_t
+prv_assignmem(lwmem_t* lwobj, const lwmem_region_t* regions) {
+    uint8_t* mem_start_addr = NULL;
+    size_t mem_size = 0;
+    lwmem_block_t *first_block = NULL, *prev_end_block = NULL;
 
-    lwobj = LWMEM_GET_LWOBJ(lwobj);
-    /* Check first things first */
-    if (regions == NULL || lwobj->end_block != NULL /* Init function may only be called once per lwmem instance */
-        || (((size_t)LWMEM_CFG_ALIGN_NUM) & (((size_t)LWMEM_CFG_ALIGN_NUM) - 1)) > 0) { /* Must be power of 2 */
-        return 0;
-    }
-
-    /* Check values entered by application */
-    mem_start_addr = (void*)0;
-    mem_size = 0;
-    for (size_t i = 0;; ++i) {
-        /*
-         * Check for valid entry or end of array descriptor
-         *
-         * Invalid entry is considered as "end-of-region" indicator
-         */
-        if (regions[i].size == 0 && regions[i].start_addr == NULL) {
-            len = i;
-            if (len == 0) {
-                return 0;
-            }
-            break;
-        }
-
-        /* New region(s) must be higher (in address space) than previous one */
-        if ((mem_start_addr + mem_size) > LWMEM_TO_BYTE_PTR(regions[i].start_addr)) {
-            return 0;
-        }
-
-        /* Save new values for next round */
-        mem_start_addr = regions[i].start_addr;
-        mem_size = regions[i].size;
-    }
-
-    /* Process further checks of valid inputs */
-    if (regions == NULL || len == 0
-#if LWMEM_CFG_OS
-        || lwmem_sys_mutex_isvalid(&(lwobj->mutex)) /* Check if mutex valid already = must not be */
-        || !lwmem_sys_mutex_create(&(lwobj->mutex)) /* Final step = try to create mutex for new instance */
-#endif                                           /* LWMEM_CFG_OS */
-    ) {
-        return 0;
-    }
-
-    for (size_t i = 0; i < len; ++i, ++regions) {
-        /* Get region start address and size */
+    for (size_t idx = 0; regions->size > 0 && regions->start_addr != NULL; ++idx, ++regions) {
+        /* Get region start address and size, stop on failure */
         if (!prv_get_region_addr_size(regions, &mem_start_addr, &mem_size)) {
             continue;
         }
@@ -827,6 +770,161 @@ lwmem_assignmem_ex(lwmem_t* lwobj, const lwmem_region_t* regions) {
     return lwobj->mem_regions_count; /* Return number of regions used by manager */
 }
 
+#else /* LWMEM_CFG_FULL */
+
+/**
+ * \brief           Assign the regions for simple algorithm
+ * 
+ *                  At this point, regions check has been performed, so we assume
+ *                  everything is ready to proceed
+ * 
+ * \param           lwobj: LwMEM object
+ * \param           regions: List of regions to assign
+ * \return          Number of regions used
+ */
+static size_t
+prv_assignmem_simple(lwmem_t* const lwobj, const lwmem_region_t* regions) {
+    uint8_t* mem_start_addr = regions[0].start_addr;
+    size_t mem_size = regions[0].size;
+
+    /* Adjust alignment data */
+    if (((size_t)mem_start_addr) & LWMEM_ALIGN_BITS) {
+        mem_start_addr += ((size_t)LWMEM_CFG_ALIGN_NUM) - ((size_t)mem_start_addr & LWMEM_ALIGN_BITS);
+        mem_size -= (size_t)(mem_start_addr - LWMEM_TO_BYTE_PTR(regions[0].start_addr));
+    }
+
+    /* Align mem to alignment*/
+    mem_size = mem_size & ~LWMEM_ALIGN_BITS;
+
+    /* Store the available information */
+    lwobj->mem_available_bytes = mem_size;
+    lwobj->mem_next_available_ptr = mem_start_addr;
+    lwobj->is_initialized = 1;
+    return 1; /* One region is being used only for now */
+}
+
+/**
+ * \brief           Simple allocation algorithm, that can only allocate memory,
+ *                  but it does not support free.
+ * 
+ *                  It uses simple first-in-first-serve concept,
+ *                  where memory grows upward gradually, up until it reaches the end
+ *                  of memory area
+ * 
+ * \param           lwobj: LwMEM object
+ * \param           region: Selected region. Not used in the current revision,
+ *                      but footprint remains the same if one day library will support it
+ * \param           size: Requested allocation size
+ * \return          `NULL` on failure, or pointer to allocated memory
+ */
+static void*
+prv_alloc_simple(lwmem_t* const lwobj, const lwmem_region_t* region, const size_t size) {
+    void* retval = NULL;
+    const size_t alloc_size = LWMEM_ALIGN(size);
+
+    if (alloc_size <= lwobj->mem_available_bytes) {
+        retval = lwobj->mem_next_available_ptr;
+
+        /* Get ready for next iteration */
+        lwobj->mem_next_available_ptr += alloc_size;
+        lwobj->mem_available_bytes -= alloc_size;
+    }
+    (void)region;
+    return retval;
+}
+
+#endif /* LWMEM_CFG_FULL */
+
+/**
+ * \brief           Initializes and assigns user regions for memory used by allocator algorithm
+ * \param[in]       lwobj: LwMEM instance. Set to `NULL` to use default instance
+ * \param[in]       regions: Pointer to array of regions with address and respective size.
+ *                      Regions must be in increasing order (start address) and must not overlap in-between.
+ *                      Last region entry must have address `NULL` and size set to `0`
+ * \code{.c}
+//Example definition
+lwmem_region_t regions[] = {
+    { (void *)0x10000000, 0x1000 }, //Region starts at address 0x10000000 and is 0x1000 bytes long
+    { (void *)0x20000000, 0x2000 }, //Region starts at address 0x20000000 and is 0x2000 bytes long
+    { (void *)0x30000000, 0x3000 }, //Region starts at address 0x30000000 and is 0x3000 bytes long
+    { NULL, 0 }                     //Array termination indicator
+}
+\endcode
+ * \return          `0` on failure, number of final regions used for memory manager on success
+ * \note            This function is not thread safe when used with operating system.
+ *                      It must be called only once to setup memory regions
+ */
+size_t
+lwmem_assignmem_ex(lwmem_t* lwobj, const lwmem_region_t* regions) {
+    uint8_t* mem_start_addr = NULL;
+    size_t mem_size = 0, len = 0;
+
+    lwobj = LWMEM_GET_LWOBJ(lwobj);
+
+    /* Check first things first */
+    if (regions == NULL
+#if LWMEM_CFG_FULL
+        || lwobj->end_block != NULL /* Init function may only be called once per lwmem instance */
+#else
+        || lwobj->is_initialized /* Already initialized? */
+#endif /* LWMEM_CFG_FULL */
+    ) {
+        return 0;
+    }
+
+    /* Check values entered by application */
+    mem_start_addr = (void*)0;
+    mem_size = 0;
+    for (size_t idx = 0;; ++idx) {
+        /*
+         * Check for valid entry or end of array descriptor
+         * Invalid entry is considered as "end-of-region" indicator
+         */
+        if (regions[idx].size == 0 && regions[idx].start_addr == NULL) {
+            len = idx;
+            if (len == 0) {
+                return 0;
+            }
+            break;
+        }
+
+#if !LWMEM_CFG_FULL
+        /*
+         * In case of simple allocation algorithm, we (for now!) only allow one region.
+         * Return zero value if user passed more than one region in a sequence.
+         */
+        else if (idx > 0) {
+            return 0;
+        }
+#endif /* LWMEM_CFG_FULL */
+
+        /* New region(s) must be higher (in address space) than previous one */
+        if ((mem_start_addr + mem_size) > LWMEM_TO_BYTE_PTR(regions[idx].start_addr)) {
+            return 0;
+        }
+
+        /* Save new values for next round */
+        mem_start_addr = regions[idx].start_addr;
+        mem_size = regions[idx].size;
+    }
+
+    /* Final init and check before initializing the regions */
+    if (len == 0
+#if LWMEM_CFG_OS
+        || lwmem_sys_mutex_isvalid(&(lwobj->mutex)) /* Check if mutex valid already = must not be */
+        || !lwmem_sys_mutex_create(&(lwobj->mutex)) /* Final step = try to create mutex for new instance */
+#endif                                              /* LWMEM_CFG_OS */
+    ) {
+        return 0;
+    }
+
+#if LWMEM_CFG_FULL
+    return prv_assignmem(lwobj, regions);
+#else  /* LWMEM_CFG_FULL */
+    return prv_assignmem_simple(lwobj, regions);
+#endif /* LWMEM_CFG_FULL */
+}
+
 /**
  * \brief           Allocate memory of requested size in specific lwmem instance and optional region.
  * \note            This is an extended malloc version function declaration to support advanced features
@@ -839,10 +937,16 @@ lwmem_assignmem_ex(lwmem_t* lwobj, const lwmem_region_t* regions) {
  */
 void*
 lwmem_malloc_ex(lwmem_t* lwobj, const lwmem_region_t* region, const size_t size) {
-    void* ptr;
+    void* ptr = NULL;
+
     lwobj = LWMEM_GET_LWOBJ(lwobj);
+
     LWMEM_PROTECT(lwobj);
+#if LWMEM_CFG_FULL
     ptr = prv_alloc(lwobj, region, size);
+#else  /* LWMEM_CFG_FULL */
+    ptr = prv_alloc_simple(lwobj, region, size);
+#endif /* LWMEM_CFG_FULL */
     LWMEM_UNPROTECT(lwobj);
     return ptr;
 }
@@ -852,7 +956,7 @@ lwmem_malloc_ex(lwmem_t* lwobj, const lwmem_region_t* region, const size_t size)
  *                  in specific lwmem instance and region.
  *
  * It resets allocated block of memory to zero if allocation is successful
-
+ *
  * \note            This is an extended calloc version function declaration to support advanced features
  * \param[in]       lwobj: LwMEM instance. Set to `NULL` to use default instance
  * \param[in]       region: Optional region instance within LwMEM instance to force allocation from.
@@ -864,17 +968,26 @@ lwmem_malloc_ex(lwmem_t* lwobj, const lwmem_region_t* region, const size_t size)
  */
 void*
 lwmem_calloc_ex(lwmem_t* lwobj, const lwmem_region_t* region, const size_t nitems, const size_t size) {
-    void* ptr;
-    const size_t s = size * nitems;
+    void* ptr = NULL;
+    const size_t alloc_size = size * nitems;
 
     lwobj = LWMEM_GET_LWOBJ(lwobj);
+
     LWMEM_PROTECT(lwobj);
-    if ((ptr = prv_alloc(lwobj, region, s)) != NULL) {
-        LWMEM_MEMSET(ptr, 0x00, s);
-    }
+#if LWMEM_CFG_FULL
+    ptr = prv_alloc(lwobj, region, alloc_size);
+#else  /* LWMEM_CFG_FULL */
+    ptr = prv_alloc_simple(lwobj, region, alloc_size);
+#endif /* LWMEM_CFG_FULL */
     LWMEM_UNPROTECT(lwobj);
+
+    if (ptr != NULL) {
+        LWMEM_MEMSET(ptr, 0x00, alloc_size);
+    }
     return ptr;
 }
+
+#if LWMEM_CFG_FULL || __DOXYGEN__
 
 /**
  * \brief           Reallocates already allocated memory with new size in specific lwmem instance and region.
@@ -936,7 +1049,7 @@ lwmem_realloc_ex(lwmem_t* lwobj, const lwmem_region_t* region, void* const ptr, 
  * \return          `1` if successfully reallocated, `0` otherwise
  * \note            This function is thread safe when \ref LWMEM_CFG_OS is enabled
  */
-uint8_t
+int
 lwmem_realloc_s_ex(lwmem_t* lwobj, const lwmem_region_t* region, void** const ptr, const size_t size) {
     void* new_ptr;
 
@@ -1025,13 +1138,15 @@ lwmem_get_size_ex(lwmem_t* lwobj, void* ptr) {
     return len;
 }
 
+#endif /* LWMEM_CFG_FULL || __DOXYGEN__ */
+
 #if LWMEM_CFG_ENABLE_STATS || __DOXYGEN__
 
 /**
  * \brief           Get statistics of a LwMEM instance
  * \param[in]       lwobj: LwMEM instance. Set to `NULL` to use default instance.
  *                      Instance must be the same as used during allocation procedure
- * \param[in]       stats: Pointer to \ref lwmem_stats_t to store result
+ * \param[in,out]   stats: Pointer to \ref lwmem_stats_t to store result
  */
 void
 lwmem_get_stats_ex(lwmem_t* lwobj, lwmem_stats_t* stats) {
@@ -1044,12 +1159,135 @@ lwmem_get_stats_ex(lwmem_t* lwobj, lwmem_stats_t* stats) {
     }
 }
 
+/**
+ * \brief           Get statistics of a default LwMEM instance
+ * \param[in,out]   stats: Pointer to \ref lwmem_stats_t to store result
+ */
+size_t
+lwmem_get_size(lwmem_stats_t* stats) {
+    lwmem_get_stats_ex(NULL, stats);
+}
+
 #endif /* LWMEM_CFG_ENABLE_STATS || __DOXYGEN__ */
+
+/**
+ * \note            This is a wrapper for \ref lwmem_assignmem_ex function.
+ *                      It operates in default LwMEM instance and uses first available region for memory operations
+ * \param[in]       regions: Pointer to array of regions with address and respective size.
+ *                      Regions must be in increasing order (start address) and must not overlap in-between.
+ *                      Last region entry must have address `NULL` and size set to `0`
+ * \code{.c}
+//Example definition
+lwmem_region_t regions[] = {
+    { (void *)0x10000000, 0x1000 }, //Region starts at address 0x10000000 and is 0x1000 bytes long
+    { (void *)0x20000000, 0x2000 }, //Region starts at address 0x20000000 and is 0x2000 bytes long
+    { (void *)0x30000000, 0x3000 }, //Region starts at address 0x30000000 and is 0x3000 bytes long
+    { NULL, 0 }                     //Array termination indicator
+}
+\endcode
+ * \return          `0` on failure, number of final regions used for memory manager on success
+ */
+size_t
+lwmem_assignmem(const lwmem_region_t* regions) {
+    return lwmem_assignmem_ex(NULL, regions);
+}
+
+/**
+ * \note            This is a wrapper for \ref lwmem_malloc_ex function.
+ *                      It operates in default LwMEM instance and uses first available region for memory operations
+ * \param[in]       size: Size to allocate in units of bytes
+ * \return          Pointer to allocated memory on success, `NULL` otherwise
+ * \note            This function is thread safe when \ref LWMEM_CFG_OS is enabled
+ */
+void*
+lwmem_malloc(size_t size) {
+    return lwmem_malloc_ex(NULL, NULL, size);
+}
+
+/**
+ * \note            This is a wrapper for \ref lwmem_calloc_ex function.
+ *                      It operates in default LwMEM instance and uses first available region for memory operations
+ * \param[in]       nitems: Number of elements to be allocated
+ * \param[in]       size: Size of each element, in units of bytes
+ * \return          Pointer to allocated memory on success, `NULL` otherwise
+ * \note            This function is thread safe when \ref LWMEM_CFG_OS is enabled
+ */
+void*
+lwmem_calloc(size_t nitems, size_t size) {
+    return lwmem_calloc_ex(NULL, NULL, nitems, size);
+}
+
+#if LWMEM_CFG_FULL || __DOXYGEN__
+
+/**
+ * \note            This is a wrapper for \ref lwmem_realloc_ex function.
+ *                      It operates in default LwMEM instance and uses first available region for memory operations
+ * \param[in]       ptr: Memory block previously allocated with one of allocation functions.
+ *                      It may be set to `NULL` to create new clean allocation
+ * \param[in]       size: Size of new memory to reallocate
+ * \return          Pointer to allocated memory on success, `NULL` otherwise
+ * \note            This function is thread safe when \ref LWMEM_CFG_OS is enabled
+ */
+void*
+lwmem_realloc(void* ptr, size_t size) {
+    return lwmem_realloc_ex(NULL, NULL, ptr, size);
+}
+
+/**
+ * \note            This is a wrapper for \ref lwmem_realloc_s_ex function.
+ *                      It operates in default LwMEM instance and uses first available region for memory operations
+ * \param[in]       ptr2ptr: Pointer to pointer to allocated memory. Must not be set to `NULL`.
+ *                      If reallocation is successful, it modifies pointer's pointing address,
+ *                      or sets it to `NULL` in case of `free` operation
+ * \param[in]       size: New requested size in bytes
+ * \return          `1` if successfully reallocated, `0` otherwise
+ * \note            This function is thread safe when \ref LWMEM_CFG_OS is enabled
+ */
+int
+lwmem_realloc_s(void** ptr2ptr, size_t size) {
+    return lwmem_realloc_s_ex(NULL, NULL, ptr2ptr, size);
+}
+
+/**
+ * \note            This is a wrapper for \ref lwmem_free_ex function.
+ *                      It operates in default LwMEM instance and uses first available region for memory operations
+ * \param[in]       ptr: Memory to free. `NULL` pointer is valid input
+ * \note            This function is thread safe when \ref LWMEM_CFG_OS is enabled
+ */
+void
+lwmem_free(void* ptr) {
+    lwmem_free_ex(NULL, (ptr));
+}
+
+/**
+ * \note            This is a wrapper for \ref lwmem_free_s_ex function.
+ *                      It operates in default LwMEM instance and uses first available region for memory operations
+ * \param[in]       ptr2ptr: Pointer to pointer to allocated memory.
+ *                      When set to non `NULL`, pointer is freed and set to `NULL`
+ * \note            This function is thread safe when \ref LWMEM_CFG_OS is enabled
+ */
+void
+lwmem_free_s(void** ptr2ptr) {
+    lwmem_free_s_ex(NULL, (ptr2ptr));
+}
+
+/**
+ * \note            This is a wrapper for \ref lwmem_get_size_ex function.
+ *                      It operates in default LwMEM instance and uses first available region for memory operations
+ * \param[in]       ptr: Pointer to allocated memory
+ * \return          Block size for user in units of bytes
+ */
+size_t
+lwmem_get_size(void* ptr) {
+    return lwmem_get_size_ex(NULL, ptr);
+}
+
+#endif /* LWMEM_CFG_FULL || __DOXYGEN__ */
 
 /* Part of library used ONLY for LWMEM_DEV purposes */
 /* To validate and test library */
 
-#if defined(LWMEM_DEV) && !__DOXYGEN__
+#if defined(LWMEM_DEV) && LWMEM_CFG_FULL && !__DOXYGEN__
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -1070,14 +1308,16 @@ create_regions(size_t count, size_t size) {
      *
      * Length 1 entry more, to set default values for NULL entry
      */
-    if ((regions = calloc(count + 1, sizeof(*regions))) == NULL) {
+    regions = calloc(count + 1, sizeof(*regions));
+    if (regions == NULL) {
         return NULL;
     }
 
     /* Allocate memory for regions */
     for (size_t i = 0; i < count; ++i) {
         regions[i].size = size;
-        if ((regions[i].start_addr = malloc(regions[i].size)) == NULL) {
+        regions[i].start_addr = malloc(regions[i].size);
+        if (regions[i].start_addr == NULL) {
             return NULL;
         }
     }

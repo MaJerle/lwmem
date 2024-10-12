@@ -52,7 +52,7 @@ State 3b
 |     4 | 0034A548 |      1 |   56 |               48 |Free block      |
 |     5 | 0034A580 |      0 |    0 |                0 |End of region   |
 |-------|----------|--------|------|------------------|----------------|
-Assert failed with condition (rptr2 == ptr2)
+Assert passed with condition (rptr2 == ptr1)
 
 ------------------------------------------------------------------------
  -- > State restored to last saved!
