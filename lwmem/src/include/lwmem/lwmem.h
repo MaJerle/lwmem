@@ -144,8 +144,9 @@ size_t lwmem_get_size(void* ptr);
 unsigned char lwmem_debug_create_regions(lwmem_region_t** regs_out, size_t count, size_t size);
 void lwmem_debug_save_state(void);
 void lwmem_debug_restore_to_saved(void);
-
 void lwmem_debug_print(unsigned char print_alloc, unsigned char print_free);
+void lwmem_debug_test_region(void* region_start, size_t region_size, uint8_t** region_start_calc,
+                             size_t* region_size_calc);
 #endif /* defined(LWMEM_DEV) && !__DOXYGEN__ */
 
 /**

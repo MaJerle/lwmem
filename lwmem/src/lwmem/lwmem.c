@@ -206,7 +206,7 @@ prv_get_region_addr_size(const lwmem_region_t* region, uint8_t** msa, size_t* ms
     }
 
     /* Check region size and align it to config bits */
-    mem_size = region->size & ~LWMEM_ALIGN_BITS; /* Size does not include lower bits */
+    mem_size &= ~LWMEM_ALIGN_BITS; /* Align the size to lower bits */
     if (mem_size < (2 * LWMEM_BLOCK_MIN_SIZE)) {
         return 0;
     }
@@ -1425,6 +1425,15 @@ lwmem_debug_restore_to_saved(void) {
         memcpy(regions_orig[i].start_addr, regions_temp[i].start_addr, regions_temp[i].size);
     }
     printf(" -- > State restored to last saved!\r\n");
+}
+
+void
+lwmem_debug_test_region(void* region_start, size_t region_size, uint8_t** region_start_calc, size_t* region_size_calc) {
+    lwmem_region_t region = {
+        .start_addr = region_start,
+        .size = region_size,
+    };
+    prv_get_region_addr_size(&region, region_start_calc, region_size_calc);
 }
 
 #endif /* defined(LWMEM_DEV) && !__DOXYGEN__ */
