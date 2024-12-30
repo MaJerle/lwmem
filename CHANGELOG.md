@@ -2,6 +2,10 @@
 
 ## Develop
 
+## v2.2.1
+
+- Fix the wrong variable to reduce the size of the region in case of unaligned address or size
+
 ## v2.2.0
 
 - Rework library CMake with removed INTERFACE type

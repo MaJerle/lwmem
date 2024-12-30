@@ -11,6 +11,7 @@ else()
         ${CMAKE_CURRENT_LIST_DIR}/dev/main.cpp
         ${CMAKE_CURRENT_LIST_DIR}/tests/lwmem_test.c
         ${CMAKE_CURRENT_LIST_DIR}/tests/lwmem_test_simple.c
+        ${CMAKE_CURRENT_LIST_DIR}/tests/lwmem_test_region.c
 
         # win32 port
         ${CMAKE_CURRENT_LIST_DIR}/lwmem/src/system/lwmem_sys_win32.c

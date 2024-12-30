@@ -45,6 +45,6 @@
 #define LWMEM_CFG_OS_MUTEX_HANDLE HANDLE
 #define LWMEM_CFG_ENABLE_STATS    0
 #define LWMEM_CFG_CLEAN_MEMORY    1
-#define LWMEM_CFG_FULL            0
+#define LWMEM_CFG_FULL            1
 
 #endif /* LWMEM_HDR_OPTS_H */
