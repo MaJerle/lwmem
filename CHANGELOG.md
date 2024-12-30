@@ -2,7 +2,9 @@
 
 ## Develop
 
-- Fix the wrong variable to reduce the size of the region
+## v2.2.1
+
+- Fix the wrong variable to reduce the size of the region in case of unaligned address or size
 
 ## v2.2.0
 
