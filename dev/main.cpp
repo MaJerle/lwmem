@@ -8,12 +8,15 @@ extern "C" void lwmem_test_run(void);
 extern "C" void lwmem_test_simple_run(void);
 extern "C" void lwmem_test_memory_structure(void);
 extern "C" void lwmem_test_region(void);
+extern "C" void lwmem_test_available_mem(void);
 
 /* Setup manager */
 static Lwmem::LwmemLight<1024> manager;
 
 int
 main(void) {
+    lwmem_test_available_mem();
+    return 0;
     lwmem_test_region();
     return 0;
 #if LWMEM_CFG_FULL
