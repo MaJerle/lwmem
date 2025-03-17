@@ -1,17 +1,8 @@
 #include <stdio.h>
 #include "lwmem/lwmem.h"
+#include "tests.h"
 
 #if LWMEM_CFG_FULL
-
-/* Assert check */
-#define ASSERT(x)                                                                                                      \
-    do {                                                                                                               \
-        if (!(x)) {                                                                                                    \
-            printf("Assert on line %d failed with condition (" #x ")\r\n", (int)__LINE__);                             \
-        } else {                                                                                                       \
-            printf("Assert on line %d passed with condition (" #x ")\r\n", (int)__LINE__);                             \
-        }                                                                                                              \
-    } while (0)
 
 /********************************************/
 /* Test case helpers                        */
@@ -60,7 +51,7 @@ static lwmem_region_t lw_c_regions[] = {
 
 /********************************************/
 
-void
+int
 lwmem_test_run(void) {
     void *ptr_1 = NULL, *ptr_2 = NULL, *ptr_3 = NULL;
     void *ptr_c_1 = NULL, *ptr_c_2 = NULL, *ptr_c_3 = NULL;
@@ -141,13 +132,15 @@ lwmem_test_run(void) {
     lwmem_free(ptr_c_3);
 
     printf("Done\r\n");
+
+    return 0;
 }
 
 /* For debug purposes */
 static lwmem_region_t* regions_used;
 static size_t regions_count = 4; /* Use only 1 region for debug purposes of non-free areas */
 
-void
+int
 lwmem_test_memory_structure(void) {
     uint8_t *ptr1, *ptr2, *ptr3, *ptr4;
     uint8_t *rptr1, *rptr2, *rptr3, *rptr4;
@@ -161,7 +154,7 @@ lwmem_test_memory_structure(void) {
      */
     if (!lwmem_debug_create_regions(&regions_used, regions_count, 128)) {
         printf("Cannot allocate memory for regions for debug purpose!\r\n");
-        return;
+        return -1;
     }
 
     /*
@@ -223,10 +216,11 @@ lwmem_test_memory_structure(void) {
     lwmem_debug_print(1, 1);
     ASSERT(rptr4 != ptr1 && rptr4 != ptr2 && rptr4 != ptr3 && rptr4 != ptr4);
 
-    printf("ptr1: %08X\r\nptr2: %08X\r\nptr3: %08X\r\nptr4: %08X\r\n", (unsigned)ptr1, (unsigned)ptr2, (unsigned)ptr3,
-           (unsigned)ptr4);
-    printf("r_ptr1: %08X\r\nr_ptr2: %08X\r\nr_ptr3: %08X\r\nr_ptr4: %08X\r\n", (unsigned)rptr1, (unsigned)rptr2,
-           (unsigned)rptr3, (unsigned)rptr4);
+    printf("ptr1: %08X\r\nptr2: %08X\r\nptr3: %08X\r\nptr4: %08X\r\n", (unsigned)(uintptr_t)ptr1,
+           (unsigned)(uintptr_t)ptr2, (unsigned)(uintptr_t)ptr3, (unsigned)(uintptr_t)ptr4);
+    printf("r_ptr1: %08X\r\nr_ptr2: %08X\r\nr_ptr3: %08X\r\nr_ptr4: %08X\r\n", (unsigned)(uintptr_t)rptr1,
+           (unsigned)(uintptr_t)rptr2, (unsigned)(uintptr_t)rptr3, (unsigned)(uintptr_t)rptr4);
+    return 0;
 }
 
 #endif /* LWMEM_CFG_FULL */

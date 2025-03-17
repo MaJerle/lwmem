@@ -3,16 +3,6 @@
 
 #if !LWMEM_CFG_FULL
 
-/* Assert check */
-#define ASSERT(x)                                                                                                      \
-    do {                                                                                                               \
-        if (!(x)) {                                                                                                    \
-            printf("Assert on line %d failed with condition (" #x ")\r\n", (int)__LINE__);                             \
-        } else {                                                                                                       \
-            printf("Assert on line %d passed with condition (" #x ")\r\n", (int)__LINE__);                             \
-        }                                                                                                              \
-    } while (0)
-
 /********************************************/
 /* Configuration for default lwmem instance */
 
@@ -41,7 +31,7 @@ static lwmem_region_t lw_c_regions[] = {
 
 /********************************************/
 
-void
+int
 lwmem_test_simple_run(void) {
     size_t retval;
     void* ptr;
@@ -63,6 +53,8 @@ lwmem_test_simple_run(void) {
     ASSERT(ptr != NULL);
     ptr = lwmem_malloc(4);
     ASSERT(ptr == NULL);
+
+    return 0;
 }
 
 #endif /* !LWMEM_CFG_FULL */

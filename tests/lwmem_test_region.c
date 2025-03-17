@@ -5,15 +5,6 @@
 #error "Test shall run with LWMEM_CFG_ALIGN_NUM == 4"
 #endif
 
-/* Test assert information */
-#define TEST_ASSERT(condition)                                                                                         \
-    do {                                                                                                               \
-        if (!(condition)) {                                                                                            \
-            printf("Assert failed on the line %d\r\n", __LINE__);                                                      \
-            return;                                                                                                    \
-        }                                                                                                              \
-    } while (0)
-
 typedef struct {
     uint8_t* region_start;
     size_t region_size;
@@ -23,10 +14,8 @@ typedef struct {
 
 #define TEST_ENTRY(_region_start_, _region_size_, _region_start_exp_, _region_size_exp_)                               \
     {                                                                                                                  \
-        .region_start = (void*)(_region_start_),                                                                       \
-        .region_size = (_region_size_),                                                                                \
-        .region_start_exp = (void*)(_region_start_exp_),                                                               \
-        .region_size_exp = (_region_size_exp_),                                                                        \
+        .region_start = (void*)(_region_start_), .region_size = (_region_size_),                                       \
+        .region_start_exp = (void*)(_region_start_exp_), .region_size_exp = (_region_size_exp_),                       \
     }
 
 /* List of test cases */
@@ -60,7 +49,7 @@ static const test_region_t test_cases[] = {
 
 /* Start is aligned, length is not always aligned */
 
-void
+int
 lwmem_test_region(void) {
     uint8_t* region_start = NULL;
     size_t region_size = 0;
@@ -70,13 +59,16 @@ lwmem_test_region(void) {
         lwmem_debug_test_region(test->region_start, test->region_size, &region_start, &region_size);
 
         if (region_start != test->region_start_exp) {
-            printf("Region start test failed. Idx: %u, input: 0x%08p, expected: 0x%08p, output: 0x%08p\r\n",
-                   (unsigned)idx, test->region_start, test->region_start_exp, region_start);
+            printf("Region start test failed. Idx: %u, input: 0x%8p, expected: 0x%8p, output: 0x%8p\r\n", (unsigned)idx,
+                   test->region_start, test->region_start_exp, region_start);
+            return -1;
         } else if (region_size != test->region_size_exp) {
             printf("Region size test failed. Idx: %u, input: 0x%08X, expected: 0x%08X, output: 0x%08X\r\n",
                    (unsigned)idx, (unsigned)test->region_size, (unsigned)test->region_size_exp, (unsigned)region_size);
+            return -1;
         }
     }
 
     printf("Done\r\n");
+    return 0;
 }

@@ -4,36 +4,33 @@
 #include "lwmem/lwmem.h"
 #include "lwmem/lwmem.hpp"
 
-extern "C" void lwmem_test_run(void);
-extern "C" void lwmem_test_simple_run(void);
-extern "C" void lwmem_test_memory_structure(void);
-extern "C" void lwmem_test_region(void);
-extern "C" void lwmem_test_available_mem(void);
+extern "C" int lwmem_test_run(void);
+extern "C" int lwmem_test_simple_run(void);
+extern "C" int lwmem_test_memory_structure(void);
+extern "C" int lwmem_test_region(void);
+extern "C" int lwmem_test_available_mem(void);
 
 /* Setup manager */
 static Lwmem::LwmemLight<1024> manager;
 
 int
 main(void) {
-    lwmem_test_available_mem();
-    return 0;
-    lwmem_test_region();
-    return 0;
+    int ret = 0;
+
+    printf("----\r\n");
+    ret |= lwmem_test_available_mem();
+    printf("----\r\n");
+    ret |= lwmem_test_region();
+    printf("----\r\n");
 #if LWMEM_CFG_FULL
-    lwmem_test_memory_structure();
-    //lwmem_test_run();
+    ret |= lwmem_test_memory_structure();
+    printf("----\r\n");
 #else
-    lwmem_test_simple_run();
+    ret |= lwmem_test_simple_run();
+    printf("----\r\n");
 #endif
 
-#if 1
-    /* Test C++ code */
-    void* ret = manager.malloc(123);
-    std::cout << ret << std::endl;
-#if LWMEM_CFG_FULL
-    manager.free(ret);
-#endif /* LWMEM_CFG_FULL */
-#endif
-
-    return 0;
+    printf("ret: %u\r\n", (unsigned)ret);
+    printf("Done\r\n");
+    return ret;
 }

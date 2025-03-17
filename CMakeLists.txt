@@ -6,6 +6,7 @@ project(LwLibPROJECT)
 if(NOT PROJECT_IS_TOP_LEVEL)
     add_subdirectory(lwmem)
 else()
+    enable_testing()
     add_executable(${PROJECT_NAME})
     target_sources(${PROJECT_NAME} PUBLIC
         ${CMAKE_CURRENT_LIST_DIR}/dev/main.cpp
@@ -20,6 +21,7 @@ else()
     target_include_directories(${PROJECT_NAME} PUBLIC
         ${CMAKE_CURRENT_LIST_DIR}
         ${CMAKE_CURRENT_LIST_DIR}/dev
+        ${CMAKE_CURRENT_LIST_DIR}/tests
     )
 
     # Add subdir with lwmem and link to the project
@@ -30,4 +32,7 @@ else()
     # Add compile options to the library, which will propagate options to executable through public link
     target_compile_definitions(lwmem PUBLIC WIN32 _DEBUG CONSOLE LWMEM_DEV)
     target_compile_options(lwmem PUBLIC -Wall -Wextra -Wpedantic)
+
+    # Add test
+    add_test(NAME Test COMMAND $<TARGET_FILE:${CMAKE_PROJECT_NAME}>)
 endif()
