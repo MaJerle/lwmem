@@ -6,6 +6,12 @@ project(LwLibPROJECT)
 if(NOT PROJECT_IS_TOP_LEVEL)
     add_subdirectory(lwmem)
 else()
+    # Set default compile flags for GCC
+    if(CMAKE_COMPILER_IS_GNUCXX)
+        message(STATUS "GCC detected, adding compile flags")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic -Wall -Wextra")
+    endif(CMAKE_COMPILER_IS_GNUCXX)
+
     enable_testing()
     add_executable(${PROJECT_NAME})
     target_sources(${PROJECT_NAME} PUBLIC
