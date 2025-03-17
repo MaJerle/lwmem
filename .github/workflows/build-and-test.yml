@@ -26,7 +26,7 @@ jobs:
         run: |
           mkdir __build__
           cd __build__
-          cmake -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -S.. -T host=x86 -A Win32
+          cmake -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -S.. -G Ninja -T host=x86 -A Win32
           cmake --build .
 
       - name: Run Tests
