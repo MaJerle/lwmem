@@ -37,7 +37,6 @@ else()
 
     # Add compile options to the library, which will propagate options to executable through public link
     target_compile_definitions(lwmem PUBLIC WIN32 _DEBUG CONSOLE LWMEM_DEV)
-    target_compile_options(lwmem PUBLIC -Wall -Wextra -Wpedantic)
 
     # Add test
     add_test(NAME Test COMMAND $<TARGET_FILE:${CMAKE_PROJECT_NAME}>)
