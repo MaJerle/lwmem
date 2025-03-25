@@ -1,5 +1,8 @@
+# Language part removed. With clang-format >=20.1, the C and Cpp are separately handled,
+# so either there is no language at all, or we need to create 2 formats for C and Cpp, separately
+
 ---
-Language: Cpp
+# Language: Cpp
 # BasedOnStyle:  LLVM
 AccessModifierOffset: -2
 AlignAfterOpenBracket: Align
