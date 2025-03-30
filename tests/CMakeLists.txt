@@ -13,7 +13,7 @@ endif(CMAKE_COMPILER_IS_GNUCXX)
 enable_testing()
 add_executable(${CMAKE_PROJECT_NAME})
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
-    ${CMAKE_CURRENT_LIST_DIR}/test_file.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test_main.cpp
 )
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/
