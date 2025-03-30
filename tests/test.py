@@ -21,7 +21,7 @@ def main(args):
         os.chdir('__build__')
         print('Configure the CMake', flush=True)
         if args.github:
-            retval |= os.system('cmake -S../.. -T host=x86 -A Win32 -DTEST_CMAKE_FILE_NAME={}')
+            retval |= os.system('cmake -S../.. -T host=x86 -A Win32 -DTEST_CMAKE_FILE_NAME={}'.format(file))
         else:
             retval |= os.system('cmake -DCMAKE_C_COMPILER=i686-w64-mingw32-gcc -DCMAKE_CXX_COMPILER=i686-w64-mingw32-g++ -S../.. -G Ninja -DTEST_CMAKE_FILE_NAME={}'.format(file))
         
