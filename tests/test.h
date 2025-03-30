@@ -8,11 +8,11 @@
  * @copyright Copyright (c) 2025
  * 
  */
-#ifndef TESTS_HDR_H
-#define TESTS_HDR_H
+#ifndef TEST_HDR_H
+#define TEST_HDR_H
 
 /* Assert check */
-#define ASSERT(x)                                                                                                      \
+#define TEST_ASSERT(x)                                                                                                 \
     do {                                                                                                               \
         if (!(x)) {                                                                                                    \
             printf("Assert in file %s and on line %d failed with condition (" #x ")\r\n", __FILE__, (int)__LINE__);    \
@@ -20,4 +20,4 @@
         }                                                                                                              \
     } while (0)
 
-#endif /* TESTS_HDR_H */
+#endif /* TEST_HDR_H */
