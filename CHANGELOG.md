@@ -2,6 +2,8 @@
 
 ## Develop
 
+## v2.2.2
+
 - Fix the wrong stats function type -> regression
 
 ## v2.2.1
