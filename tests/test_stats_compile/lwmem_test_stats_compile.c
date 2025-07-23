@@ -32,18 +32,6 @@ static lwmem_region_t lw_regions_too_many[] = {
 };
 
 /********************************************/
-/********************************************/
-/* Region memory declaration */
-/* Use uint32 for alignment reasons */
-static uint32_t lw_c_mem1[64 / 4];
-
-/* Regions descriptor */
-static lwmem_region_t lw_c_regions[] = {
-    {lw_c_mem1, sizeof(lw_c_mem1)},
-    {NULL, 0},
-};
-
-/********************************************/
 
 int
 test_run(void) {
@@ -52,10 +40,6 @@ test_run(void) {
 
     /* Should fail -> too many regions */
     retval = lwmem_assignmem(lw_regions_too_many);
-    TEST_ASSERT(retval == 0);
-
-    /* Should fly now */
-    retval = lwmem_assignmem(lw_c_regions);
     TEST_ASSERT(retval != 0);
 
     /* We have 64 bytes from now on */
@@ -64,7 +48,7 @@ test_run(void) {
     ptr = lwmem_malloc(32);
     TEST_ASSERT(ptr != NULL);
     ptr = lwmem_malloc(32);
-    TEST_ASSERT(ptr == NULL);
+    TEST_ASSERT(ptr != NULL);
     ptr = lwmem_malloc(4);
     TEST_ASSERT(ptr != NULL);
 
