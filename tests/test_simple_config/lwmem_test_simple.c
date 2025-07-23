@@ -20,13 +20,17 @@
 /* Configuration for default lwmem instance */
 
 /* Region memory declaration */
-static uint8_t lw_mem1[1024], lw_mem2[256], lw_mem3[128];
+static struct {
+    uint8_t m1[128];
+    uint8_t m2[256];
+    uint8_t m3[1024];
+} lw_mem;
 
 /* Regions descriptor */
 static lwmem_region_t lw_regions_too_many[] = {
-    {lw_mem3, sizeof(lw_mem3)},
-    {lw_mem2, sizeof(lw_mem2)},
-    {lw_mem1, sizeof(lw_mem1)},
+    {lw_mem.m1, sizeof(lw_mem.m1)},
+    {lw_mem.m2, sizeof(lw_mem.m2)},
+    {lw_mem.m3, sizeof(lw_mem.m3)},
     {NULL, 0},
 };
 
