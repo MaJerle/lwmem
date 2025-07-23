@@ -29,7 +29,7 @@
  * This file is part of LwMEM - Lightweight dynamic memory manager library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         v2.2.1
+ * Version:         v2.2.2
  */
 #include "lwmem/lwmem.h"
 #include <limits.h>
@@ -1163,8 +1163,8 @@ lwmem_get_stats_ex(lwmem_t* lwobj, lwmem_stats_t* stats) {
  * \brief           Get statistics of a default LwMEM instance
  * \param[in,out]   stats: Pointer to \ref lwmem_stats_t to store result
  */
-size_t
-lwmem_get_size(lwmem_stats_t* stats) {
+void
+lwmem_get_stats(lwmem_stats_t* stats) {
     lwmem_get_stats_ex(NULL, stats);
 }
 

@@ -1,6 +1,6 @@
 /**
- * \file            lwmem_sys_cmsis_os.c
- * \brief           System functions for CMSIS-OS based operating system
+ * \file            lwmem_opts.h
+ * \brief           LwMEM application options
  */
 
 /*
@@ -26,38 +26,18 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  * OTHER DEALINGS IN THE SOFTWARE.
  *
- * This file is part of LwMEM - Lightweight dynamic memory manager library.
+ * This file is part of Lightweight dynamic memory manager library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         v2.2.2
  */
-#include "system/lwmem_sys.h"
+#ifndef LWMEM_HDR_OPTS_H
+#define LWMEM_HDR_OPTS_H
 
-#if LWMEM_CFG_OS && !__DOXYGEN__
+/* Rename this file to "lwmem_opts.h" for your application */
 
-#include "cmsis_os.h"
+#include "windows.h"
 
-uint8_t
-lwmem_sys_mutex_create(LWMEM_CFG_OS_MUTEX_HANDLE* m) {
-    const osMutexAttr_t attr = {
-        .name = "lwmem_mutex",
-    };
-    return (*m = osMutexNew(&attr)) != NULL;
-}
+#define LWMEM_CFG_FULL         1
+#define LWMEM_CFG_ENABLE_STATS 1
 
-uint8_t
-lwmem_sys_mutex_isvalid(LWMEM_CFG_OS_MUTEX_HANDLE* m) {
-    return *m != NULL;
-}
-
-uint8_t
-lwmem_sys_mutex_wait(LWMEM_CFG_OS_MUTEX_HANDLE* m) {
-    return osMutexAcquire(*m, osWaitForever) == osOK;
-}
-
-uint8_t
-lwmem_sys_mutex_release(LWMEM_CFG_OS_MUTEX_HANDLE* m) {
-    return osMutexRelease(*m) == osOK;
-}
-
-#endif /* LWMEM_CFG_OS && !__DOXYGEN__ */
+#endif /* LWMEM_HDR_OPTS_H */

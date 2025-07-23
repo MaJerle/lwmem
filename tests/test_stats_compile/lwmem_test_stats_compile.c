@@ -1,17 +1,17 @@
+/**
+ * \file            lwmem_test_simple.c
+ * \author          Tilen MAJERLE <tilen@majerle.eu>
+ * \brief           
+ * \version         0.1
+ * \date            2025-03-30
+ * 
+ * @copyright Copyright (c) 2025
+ * 
+ * Test the compile for stats + full config
+ */
 #include <stdio.h>
 #include "lwmem/lwmem.h"
-
-#if !LWMEM_CFG_FULL
-
-/* Assert check */
-#define ASSERT(x)                                                                                                      \
-    do {                                                                                                               \
-        if (!(x)) {                                                                                                    \
-            printf("Assert on line %d failed with condition (" #x ")\r\n", (int)__LINE__);                             \
-        } else {                                                                                                       \
-            printf("Assert on line %d passed with condition (" #x ")\r\n", (int)__LINE__);                             \
-        }                                                                                                              \
-    } while (0)
+#include "test.h"
 
 /********************************************/
 /* Configuration for default lwmem instance */
@@ -41,28 +41,28 @@ static lwmem_region_t lw_c_regions[] = {
 
 /********************************************/
 
-void
-lwmem_test_simple_run(void) {
+int
+test_run(void) {
     size_t retval;
     void* ptr;
 
     /* Should fail -> too many regions */
     retval = lwmem_assignmem(lw_regions_too_many);
-    ASSERT(retval == 0);
+    TEST_ASSERT(retval == 0);
 
     /* Should fly now */
     retval = lwmem_assignmem(lw_c_regions);
-    ASSERT(retval != 0);
+    TEST_ASSERT(retval != 0);
 
     /* We have 64 bytes from now on */
 
     /* Try to allocate memory */
     ptr = lwmem_malloc(32);
-    ASSERT(ptr != NULL);
+    TEST_ASSERT(ptr != NULL);
     ptr = lwmem_malloc(32);
-    ASSERT(ptr != NULL);
+    TEST_ASSERT(ptr != NULL);
     ptr = lwmem_malloc(4);
-    ASSERT(ptr == NULL);
-}
+    TEST_ASSERT(ptr == NULL);
 
-#endif /* !LWMEM_CFG_FULL */
+    return 0;
+}

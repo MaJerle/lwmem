@@ -29,7 +29,7 @@
  * This file is part of LwMEM - Lightweight dynamic memory manager library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         v2.2.1
+ * Version:         v2.2.2
  */
 #ifndef LWMEM_HDR_H
 #define LWMEM_HDR_H
@@ -125,7 +125,7 @@ size_t lwmem_get_size_ex(lwmem_t* lwobj, void* ptr);
 #endif /* LWMEM_CFG_FULL || __DOXYGEN__ */
 #if LWMEM_CFG_ENABLE_STATS || __DOXYGEN__
 void lwmem_get_stats_ex(lwmem_t* lwobj, lwmem_stats_t* stats);
-void lwmem_get_size(lwmem_stats_t* stats);
+void lwmem_get_stats(lwmem_stats_t* stats);
 #endif /* LWMEM_CFG_ENABLE_STATS || __DOXYGEN__ */
 
 size_t lwmem_assignmem(const lwmem_region_t* regions);

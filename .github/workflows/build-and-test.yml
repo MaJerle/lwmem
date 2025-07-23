@@ -1,0 +1,29 @@
+name: Windows CMake Build & Test
+
+on:
+  push:
+    branches:
+      - develop
+      - test
+  pull_request:
+    branches:
+      - develop
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install MinGW
+        run: |
+          choco install mingw --version=12.2.0 -y
+          echo "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin" >> $GITHUB_PATH
+          gcc --version
+
+      - name: Run Tests
+        working-directory: tests
+        run: |
+          python test.py --github
