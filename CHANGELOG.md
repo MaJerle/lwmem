@@ -2,6 +2,8 @@
 
 ## Develop
 
+- Fix the wrong stats function type -> regression
+
 ## v2.2.1
 
 - Fix the wrong variable to reduce the size of the region in case of unaligned address or size

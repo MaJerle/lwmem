@@ -1163,8 +1163,8 @@ lwmem_get_stats_ex(lwmem_t* lwobj, lwmem_stats_t* stats) {
  * \brief           Get statistics of a default LwMEM instance
  * \param[in,out]   stats: Pointer to \ref lwmem_stats_t to store result
  */
-size_t
-lwmem_get_size(lwmem_stats_t* stats) {
+void
+lwmem_get_stats(lwmem_stats_t* stats) {
     lwmem_get_stats_ex(NULL, stats);
 }
 
