@@ -29,7 +29,7 @@
  * This file is part of LwMEM - Lightweight dynamic memory manager library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         v2.2.2
+ * Version:         v2.2.3
  */
 #include "lwmem/lwmem.h"
 #include <limits.h>
@@ -239,7 +239,7 @@ prv_insert_free_block(lwmem_t* const lwobj, lwmem_block_t* nblk) {
      * Try to find position to put new block in-between
      * Search until all free block addresses are lower than entry block
      */
-    for (prev = &(lwobj->start_block); prev != NULL && prev->next < nblk; prev = prev->next) {}
+    for (prev = &(lwobj->start_block); prev != NULL && prev->next != NULL && prev->next < nblk; prev = prev->next) {}
 
     /* This is hard error with wrong memory usage */
     if (prev == NULL) {

@@ -29,5 +29,5 @@
  * This file is part of LwMEM - Lightweight dynamic memory manager library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         v2.2.2
+ * Version:         v2.2.3
  */
