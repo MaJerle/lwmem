@@ -2,7 +2,7 @@
 
 ## Develop
 
-- Fix the missing last entry `NULL` check which prevented the free/realloc once blocks are all full 21c0d3d8bc70df211cb8f3128ec2a198206c7e6d
+- Fix the missing last entry `NULL` check which prevented the free/realloc once blocks are all full [21c0d3d8bc70df211cb8f3128ec2a198206c7e6d](https://github.com/MaJerle/lwmem/commit/21c0d3d8bc70df211cb8f3128ec2a198206c7e6d)
 
 ## v2.2.2
 
