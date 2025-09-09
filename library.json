@@ -31,6 +31,8 @@
         ]
     },
     "build": {
-        "includeDir": "lwmem/src/include"
+        "includeDir": "lwmem/src/include",
+        "srcDir": ".",
+        "srcFilter": "+<lwmem>"
     }
 }
