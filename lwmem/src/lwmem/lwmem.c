@@ -437,7 +437,7 @@ prv_alloc(lwmem_t* const lwobj, const lwmem_region_t* region, const size_t size)
     prv_split_too_big_block(lwobj, curr, final_size); /* Split block if it is too big */
     prv_block_set_alloc(curr);                        /* Set block as allocated */
 
-    LWMEM_UPDATE_MIN_FREE(lwobj);
+    LWMEM_UPDATE_MIN_FREE(lwobj); /* Update values before returning */
     LWMEM_INC_STATS(lwobj->stats.nr_alloc);
 
     return retval;
@@ -594,13 +594,13 @@ prv_realloc(lwmem_t* const lwobj, const lwmem_region_t* region, void* const ptr,
          * and remove next free from list of free blocks
          */
         lwobj->mem_available_bytes -= prev->next->size; /* For now decrease effective available bytes */
-        LWMEM_UPDATE_MIN_FREE(lwobj);
-        block->size = block_size + prev->next->size; /* Increase effective size of new block */
-        prev->next = prev->next->next;               /* Set next to next's next,
+        block->size = block_size + prev->next->size;    /* Increase effective size of new block */
+        prev->next = prev->next->next;                  /* Set next to next's next,
                                                             effectively remove expanded block from free list */
 
         prv_split_too_big_block(lwobj, block, final_size); /* Split block if it is too big */
         prv_block_set_alloc(block);                        /* Set block as allocated */
+        LWMEM_UPDATE_MIN_FREE(lwobj);                      /* Before returning, handle the minimum free */
         return ptr;                                        /* Return existing pointer */
     }
 
@@ -625,15 +625,16 @@ prv_realloc(lwmem_t* const lwobj, const lwmem_region_t* region, void* const ptr,
         LWMEM_MEMMOVE(new_data_ptr, old_data_ptr, block_size);
 
         lwobj->mem_available_bytes -= prev->size; /* For now decrease effective available bytes */
-        LWMEM_UPDATE_MIN_FREE(lwobj);
-        prev->size += block_size;    /* Increase size of input block size */
-        prevprev->next = prev->next; /* Remove prev from free list as it is now being used
-                                                for allocation together with existing block */
-        block = prev;                /* Move block pointer to previous one */
+        prev->size += block_size;                 /* Increase size of input block size */
+        prevprev->next = prev->next;              /* Remove prev from free list as it is now being used
+                                                        for allocation together with existing block */
+        block = prev;                             /* Move block pointer to previous one */
 
         prv_split_too_big_block(lwobj, block, final_size); /* Split block if it is too big */
         prv_block_set_alloc(block);                        /* Set block as allocated */
-        return new_data_ptr;                               /* Return new data ptr */
+
+        LWMEM_UPDATE_MIN_FREE(lwobj); /* Update values before returning */
+        return new_data_ptr;          /* Return new data ptr */
     }
 
     /*
@@ -664,7 +665,6 @@ prv_realloc(lwmem_t* const lwobj, const lwmem_region_t* region, void* const ptr,
 
         /* Decrease effective available bytes for free blocks before and after input block */
         lwobj->mem_available_bytes -= prev->size + prev->next->size;
-        LWMEM_UPDATE_MIN_FREE(lwobj);
         prev->size += block_size + prev->next->size; /* Increase size of new block by size of 2 free blocks */
 
         /* Remove free block before current one and block after current one from linked list (remove 2) */
@@ -673,6 +673,7 @@ prv_realloc(lwmem_t* const lwobj, const lwmem_region_t* region, void* const ptr,
 
         prv_split_too_big_block(lwobj, block, final_size); /* Split block if it is too big */
         prv_block_set_alloc(block);                        /* Set block as allocated */
+        LWMEM_UPDATE_MIN_FREE(lwobj);                      /* Update value before returning */
         return new_data_ptr;                               /* Return new data ptr */
     }
 
