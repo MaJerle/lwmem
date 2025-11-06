@@ -2,7 +2,10 @@
 
 ## Develop
 
+## v2.2.4
+
 - Fix the platformio library package description
+- 
 
 ## v2.2.3
 
