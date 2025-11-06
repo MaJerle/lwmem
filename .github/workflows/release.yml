@@ -1,13 +1,14 @@
+name: Release workflow
+
 on:
   push:
     # Sequence of patterns matched against refs/tags
     tags:
       - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
 
-name: Create Release
-
 jobs:
-  build:
+  # Create the release from the tag
+  create-release:
     name: Create Release
     runs-on: ubuntu-latest
     steps:
@@ -17,7 +18,7 @@ jobs:
         id: create_release
         uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
         with:
           tag_name: ${{ github.ref }}
           release_name: Release ${{ github.ref }}
@@ -25,3 +26,23 @@ jobs:
             See the [CHANGELOG](CHANGELOG.md)
           draft: false
           prerelease: false
+
+  # Publish package to PlatformIO
+  publish-platformio:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install PlatformIO
+        run: pip install platformio
+
+      - name: Publish to PlatformIO
+        env:
+          PLATFORMIO_AUTH_TOKEN: ${{ secrets.PLATFORMIO_AUTH_TOKEN }}
+        run: pio pkg publish --type library --non-interactive
