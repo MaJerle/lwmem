@@ -35,6 +35,14 @@
 
 /* Rename this file to "lwmem_opts.h" for your application */
 
+#define LWMEM_CFG_OS 1
+#if defined(_WIN32)
+#include <windows.h>
+#define LWMEM_CFG_OS_MUTEX_HANDLE HANDLE
+#else
+#include <pthread.h>
+#define LWMEM_CFG_OS_MUTEX_HANDLE pthread_mutex_t*
+#endif
 #define LWMEM_CFG_ENABLE_STATS 1
 #define LWMEM_CFG_CLEAN_MEMORY 1
 #define LWMEM_CFG_FULL         1

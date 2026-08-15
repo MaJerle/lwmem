@@ -6,7 +6,7 @@ def main(args):
     rootpath = os.getcwd()
     files = [f for f in glob.glob(os.path.join(os.getcwd(), '**', '*.cmake'), recursive=True) if '__build__' not in f]
     print(files, flush=True)
-    
+
     for file in files:
         basep = os.path.dirname(file)
         print('Test path:', basep, flush=True)
@@ -20,18 +20,12 @@ def main(args):
         os.mkdir('__build__')
         os.chdir('__build__')
         print('Configure the CMake', flush=True)
-        if args.github:
-            retval |= os.system('cmake -S../.. -T host=x86 -A Win32 -DTEST_CMAKE_FILE_NAME={}'.format(file))
-        else:
-            retval |= os.system('cmake -DCMAKE_C_COMPILER=i686-w64-mingw32-gcc -DCMAKE_CXX_COMPILER=i686-w64-mingw32-g++ -S../.. -G Ninja -DTEST_CMAKE_FILE_NAME={}'.format(file))
-        
+        retval |= os.system('cmake -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -S../.. -G Ninja -DTEST_CMAKE_FILE_NAME={}'.format(file))
+
         print('Compile', flush=True)
         retval |= os.system('cmake --build .')
         print('Run test', flush=True)
-        if args.github:
-            retval |= os.system('ctest . --output-on-failure -C Debug')
-        else:
-            retval |= os.system('ctest . --output-on-failure')
+        retval |= os.system('ctest . --output-on-failure -C Debug')
 
     return retval
 

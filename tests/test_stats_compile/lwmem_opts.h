@@ -35,8 +35,6 @@
 
 /* Rename this file to "lwmem_opts.h" for your application */
 
-#include "windows.h"
-
 #define LWMEM_CFG_FULL         1
 #define LWMEM_CFG_ENABLE_STATS 1
 

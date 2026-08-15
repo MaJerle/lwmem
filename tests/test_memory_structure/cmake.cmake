@@ -7,3 +7,6 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
 
 # Options file
 set(LWMEM_OPTS_FILE ${CMAKE_CURRENT_LIST_DIR}/lwmem_opts.h)
+
+# This test hardcodes 32-bit pointer/size_t byte-count assertions
+set(LWMEM_TEST_ARCH 32)
