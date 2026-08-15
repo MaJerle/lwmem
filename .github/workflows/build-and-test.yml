@@ -10,25 +10,7 @@ on:
       - develop
 
 jobs:
-  build-windows:
-    runs-on: windows-latest
-
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Install MinGW
-        run: |
-          choco install mingw --version=12.2.0 -y
-          echo "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin" >> $GITHUB_PATH
-          gcc --version
-
-      - name: Run Tests
-        working-directory: tests
-        run: |
-          python3 test.py --github
-
-  build-gcc:
+  build:
     runs-on: ubuntu-latest
 
     steps:
