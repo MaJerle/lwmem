@@ -1,5 +1,6 @@
 import os
 import re
+import subprocess
 
 # Get presets from the path
 # Use cmake command line to list actual presets visible to cmake
@@ -22,7 +23,7 @@ if __name__ == '__main__':
 		print("-------------------------------")
 		print("Configuring preset " + preset)
 		print("-------------------------------")
-		ret = os.system("cmake --preset " + preset)
+		ret = subprocess.run(['cmake', '--fresh', '--preset', preset]).returncode
 		if ret != 0:
 			print("!!!! Command failed !!!! with result code: " + str(ret))
 			failed.append(preset)
@@ -30,7 +31,7 @@ if __name__ == '__main__':
 		print("-------------------------------")
 		print("Building preset " + preset)
 		print("-------------------------------")
-		ret = os.system("cmake --build --preset " + preset)
+		ret = subprocess.run(['cmake', '--build', '--preset', preset]).returncode
 		if ret != 0:
 			print("!!!! Command failed !!!! with result code: " + str(ret))
 			failed.append(preset)
