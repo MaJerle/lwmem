@@ -4,7 +4,7 @@
 
 ## Features
 
-* Written in C (C11), compatible with ``stdint.h`` for size data types
+* Written in C (C11), compatible with `stdint.h` data types
 * Implements standard C library functions for memory allocation, malloc, calloc, realloc and free
 * Uses *first-fit* algorithm to search for free block
 * Supports multiple allocation instances to split between memories and/or CPU cores
