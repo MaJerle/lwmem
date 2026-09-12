@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (c) 2024 Tilen MAJERLE
+ * Copyright (c) 2026 Tilen MAJERLE
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -41,7 +41,7 @@
  * Open "include/lwmem/lwmem_opt.h" and
  * copy & replace here settings you want to change values
  */
-#define LWMEM_CFG_OS                            1
-#define LWMEM_CFG_OS_MUTEX_HANDLE               osMutexId
+#define LWMEM_CFG_OS              1
+#define LWMEM_CFG_OS_MUTEX_HANDLE osMutexId
 
 #endif /* LWMEM_HDR_OPTS_H */

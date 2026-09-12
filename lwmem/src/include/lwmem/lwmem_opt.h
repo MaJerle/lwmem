@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (c) 2024 Tilen MAJERLE
+ * Copyright (c) 2026 Tilen MAJERLE
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -87,16 +87,16 @@ extern "C" {
 
 /**
  * \brief           Enables `1` or disables `0` full memory management support.
- * 
+ *
  * When enabled (default config), library supports allocation, reallocation and freeing of the memory.
  *  - Memory [c]allocation
  *  - Memory reallocation
  *  - Memory allocation in user defined memory regions
  *  - Memory freeing
- * 
+ *
  * When disabled, library only supports allocation and does not provide any other service.
  *  - Its purpose is for memory allocation at the start of firmware initialization only
- * 
+ *
  * \note            When disabled, statistics functionaltiy is not available
  *                  and only one region is supported (for now, may be updated later).
  *                  API to allocate memory remains the same as for full configuration.
@@ -125,7 +125,7 @@ extern "C" {
 
 /**
  * \brief           Memory set function
- * 
+ *
  * \note            Function footprint is the same as \ref memset
  */
 #ifndef LWMEM_MEMSET
@@ -134,7 +134,7 @@ extern "C" {
 
 /**
  * \brief           Memory copy function
- * 
+ *
  * \note            Function footprint is the same as \ref memcpy
  */
 #ifndef LWMEM_MEMCPY
@@ -143,7 +143,7 @@ extern "C" {
 
 /**
  * \brief           Memory move function
- * 
+ *
  * \note            Function footprint is the same as \ref memmove
  */
 #ifndef LWMEM_MEMMOVE

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (c) 2024 Tilen MAJERLE
+ * Copyright (c) 2026 Tilen MAJERLE
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -44,11 +44,10 @@ uint8_t region1_data[1024];
 /**
  * \brief           Define final regions
  */
-static lwmem_region_t
-regions[] = {
-    { region1_data, sizeof(region1_data) },
+static lwmem_region_t regions[] = {
+    {region1_data, sizeof(region1_data)},
     /* Add more regions if needed */
-    { NULL, 0 }
+    {NULL, 0},
 };
 
 static void app_thread(void* arg);
@@ -58,25 +57,26 @@ static void app_thread(void* arg);
  */
 int
 main(void) {
-    LL_Init();                                  /* Reset of all peripherals, initializes the Flash interface and the Systick. */
-    SystemClock_Config();                       /* Configure the system clock */
-    USART_Printf_Init();                        /* Init USART for printf */
+    LL_Init();            /* Reset of all peripherals, initializes the Flash interface and the Systick. */
+    SystemClock_Config(); /* Configure the system clock */
+    USART_Printf_Init();  /* Init USART for printf */
 
     printf("Application running on STM32L496G-Discovery!\r\n");
 
-    osKernelInitialize();                       /* Initialize kernel */
+    osKernelInitialize(); /* Initialize kernel */
 
     /* Initialize LwMEM */
     printf("Initializing LwMEM...\r\n");
     if (!lwmem_assignmem(regions)) {
-        printf("Cannot initialize LwMEM. Make sure your regions are not overlapping each other and are in ascending memory order\r\n");
+        printf("Cannot initialize LwMEM. Make sure your regions are not overlapping each other and are in ascending "
+               "memory order\r\n");
         while (1) {}
     } else {
         printf("LwMEM initialized and ready to use\r\n");
     }
 
-    osThreadNew(app_thread, NULL, NULL);        /* Create application thread */
-    osKernelStart();                            /* Start kernel */
+    osThreadNew(app_thread, NULL, NULL); /* Create application thread */
+    osKernelStart();                     /* Start kernel */
 
     while (1) {}
 }
@@ -87,16 +87,16 @@ main(void) {
  */
 static void
 app_thread(void* arg) {
-    void* ptr1, *ptr2;
+    void *ptr1, *ptr2;
 
     /* Allocate */
-    ptr1 = lwmem_malloc(128);                   /* Allocate 128 bytes */
+    ptr1 = lwmem_malloc(128); /* Allocate 128 bytes */
     if (ptr1 == NULL) {
         printf("Cannot allocate 128 bytes of memory\r\n");
     }
 
     /* Reallocate */
-    ptr2 = lwmem_realloc(ptr1, 256);            /* Extend to 256 bytes */
+    ptr2 = lwmem_realloc(ptr1, 256); /* Extend to 256 bytes */
     if (ptr2 == NULL) {
         printf("Cannot reallocate to 256 bytes of memory\r\n");
     } else {
@@ -120,7 +120,7 @@ app_thread(void* arg) {
     }
 
     /* Free */
-    lwmem_free(ptr1);                           /* Free memory */
+    lwmem_free(ptr1); /* Free memory */
 
     printf("Terminating application thread\r\n");
     osThreadExit();
@@ -228,8 +228,8 @@ USART_Printf_Init(void) {
     USART_InitStruct.OverSampling = LL_USART_OVERSAMPLING_16;
     LL_USART_Init(USART2, &USART_InitStruct);
 
-    LL_USART_ConfigAsyncMode(USART2);           /* Configure USART in async mode */
-    LL_USART_Enable(USART2);                    /* Enable USART */
+    LL_USART_ConfigAsyncMode(USART2); /* Configure USART in async mode */
+    LL_USART_Enable(USART2);          /* Enable USART */
 }
 
 /**
@@ -239,11 +239,13 @@ USART_Printf_Init(void) {
  * \return          Written character
  */
 #ifdef __GNUC__
-int __io_putchar(int ch) {
+int
+__io_putchar(int ch) {
 #else
-int fputc(int ch, FILE* fil) {
+int
+fputc(int ch, FILE* fil) {
 #endif
-    LL_USART_TransmitData8(USART2, (uint8_t)ch);/* Transmit data */
-    while (!LL_USART_IsActiveFlag_TXE(USART2)); /* Wait until done */
+    LL_USART_TransmitData8(USART2, (uint8_t)ch); /* Transmit data */
+    while (!LL_USART_IsActiveFlag_TXE(USART2)) {}
     return ch;
 }

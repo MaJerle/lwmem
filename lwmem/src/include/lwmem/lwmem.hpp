@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (c) 2020 Tilen MAJERLE
+ * Copyright (c) 2026 Tilen MAJERLE
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -47,11 +47,11 @@ namespace Lwmem {
 
 /**
  * \brief           LwMEM Light implementation with single memory region.
- * \tparam          LEN: Length of region in units of bytes 
- * 
+ * \tparam          LEN: Length of region in units of bytes
+ *
  * This class provides C++ wrapper functions for LwMEM library.
  * For detailed docs instructions, have a look at \ref lwmem.c file.
- * 
+ *
  * Start lwmem with:
  * \code{.c}
 Lwmem::LwmemLight<1024> mngr;   //Use 1024 bytes of data for memory operations

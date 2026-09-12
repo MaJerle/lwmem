@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (c) 2024 Tilen MAJERLE
+ * Copyright (c) 2026 Tilen MAJERLE
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -467,7 +467,8 @@ prv_free(lwmem_t* const lwobj, void* const ptr) {
  * Function behaves differently, depends on input parameter of `ptr` and `size`:
  *
  *  - `ptr == NULL; size == 0`: Function returns `NULL`, no memory is allocated or freed
- *  - `ptr == NULL; size > 0`: Function tries to allocate new block of memory with `size` length, equivalent to `malloc(size)`
+ *  - `ptr == NULL; size > 0`: Function tries to allocate new block of memory with `size` length, equivalent to
+ * `malloc(size)`
  *  - `ptr != NULL; size == 0`: Function frees memory, equivalent to `free(ptr)`
  *  - `ptr != NULL; size > 0`: Function tries to allocate new memory of copy content before returning pointer on success
  *
@@ -483,9 +484,9 @@ static void*
 prv_realloc(lwmem_t* const lwobj, const lwmem_region_t* region, void* const ptr, const size_t size) {
     lwmem_block_t *block = NULL, *prevprev = NULL, *prev = NULL;
     size_t block_size; /* Holds size of input block (ptr), including metadata size */
-    const size_t final_size =
-        LWMEM_ALIGN(size) + LWMEM_BLOCK_META_SIZE; /* Holds size of new requested block size, including metadata size */
-    void* retval;                                  /* Return pointer, used with LWMEM_RETURN macro */
+    const size_t final_size = LWMEM_ALIGN(size) + LWMEM_BLOCK_META_SIZE; /* Holds size of new requested block size,
+                                                                            including metadata size */
+    void* retval; /* Return pointer, used with LWMEM_RETURN macro */
 
     /* Check optional input parameters */
     if (size == 0) {
@@ -642,8 +643,8 @@ prv_realloc(lwmem_t* const lwobj, const lwmem_region_t* region, void* const ptr,
      * - Input block & next free block do not create contiguous block or its new size is too small
      * - Previous free block & input block do not create contiguous block or its new size is too small
      *
-     * Last option is to check if previous free block "prev", input block "block" and next free block "prev->next" create contiguous block
-     * and size of new block (from 3 contiguous blocks) together is big enough
+     * Last option is to check if previous free block "prev", input block "block" and next free block "prev->next"
+     * create contiguous block and size of new block (from 3 contiguous blocks) together is big enough
      */
     if ((LWMEM_TO_BYTE_PTR(prev) + prev->size) == LWMEM_TO_BYTE_PTR(block)
         && (LWMEM_TO_BYTE_PTR(block) + block_size) == LWMEM_TO_BYTE_PTR(prev->next)
@@ -698,10 +699,10 @@ prv_realloc(lwmem_t* const lwobj, const lwmem_region_t* region, void* const ptr,
 
 /**
  * \brief           Assign the memory structure for advanced memory allocation system
- * 
- * \param           lwobj 
- * \param           regions 
- * \return          size_t 
+ *
+ * \param           lwobj
+ * \param           regions
+ * \return          size_t
  */
 static size_t
 prv_assignmem(lwmem_t* lwobj, const lwmem_region_t* regions) {
@@ -775,10 +776,10 @@ prv_assignmem(lwmem_t* lwobj, const lwmem_region_t* regions) {
 
 /**
  * \brief           Assign the regions for simple algorithm
- * 
+ *
  *                  At this point, regions check has been performed, so we assume
  *                  everything is ready to proceed
- * 
+ *
  * \param           lwobj: LwMEM object
  * \param           regions: List of regions to assign
  * \return          Number of regions used
@@ -807,11 +808,11 @@ prv_assignmem_simple(lwmem_t* const lwobj, const lwmem_region_t* regions) {
 /**
  * \brief           Simple allocation algorithm, that can only allocate memory,
  *                  but it does not support free.
- * 
+ *
  *                  It uses simple first-in-first-serve concept,
  *                  where memory grows upward gradually, up until it reaches the end
  *                  of memory area
- * 
+ *
  * \param           lwobj: LwMEM object
  * \param           region: Selected region. Not used in the current revision,
  *                      but footprint remains the same if one day library will support it
@@ -998,7 +999,8 @@ lwmem_calloc_ex(lwmem_t* lwobj, const lwmem_region_t* region, const size_t nitem
  * Function behaves differently, depends on input parameter of `ptr` and `size`:
  *
  *  - `ptr == NULL; size == 0`: Function returns `NULL`, no memory is allocated or freed
- *  - `ptr == NULL; size > 0`: Function tries to allocate new block of memory with `size` length, equivalent to `malloc(region, size)`
+ *  - `ptr == NULL; size > 0`: Function tries to allocate new block of memory with `size` length, equivalent to
+ * `malloc(region, size)`
  *  - `ptr != NULL; size == 0`: Function frees memory, equivalent to `free(ptr)`
  *  - `ptr != NULL; size > 0`: Function tries to allocate new memory of copy content before returning pointer on success
  *
@@ -1035,9 +1037,11 @@ lwmem_realloc_ex(lwmem_t* lwobj, const lwmem_region_t* region, void* const ptr, 
  *
  *  - `ptr == NULL`: Invalid input, function returns `0`
  *  - `*ptr == NULL; size == 0`: Function returns `0`, no memory is allocated or freed
- *  - `*ptr == NULL; size > 0`: Function tries to allocate new block of memory with `size` length, equivalent to `malloc(size)`
+ *  - `*ptr == NULL; size > 0`: Function tries to allocate new block of memory with `size` length, equivalent to
+ * `malloc(size)`
  *  - `*ptr != NULL; size == 0`: Function frees memory, equivalent to `free(ptr)`, sets input pointer pointing to `NULL`
- *  - `*ptr != NULL; size > 0`: Function tries to reallocate existing pointer with new size and copy content to new block
+ *  - `*ptr != NULL; size > 0`: Function tries to reallocate existing pointer with new size and copy content to new
+ * block
  *
  * \param[in]       lwobj: LwMEM instance. Set to `NULL` to use default instance
  * \param[in]       region: Pointer to region to allocate from.
